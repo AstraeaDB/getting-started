@@ -644,7 +644,7 @@ run at the same time as their siblings in the same phase.
   *Accept:* the tree matches section 3.1; `just --list` shows only the new
   recipes; the authoring server still answers a ping on its new name; no
   reference to the rag template survives in any file.
-  *after:* user answers Q6.
+  *after:* nothing. Q6 is resolved (`AstraeaDB/getting-started`, `/docs` on `main`), so this is the entry point for Phase 0.
 - **T2 [documentarian] Build the site toolchain.** Write `lessons.toml` with all
   20 entries, `site/build.py`, the three templates, `site/assets/site.css`, and
   `site/assets/site.js` (track switcher plus `localStorage` preference).
@@ -786,7 +786,7 @@ lesson that needs an external dataset either runs against the sampled subset in
   GitHub Action that runs `just build` and a fast-mode `just verify-all` on push.
   *Accept:* the site is live at its URL; every outbound link returns 200; the
   Action passes on a trial push; a `Decision` node records the launch revision.
-  *after:* T29, Q6.
+  *after:* T29. Publish to `AstraeaDB/getting-started` from `/docs` on `main`; the URL is `https://astraeadb.github.io/getting-started/` (Q6). Whether `AstraeaDB-Official`'s README points here as its primary entry point is decided at this step.
 
 ---
 
@@ -893,16 +893,28 @@ not surprised at the end of Crawl. Building full R versions of twelve lessons
 roughly doubles the writing and the verification cost for material whose source
 demos are all Python.
 
-**Q6. Where does the site live, and is there a custom domain?**
-The options are a new public repository `AstraeaDB/getting-started` published
-from `main` and `/docs`, or a `gh-pages` branch of `AstraeaDB-Official`.
-*Recommendation:* a new public repository, published from `/docs` on `main`. It
-gives the site its own issue tracker, keeps roughly 20 pages of generated HTML
-out of the database repository, and needs no GitHub Action to publish. That puts
-the URL at `https://astraeadb.github.io/getting-started/`.
-*Also decide:* is there a custom domain such as `docs.astraeadb.dev`, and does
-`AstraeaDB-Official`'s README link to the site as the primary entry point? T1
-and T30 are both blocked on this answer.
+**Q6. Where does the site live? RESOLVED 2026-08-07: a new public
+`AstraeaDB/getting-started`.**
+The options were a new public repository published from `main` and `/docs`, or a
+`gh-pages` branch of `AstraeaDB-Official`.
+*Answer:* a new public repository, `AstraeaDB/getting-started`, published from
+`/docs` on `main`. It gives the site its own issue tracker, keeps roughly 20
+pages of generated HTML out of the database repository, and needs no GitHub
+Action to publish. The site URL is
+**`https://astraeadb.github.io/getting-started/`**, and every internal link,
+canonical URL, and asset path in `site/build.py` should be built against that
+base.
+
+**T1 and T30 are unblocked, so Phase 0 can start.**
+
+*Two sub-questions were not answered and are deliberately left open, because
+neither blocks Phase 0.* Whether a custom domain such as `docs.astraeadb.dev`
+should front the site: assume no for now, and note that adding one later is a
+`CNAME` file plus a DNS record, so the only real cost of deferring is that
+already-published absolute URLs would need a sweep. Keep absolute URLs out of
+the content and confined to `build.py` so that sweep stays cheap. And whether
+`AstraeaDB-Official`'s README should link the site as its primary entry point:
+that is a T30 launch decision, not a build-time one.
 
 **Q7. Is Medium still a publication target? RESOLVED 2026-08-07: no.**
 The five existing 635 KB HTML files were self-contained pandoc exports built for
