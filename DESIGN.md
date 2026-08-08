@@ -284,7 +284,7 @@ needed, not the eventual state.
 
 | ID | Title | Track | Source | Status |
 | --- | --- | --- | --- | --- |
-| `walk-01-embeddings` | What an Embedding Is, and How to Make One | py (r sidebar) | `astraeadb-embeddings-demo` (**private**), `tools/embeddings/embed.py` | **Net-new prose.** Teaches Ollama plus `embeddinggemma`, 768 native dimensions truncated to 128 by Matryoshka truncation with L2 renormalization, which is what the whole site standardizes on. |
+| `walk-01-embeddings` | What an Embedding Is, and How to Make One | py (r sidebar) | `astraeadb-embeddings-demo` (**private**), `tools/embeddings/embed.py` | **Net-new prose.** Teaches Ollama plus `embeddinggemma`, `embeddinggemma` at its native 768 dimensions, which is what the whole site standardizes on (Q9). No Matryoshka truncation: the reader never slices a vector. |
 | `walk-02-semantic-search` | Searching a Graph by Meaning, Not by Keyword | py (r sidebar) | `astraeadb-embeddings-demo` | **Net-new prose, consolidates.** Goes past `crawl-*-02` by building the corpus, choosing what text to embed per node type, and tuning `alpha` in hybrid search. |
 | `walk-03-text-to-graph` | Turning a Book Into a Knowledge Graph | py | `astraea-graphrag-demo` | **Net-new prose over existing code.** Extraction to `Character` / `Location` / `Event` / `Theme` / `Chapter` / `Passage` nodes with provenance edges back to source text. |
 | `walk-04-graphrag` | GraphRAG End to End: Retrieve, Extract, Linearize, Answer | py | `astraea-graphrag-demo` | **Net-new prose over existing code.** The four-stage pipeline, with the comparison mode that shows the same question answered without the graph. |
@@ -343,8 +343,8 @@ package mirrors them. Two consequences that shape the site:
 
 | Lesson | APIs and node ids |
 | --- | --- |
-| `walk-01-embeddings` | No AstraeaDB API. Ollama's `/api/embed` with `embeddinggemma`, then Matryoshka truncation to 128 dimensions and L2 renormalization. `tools/embeddings/embed.py` in this dev environment is the reference implementation and its docstring is accurate. Tie the dimension choice to `astraea-core`'s invariant that a node's embedding dimension is pinned by the HNSW index on first insert, so a store must not mix dimensions (crate node_id=170). |
-| `walk-02-semantic-search` | Same wire calls as `crawl-*-02`, taught at depth. Add the server's `[vector] dimension` and `metric` configuration, which `astraea-cli` (crate node_id=69) reads and which defaults to 128-dimensional cosine when the section is omitted. |
+| `walk-01-embeddings` | No AstraeaDB API. Ollama's `/api/embed` with `embeddinggemma`, used at its native 768 dimensions (Q9). `tools/embeddings/embed.py` in this dev environment is the reference implementation but currently truncates to 128, so it must be updated before it is cited. Tie the dimension choice to `astraea-core`'s invariant that a node's embedding dimension is pinned by the HNSW index on first insert, so a store must not mix dimensions (crate node_id=170). |
+| `walk-02-semantic-search` | Same wire calls as `crawl-*-02`, taught at depth. Add the server's `[vector] dimension` and `metric` configuration, which `astraea-cli` (crate node_id=69) reads and which defaults to 128-dimensional cosine when the section is omitted. Because the site standardizes on 768 (Q9), every lesson sets `[vector] dimension = 768` explicitly rather than relying on the default. |
 | `walk-03-text-to-graph` | `CreateNode` with `embedding`, `CreateEdge` with `valid_from` and `valid_to`, `FindByLabel`, `FindEdgeByType`, and the bulk helpers `create_nodes` and `create_edges` in the Python client. |
 | `walk-04-graphrag` | The pipeline in `astraea-rag` (crate node_id=1093): `graph_rag_query` (node_id=1190) and `graph_rag_query_anchored` (node_id=1191), `extract_subgraph` (node_id=1206) and `extract_subgraph_semantic` (node_id=1207), `linearize_subgraph` (node_id=1114) with `TextFormat` (node_id=1113), and the token budget via `estimate_tokens` (node_id=1217) and `extract_with_budget` (node_id=1218). Configuration and result shapes are `GraphRagConfig` (node_id=1187) and `GraphRagResult` (node_id=1189). Providers are pluggable behind `LlmProvider` (node_id=1132) and `EmbeddingProvider` (node_id=1095), with `OllamaProvider` (node_id=1156) implementing both. From Python the same thing is reached with `Request::GraphRag` or through the MCP tool `graph_rag` (node_id=879). |
 | `walk-05-data-lake` | `SemanticNeighbors` for concept matching, `NeighborsAt` for platform succession, `GetSubgraph` for the planning context, and `Query` for the GQL used in planning. |
@@ -418,7 +418,8 @@ explicit task (T9 through T14) with a fixed checklist.
    call that no longer exists, any renamed argument, and any place the demo
    assumes a response shape that has changed.
 3. Check the embedding dimension the demo configures against the site standard
-   of 128. Record any divergence and why.
+   of 768 (Q9). Demos written at 128 predate the issue #25 fix and must be
+   updated, not copied. Record any divergence and why.
 4. Run the demo's own test file where it has one (`test_demo.py` exists in
    `graphrag-demo` and `data_lake_demo`) against a container-hosted server.
 5. Note every external prerequisite: dataset downloads, API keys, model pulls,
@@ -538,7 +539,7 @@ into the reader's view.
 1. Starts a fresh container from the lesson's image with `samples/<lesson-id>/`
    and `data/` mounted read-only.
 2. Starts `astraeadb serve` **inside** the container on `127.0.0.1:7687` with a
-   `[vector]` section at 128 dimensions and cosine distance. Because the server
+   `[vector]` section at 768 dimensions and cosine distance. Because the server
    is in the container, the literal `127.0.0.1:7687` in the lesson text is the
    thing being tested, not a substitute.
 3. Concatenates the lesson's `bash` blocks into one script and each language's
@@ -810,18 +811,47 @@ do not control.
 *Also decide:* should the R package's CRAN submission be treated as a
 prerequisite for launch, or as a follow-up?
 
-**Q2. Should `astraea-cli` be published to crates.io before the site launches?**
+**Q2. Should `astraea-cli` be published to crates.io before the site launches?
+RESOLVED 2026-08-07: yes, and it is far cheaper than this question assumed.**
 Only five crates are on crates.io at 0.3.1 (`astraea-core`, `astraea-graph`,
 `astraea-vector`, `astraea-storage`, `astraea-rag`). `astraea-cli` and
-`astraea-server` are not, so every lesson must open with
+`astraea-server` are not, so every lesson would otherwise open with
 `cargo install --git https://github.com/AstraeaDB/AstraeaDB-Official.git
 astraea-cli`, which compiles the whole server from source and takes several
 minutes on a first run.
-*Recommendation:* yes, publish it. A single `cargo install astraeadb` is a
-dramatically better first thirty seconds for a newcomer, it removes a git
-dependency from every lesson, and it makes the verification images far cheaper
-to build. If that cannot happen before launch, the lessons should at least warn
-the reader up front about the build time.
+
+*Investigation, 2026-08-07.* The design assumed publishing was a project. It is
+not. Nothing structural blocks any of the ten unpublished crates:
+
+- There is **no `publish = false`** anywhere in the workspace.
+- **Every internal path dependency already carries `version = "0.3.1"`.** This is
+  normally the blocking work, and it is already done. The workspace comment in
+  `Cargo.toml` claims the version is only needed for the published five; in fact
+  all ten unpublished crates score zero on "path dependency without a version".
+- The **only** gap is metadata. All ten lack `description`, `license`, and
+  `repository`, and crates.io hard-rejects a publish missing `description` or
+  `license`. `astraea-cli`'s `[package]` block carries nothing but
+  `version.workspace` and `edition.workspace`, where `astraea-core` carries an
+  explicit `description` plus `license.workspace` and `repository.workspace`.
+
+The fix is three lines per crate, two of which are `.workspace = true` because
+the workspace already defines `license = "MIT"` and `repository`.
+
+One risk checked and cleared: `astraea-cli` depends on `astraea-graph` with
+`features = ["test-utils"]`. That is a real feature (`test-utils = []`), and the
+already-published `astraea-rag` 0.3.1 depends on it the same way, so it is proven
+to resolve through crates.io.
+
+*Answer:* publish. **This work is out of scope for this project** and is filed
+against AstraeaDB as issue **#28** in `astraeadb-issues.md`. Two constraints
+recorded there: crates must go out in dependency order
+(core, storage, vector, graph, then algorithms and query, then rag, then server,
+then cli, flight, mcp, gnn, cluster, gpu), and `astraea-encrypt-demo` should get
+`publish = false` rather than metadata, because it is a demo.
+
+*Consequence for this project:* lessons should be written against
+`cargo install astraeadb`. If #28 has not landed when a lesson is written, use
+the `--git` form and leave a `TODO(#28)` marker so the sweep is mechanical.
 
 **Q3. Two source repositories are private. What happens to them?**
 `cyber-graph-demo` and `astraeadb-embeddings-demo` are private. Three of the
@@ -895,17 +925,42 @@ Installing Ollama into the image is the pure alternative, but it means a
 multi-gigabyte model pull per image build. Is the one-hostname divergence
 acceptable? If it is not, we accept much slower image builds.
 
-**Q9. Does the site standardize on 128-dimensional embeddings everywhere?**
+**Q9. Does the site standardize on 128-dimensional embeddings everywhere?
+RESOLVED 2026-08-07: no. The site uses 768, the model's native width.**
 The blogs and `tools/embeddings/embed.py` use `embeddinggemma` truncated to 128
-dimensions, which is also AstraeaDB's default when `[vector]` is omitted. But
-`GNN-test-and-improve` uses the Elliptic dataset's native 165 features, and
-`astraea-core` pins a store's dimension on first insert so a single server
-cannot mix them.
-*Recommendation:* standardize on 128 for every lesson except
-`run-01-fraud-elliptic`, which explicitly starts a second server configured for
-165 dimensions and uses that as the teaching moment for why the dimension is
-pinned. Confirm, and confirm that nobody objects to Matryoshka truncation being
-the site-wide default.
+dimensions. The original recommendation here was to keep 128 site-wide. That was
+wrong, and it was wrong for a reason worth recording.
+
+*Investigation, 2026-08-07.* The 128-dimension convention was a workaround for a
+bug, not a design constraint, and the bug is fixed:
+
+- There is **no dimension ceiling in the code**. No `MAX_DIM`, no
+  `MAX_DIMENSION`, no `dim > N` guard anywhere in `crates/`.
+- 768 is **explicitly tested**, not merely tolerated:
+  `test_non_128_dimension_insert_and_search_768` and
+  `test_round_trip_preserves_non_128_dimension_768` in `astraea-vector`.
+- Decisively, `crates/astraea-vector/src/hnsw.rs:1176` is a full-scale acceptance
+  guard at N=10k and dim 768, described in its own doc comment as "the a-llama
+  regime", asserting `recall@10 >= 0.95`. Somebody committed to keeping 768
+  working.
+- The limit was **issue #25**, the HNSW recall collapse, which `CHANGELOG.md:175`
+  records as resolved. The demos were written while it was open.
+
+*Answer:* use `embeddinggemma` at its native 768 dimensions everywhere. Beyond
+correctness, this **removes a teaching burden**: at 128 every lesson carries an
+unexplained "now slice the vector" step that needs a Matryoshka-truncation
+digression to justify. At the corpus sizes these lessons use, the six-times
+storage cost is irrelevant.
+
+*Two things this does not change.* A store's dimension is still pinned on first
+insert, so one server still cannot mix widths, and that remains a good teaching
+moment. And `run-01-fraud-elliptic` stays at 165, which is the Elliptic dataset's
+native feature count and unrelated to the embedding decision.
+
+*Consequence:* the Crawl lessons inherited from `blogs/` currently specify 128 and
+must be changed as part of T5. `tools/embeddings/embed.py` truncates to 128 and
+needs the same treatment. Any fixture or sample vector data generated at 128 is
+regenerated at 768.
 
 **Q10. How deep should the Eunomia and a-llama lessons go?**
 Both are substantial projects with their own documentation.
