@@ -16,7 +16,7 @@ Because the dashboard is a Rust program, you need Rust's tools plus a couple of 
 
 - Rust itself, from [rustup.rs](https://rustup.rs), together with the WebAssembly build target, which you add with `rustup target add wasm32-unknown-unknown`.
 - `cargo-leptos`, the build tool for Leptos (the Rust web framework the dashboard is built on). Install it with `cargo install cargo-leptos --version 0.3.5`.
-- Node.js version 18 or newer, and the Tailwind CSS command-line tool that styles the pages, which you install with `npm install -g @tailwindcss/cli`.
+- Nothing else. The pages are styled with Tailwind CSS, and `cargo-leptos` downloads the Tailwind tool for you the first time you build, so you do not need Node.js or npm.
 
 ## Install and run it
 
@@ -25,11 +25,10 @@ Clone the repository, install its local dependencies, and start it in watch mode
 ```bash
 git clone https://github.com/AstraeaDB/astraea-ui.git
 cd astraea-ui
-npm install
 cargo leptos watch
 ```
 
-The first `cargo leptos watch` compiles the dashboard, which takes a few minutes. After that it serves the dashboard at `http://localhost:3100` and rebuilds automatically whenever you change a file. Make sure your AstraeaDB server is already running, using the `astraeadb serve` step from the getting-started posts. The dashboard connects to `127.0.0.1:7687` by default. If your server runs somewhere else, set the `ASTRAEA_HOST` and `ASTRAEA_PORT` environment variables before you start it.
+The first `cargo leptos watch` compiles the dashboard, which takes a few minutes. It also downloads the Tailwind tool on that first run, so expect a short pause before compilation starts. After that it serves the dashboard at `http://localhost:3100` and rebuilds automatically whenever you change a file. Make sure your AstraeaDB server is already running, using the `astraeadb serve` step from the getting-started posts. The dashboard connects to `127.0.0.1:7687` by default. If your server runs somewhere else, set the `ASTRAEA_HOST` and `ASTRAEA_PORT` environment variables before you start it.
 
 ## Log in
 

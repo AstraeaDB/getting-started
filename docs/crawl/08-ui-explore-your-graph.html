@@ -100,9 +100,9 @@
     <li><code>cargo-leptos</code>, the build tool for Leptos (the Rust
     web framework the dashboard is built on). Install it with
     <code>cargo install cargo-leptos --version 0.3.5</code>.</li>
-    <li>Node.js version 18 or newer, and the Tailwind CSS command-line
-    tool that styles the pages, which you install with
-    <code>npm install -g @tailwindcss/cli</code>.</li>
+    <li>Nothing else. The pages are styled with Tailwind CSS, and
+    <code>cargo-leptos</code> downloads the Tailwind tool for you the
+    first time you build, so you do not need Node.js or npm.</li>
     </ul>
     <h2 id="install-and-run-it">Install and run it</h2>
     <p>Clone the repository, install its local dependencies, and start
@@ -110,10 +110,11 @@
     <div class="sourceCode" id="cb1"><pre
     class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/AstraeaDB/astraea-ui.git</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> astraea-ui</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> leptos watch</span></code></pre></div>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> leptos watch</span></code></pre></div>
     <p>The first <code>cargo leptos watch</code> compiles the dashboard,
-    which takes a few minutes. After that it serves the dashboard at
+    which takes a few minutes. It also downloads the Tailwind tool on
+    that first run, so expect a short pause before compilation starts.
+    After that it serves the dashboard at
     <code>http://localhost:3100</code> and rebuilds automatically
     whenever you change a file. Make sure your AstraeaDB server is
     already running, using the <code>astraeadb serve</code> step from
@@ -207,7 +208,7 @@ RETURN keanu, r1, m, r2, costar</code></pre>
 </div>
 
 <footer class="sitefoot">
-  <p class="badge unverified">Awaiting manual check</p>
+  <p class="badge manual">Manually checked on 2026-08-08</p>
   <p>
     <a href="../status.html">Verification status</a> &middot;
     <a href="https://github.com/AstraeaDB/getting-started">Source</a>

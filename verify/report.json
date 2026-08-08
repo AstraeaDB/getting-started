@@ -2,6 +2,13 @@
   "generated": "2026-08-08T19:23:59+00:00",
   "runs": [
     {
+      "lesson": "crawl-08-ui",
+      "green": false,
+      "checked_on": "2026-08-08",
+      "note": "Toolchain and every named feature verified; browser interaction steps still to be driven by a human. See verify/manual/crawl-08-ui.md.",
+      "skipped": []
+    },
+    {
       "lesson": "crawl-py-01",
       "green": true,
       "blocks": 11,
