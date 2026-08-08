@@ -27,12 +27,21 @@
   <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
   <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
   <li data-track="r" class="current"><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
   </ul>
   <h2 class="tier">Walk</h2>
   <ul>
   </ul>
   <h2 class="tier">Run</h2>
   <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
   </ul>
   </nav>
 
@@ -96,16 +105,17 @@
     install with <code>cargo</code>, the build tool that comes with
     Rust. If you do not already have a Rust toolchain, get one from <a
     href="https://rustup.rs">rustup.rs</a> first.</p>
-    <p>Building the server also relies on Protocol Buffers, a data
-    format from Google, so on a fresh Linux machine you first need a few
-    system packages. On Debian or Ubuntu, one command installs all of
-    them:</p>
-    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds" -->
+    <p>Building the server relies on Protocol Buffers, a data format
+    from Google, so on a fresh Linux machine you first need a few system
+    packages. On Debian or Ubuntu, one command installs all of them:</p>
+    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would reinstall the same packages every time" -->
 
     <div class="sourceCode" id="cb1"><pre
     class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install <span class="at">-y</span> protobuf-compiler libprotobuf-dev pkg-config libssl-dev build-essential</span></code></pre></div>
     <p>On macOS with <a href="https://brew.sh">Homebrew</a>, the
-    equivalent is <code>brew install protobuf</code>.</p>
+    equivalent is <code>brew install protobuf</code>. With those in
+    place, you can install the command-line program using
+    <code>cargo</code>, which is Rust's package and build tool:</p>
     <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds" -->
 
     <div class="sourceCode" id="cb2"><pre
@@ -114,8 +124,8 @@
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Start the server (JSON/TCP on 127.0.0.1:7687, data persisted to disk)</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">astraeadb</span> serve</span></code></pre></div>
-    <p>Leave that terminal running, because it is now your database. A
-    few other subcommands are worth knowing.
+    <p>Leave that terminal running, because it is now your database.</p>
+    <p>A few other subcommands are worth knowing.
     <code>astraeadb status</code> runs a quick health check.
     <code>astraeadb shell</code> opens an interactive prompt where you
     type commands and see results right away.
@@ -125,33 +135,31 @@
     the first.</p>
     <h2 id="installing-the-r-client-and-connecting">Installing the R
     client and connecting</h2>
-    <p>The client is on CRAN, the Comprehensive R Archive Network, which
-    is the official place R downloads packages from. Installing it is
-    the usual one-liner:</p>
-    <!-- verify: skip reason="the CRAN package is not published yet, so this line 404s today (DESIGN.md Q1); the install_github line below is the one that works and the one the image build uses" -->
+    <p>You install the R client straight from its GitHub repository. The
+    <code>remotes</code> package knows how to do that, so install it
+    first if you do not already have it:</p>
+    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would reinstall the package every time" -->
 
     <div class="sourceCode" id="cb3"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="st">&quot;AstraeaDB&quot;</span>)</span></code></pre></div>
-    <p>If it has not reached your CRAN mirror yet, you can install the
-    development version straight from GitHub instead. It is the same
-    package with the same functions:</p>
-    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds" -->
-
-    <div class="sourceCode" id="cb4"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages(&quot;remotes&quot;)</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;AstraeaDB/R-AstraeaDB&quot;</span>)</span></code></pre></div>
+    class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># install.packages(&quot;remotes&quot;)</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>remotes<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;AstraeaDB/R-AstraeaDB&quot;</span>)</span></code></pre></div>
+    <p>A release on CRAN, the Comprehensive R Archive Network, which is
+    the official place R downloads packages from, is planned. Once it
+    lands you will be able to run
+    <code>install.packages("AstraeaDB")</code> instead, and everything
+    else in this post will work unchanged.</p>
     <p>Now you can connect. The package gives you a client object, and
     you call its functions (its methods) using the <code>$</code> sign,
     as in <code>client$create_node(...)</code>. Before you start, it is
     worth checking that the server is actually reachable:</p>
-    <div class="sourceCode" id="cb5"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(AstraeaDB)</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">astraea_server_available</span>()) {</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">&quot;Start the server first: run `astraeadb serve` in a terminal.&quot;</span>)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>client <span class="ot">&lt;-</span> <span class="fu">astraea_connect</span>()   <span class="co"># defaults: host = &quot;127.0.0.1&quot;, port = 7687L</span></span></code></pre></div>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(AstraeaDB)</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">astraea_server_available</span>()) {</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">stop</span>(<span class="st">&quot;Start the server first: run `astraeadb serve` in a terminal.&quot;</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>client <span class="ot">&lt;-</span> <span class="fu">astraea_connect</span>()   <span class="co"># defaults: host = &quot;127.0.0.1&quot;, port = 7687L</span></span></code></pre></div>
     <p>That <code>client</code> object is what we will use for
     everything else. When you are finished, call
     <code>client$disconnect()</code> to close the connection
@@ -166,29 +174,29 @@
     of properties. The <code>create_node</code> function returns the
     node's integer ID, and we store that ID in a variable so we can
     attach edges to it later.</p>
-    <div class="sourceCode" id="cb6"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Movies: labels + properties (we&#39;ll add plot embeddings in post 2)</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>matrix     <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Movie&quot;</span>), <span class="fu">list</span>(<span class="at">title =</span> <span class="st">&quot;The Matrix&quot;</span>, <span class="at">year =</span> <span class="dv">1999</span><span class="dt">L</span>,</span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">plot =</span> <span class="st">&quot;A hacker discovers reality is a simulation.&quot;</span>))</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>reloaded   <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Movie&quot;</span>), <span class="fu">list</span>(<span class="at">title =</span> <span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="at">year =</span> <span class="dv">2003</span><span class="dt">L</span>,</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">plot =</span> <span class="st">&quot;Neo takes the fight to the machines.&quot;</span>))</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>wick       <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Movie&quot;</span>), <span class="fu">list</span>(<span class="at">title =</span> <span class="st">&quot;John Wick&quot;</span>, <span class="at">year =</span> <span class="dv">2014</span><span class="dt">L</span>,</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">plot =</span> <span class="st">&quot;A retired hitman is pulled back for revenge.&quot;</span>))</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>inception  <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Movie&quot;</span>), <span class="fu">list</span>(<span class="at">title =</span> <span class="st">&quot;Inception&quot;</span>, <span class="at">year =</span> <span class="dv">2010</span><span class="dt">L</span>,</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">plot =</span> <span class="st">&quot;A thief steals secrets from dreams.&quot;</span>))</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>darkknight <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Movie&quot;</span>), <span class="fu">list</span>(<span class="at">title =</span> <span class="st">&quot;The Dark Knight&quot;</span>, <span class="at">year =</span> <span class="dv">2008</span><span class="dt">L</span>,</span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">plot =</span> <span class="st">&quot;Batman confronts the Joker.&quot;</span>))</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># People: actors and directors</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>keanu <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Person&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Keanu Reeves&quot;</span>))</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>lana  <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Person&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Lana Wachowski&quot;</span>))</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>nolan <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Person&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Christopher Nolan&quot;</span>))</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>leo   <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Person&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Leonardo DiCaprio&quot;</span>))</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>bale  <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Person&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Christian Bale&quot;</span>))</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Genres</span></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>scifi  <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Genre&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Sci-Fi&quot;</span>))</span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>action <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Genre&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Action&quot;</span>))</span></code></pre></div>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Movies: labels + properties (we&#39;ll add plot embeddings in post 2)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>matrix     <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Movie&quot;</span>), <span class="fu">list</span>(<span class="at">title =</span> <span class="st">&quot;The Matrix&quot;</span>, <span class="at">year =</span> <span class="dv">1999</span><span class="dt">L</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">plot =</span> <span class="st">&quot;A hacker discovers reality is a simulation.&quot;</span>))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>reloaded   <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Movie&quot;</span>), <span class="fu">list</span>(<span class="at">title =</span> <span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="at">year =</span> <span class="dv">2003</span><span class="dt">L</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">plot =</span> <span class="st">&quot;Neo takes the fight to the machines.&quot;</span>))</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>wick       <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Movie&quot;</span>), <span class="fu">list</span>(<span class="at">title =</span> <span class="st">&quot;John Wick&quot;</span>, <span class="at">year =</span> <span class="dv">2014</span><span class="dt">L</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">plot =</span> <span class="st">&quot;A retired hitman is pulled back for revenge.&quot;</span>))</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>inception  <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Movie&quot;</span>), <span class="fu">list</span>(<span class="at">title =</span> <span class="st">&quot;Inception&quot;</span>, <span class="at">year =</span> <span class="dv">2010</span><span class="dt">L</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">plot =</span> <span class="st">&quot;A thief steals secrets from dreams.&quot;</span>))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>darkknight <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Movie&quot;</span>), <span class="fu">list</span>(<span class="at">title =</span> <span class="st">&quot;The Dark Knight&quot;</span>, <span class="at">year =</span> <span class="dv">2008</span><span class="dt">L</span>,</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">plot =</span> <span class="st">&quot;Batman confronts the Joker.&quot;</span>))</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a><span class="co"># People: actors and directors</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>keanu <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Person&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Keanu Reeves&quot;</span>))</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>lana  <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Person&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Lana Wachowski&quot;</span>))</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>nolan <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Person&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Christopher Nolan&quot;</span>))</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>leo   <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Person&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Leonardo DiCaprio&quot;</span>))</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>bale  <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Person&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Christian Bale&quot;</span>))</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="co"># Genres</span></span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a>scifi  <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Genre&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Sci-Fi&quot;</span>))</span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>action <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="fu">c</span>(<span class="st">&quot;Genre&quot;</span>), <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Action&quot;</span>))</span></code></pre></div>
     <p>Now we create the relationships. Edges are directed, meaning each
     one points from a source node to a target node, and every edge has a
     type. The <code>create_edge(source, target, edge_type)</code>
@@ -197,36 +205,36 @@
     <code>DIRECTED</code> run from a <code>Person</code> to a
     <code>Movie</code>, and <code>IN_GENRE</code> runs from a
     <code>Movie</code> to a <code>Genre</code>.</p>
-    <div class="sourceCode" id="cb7"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Who acted in what</span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(keanu, matrix,     <span class="st">&quot;ACTED_IN&quot;</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(keanu, reloaded,   <span class="st">&quot;ACTED_IN&quot;</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(keanu, wick,       <span class="st">&quot;ACTED_IN&quot;</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(leo,   inception,  <span class="st">&quot;ACTED_IN&quot;</span>)</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(bale,  darkknight, <span class="st">&quot;ACTED_IN&quot;</span>)</span>
-<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Who directed what</span></span>
-<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(lana,  matrix,     <span class="st">&quot;DIRECTED&quot;</span>)</span>
-<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(nolan, inception,  <span class="st">&quot;DIRECTED&quot;</span>)</span>
-<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(nolan, darkknight, <span class="st">&quot;DIRECTED&quot;</span>)</span>
-<span id="cb7-12"><a href="#cb7-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb7-13"><a href="#cb7-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Genres</span></span>
-<span id="cb7-14"><a href="#cb7-14" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(matrix,     scifi,  <span class="st">&quot;IN_GENRE&quot;</span>)</span>
-<span id="cb7-15"><a href="#cb7-15" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(matrix,     action, <span class="st">&quot;IN_GENRE&quot;</span>)</span>
-<span id="cb7-16"><a href="#cb7-16" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(reloaded,   scifi,  <span class="st">&quot;IN_GENRE&quot;</span>)</span>
-<span id="cb7-17"><a href="#cb7-17" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(wick,       action, <span class="st">&quot;IN_GENRE&quot;</span>)</span>
-<span id="cb7-18"><a href="#cb7-18" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(inception,  scifi,  <span class="st">&quot;IN_GENRE&quot;</span>)</span>
-<span id="cb7-19"><a href="#cb7-19" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(darkknight, action, <span class="st">&quot;IN_GENRE&quot;</span>)</span></code></pre></div>
+    <div class="sourceCode" id="cb6"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Who acted in what</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(keanu, matrix,     <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(keanu, reloaded,   <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(keanu, wick,       <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(leo,   inception,  <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(bale,  darkknight, <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Who directed what</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(lana,  matrix,     <span class="st">&quot;DIRECTED&quot;</span>)</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(nolan, inception,  <span class="st">&quot;DIRECTED&quot;</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(nolan, darkknight, <span class="st">&quot;DIRECTED&quot;</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># Genres</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(matrix,     scifi,  <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(matrix,     action, <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(reloaded,   scifi,  <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(wick,       action, <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(inception,  scifi,  <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(darkknight, action, <span class="st">&quot;IN_GENRE&quot;</span>)</span></code></pre></div>
     <p>That gives us 12 nodes and 14 edges, a small but complete
     graph.</p>
     <h2 id="reading-it-back">Reading it back</h2>
     <p>Let us confirm what we stored. The <code>get_node</code> function
     returns a list with the node's <code>labels</code> and its
     <code>properties</code>:</p>
-    <div class="sourceCode" id="cb8"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">get_node</span>(matrix)</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># $labels     -&gt; &quot;Movie&quot;</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># $properties -&gt; list(title = &quot;The Matrix&quot;, year = 1999, plot = &quot;...&quot;)</span></span></code></pre></div>
+    <div class="sourceCode" id="cb7"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">get_node</span>(matrix)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># $labels     -&gt; &quot;Movie&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># $properties -&gt; list(title = &quot;The Matrix&quot;, year = 1999, plot = &quot;...&quot;)</span></span></code></pre></div>
     <p>The real strength of a graph is that you can ask about
     connections. The <code>neighbors</code> function walks the edges
     leading out of or into a node. Direction matters here.
@@ -234,16 +242,16 @@
     <code>"incoming"</code> follows edges where it is the target, and
     <code>"both"</code> ignores direction. You can also filter by edge
     type.</p>
-    <div class="sourceCode" id="cb9"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Movies Keanu acted in (follow his outgoing ACTED_IN edges)</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">neighbors</span>(keanu, <span class="at">direction =</span> <span class="st">&quot;outgoing&quot;</span>, <span class="at">edge_type =</span> <span class="st">&quot;ACTED_IN&quot;</span>)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Everyone connected TO The Matrix: its actors and director (incoming edges)</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">neighbors</span>(matrix, <span class="at">direction =</span> <span class="st">&quot;incoming&quot;</span>)</span></code></pre></div>
+    <div class="sourceCode" id="cb8"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Movies Keanu acted in (follow his outgoing ACTED_IN edges)</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">neighbors</span>(keanu, <span class="at">direction =</span> <span class="st">&quot;outgoing&quot;</span>, <span class="at">edge_type =</span> <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Everyone connected TO The Matrix: its actors and director (incoming edges)</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">neighbors</span>(matrix, <span class="at">direction =</span> <span class="st">&quot;incoming&quot;</span>)</span></code></pre></div>
     <p>To collect every node of a given type, use
     <code>find_by_label</code>, which returns a list of node IDs:</p>
-    <div class="sourceCode" id="cb10"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">find_by_label</span>(<span class="st">&quot;Movie&quot;</span>)   <span class="co"># the five Movie IDs</span></span></code></pre></div>
+    <div class="sourceCode" id="cb9"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">find_by_label</span>(<span class="st">&quot;Movie&quot;</span>)   <span class="co"># the five Movie IDs</span></span></code></pre></div>
     <h2 id="first-traversals">First traversals</h2>
     <p>A neighbor is one step away. A traversal goes further by
     following a chain of edges across the graph. Breadth-first search,
@@ -254,17 +262,17 @@
     before backing up, and it returns node IDs. Starting from Keanu with
     a depth limit of 2, breadth-first search reaches his movies at depth
     1 and their genres at depth 2.</p>
-    <div class="sourceCode" id="cb11"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">bfs</span>(keanu, <span class="at">max_depth =</span> <span class="dv">2</span><span class="dt">L</span>)   <span class="co"># list of { node_id, depth }</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">dfs</span>(keanu, <span class="at">max_depth =</span> <span class="dv">2</span><span class="dt">L</span>)   <span class="co"># list of node IDs</span></span></code></pre></div>
+    <div class="sourceCode" id="cb10"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">bfs</span>(keanu, <span class="at">max_depth =</span> <span class="dv">2</span><span class="dt">L</span>)   <span class="co"># list of { node_id, depth }</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">dfs</span>(keanu, <span class="at">max_depth =</span> <span class="dv">2</span><span class="dt">L</span>)   <span class="co"># list of node IDs</span></span></code></pre></div>
     <p>The <code>shortest_path</code> function finds the route with the
     fewest steps between two nodes. Here the path from Keanu to the
     Sci-Fi genre runs through one of his movies:</p>
-    <div class="sourceCode" id="cb12"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">shortest_path</span>(keanu, scifi)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Keanu Reeves --ACTED_IN--&gt; The Matrix --IN_GENRE--&gt; Sci-Fi</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># $path   -&gt; the node IDs along the route</span></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># $length -&gt; 2</span></span></code></pre></div>
+    <div class="sourceCode" id="cb11"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">shortest_path</span>(keanu, scifi)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="co"># Keanu Reeves --ACTED_IN--&gt; The Matrix --IN_GENRE--&gt; Sci-Fi</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a><span class="co"># $path   -&gt; the node IDs along the route</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="co"># $length -&gt; 2</span></span></code></pre></div>
     <p>Pass <code>weighted = TRUE</code> to minimize the total edge
     weight rather than the number of steps. That option becomes useful
     once your edges carry meaningful weights, such as distances or
@@ -277,10 +285,10 @@
     Cypher (a widely used language for querying graph databases). You
     send a query with <code>client$query()</code>, and it returns a
     result made up of columns and rows:</p>
-    <div class="sourceCode" id="cb13"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">query</span>(<span class="st">&quot;MATCH (m:Movie) RETURN m.title, m.year&quot;</span>)</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co"># columns: m.title, m.year</span></span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># rows:    &quot;The Matrix&quot; 1999, &quot;Inception&quot; 2010, &quot;John Wick&quot; 2014, ...</span></span></code></pre></div>
+    <div class="sourceCode" id="cb12"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">query</span>(<span class="st">&quot;MATCH (m:Movie) RETURN m.title, m.year&quot;</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># columns: m.title, m.year</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="co"># rows:    &quot;The Matrix&quot; 1999, &quot;Inception&quot; 2010, &quot;John Wick&quot; 2014, ...</span></span></code></pre></div>
     <p>If you would rather work with tabular data, the client can hand
     the result back as a data frame, R's built-in table structure, using
     <code>client$results_to_dataframe(...)</code>. That makes it easy to
@@ -292,13 +300,13 @@
     the whole store: the total number of nodes and edges, plus a
     breakdown by label. It is the quickest way to confirm that your data
     loaded correctly:</p>
-    <div class="sourceCode" id="cb14"><pre
-    class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">graph_stats</span>()</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># $total_nodes -&gt; 12</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># $total_edges -&gt; 14</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="co"># $labels      -&gt; Movie = 5, Person = 5, Genre = 2</span></span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">disconnect</span>()</span></code></pre></div>
+    <div class="sourceCode" id="cb13"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">graph_stats</span>()</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="co"># $total_nodes -&gt; 12</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="co"># $total_edges -&gt; 14</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co"># $labels      -&gt; Movie = 5, Person = 5, Genre = 2</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">disconnect</span>()</span></code></pre></div>
     <p>Twelve nodes and fourteen edges, exactly what we built.</p>
     <h2 id="whats-next">What's next</h2>
     <p>You now have AstraeaDB running, a real if tiny knowledge graph
@@ -310,7 +318,7 @@
     embeddings, the lists of numbers that capture the meaning of text,
     and the same store that answers "who directed this?" can then also
     answer "find me movies with a similar feel." In the next post, <a
-    href="./r-02-vector-search.md">Vector and Hybrid Search with
+    href="./r-02-vector-search.html">Vector and Hybrid Search with
     AstraeaDB in R</a>, we will attach simple plot embeddings to our
     movies and use <code>vector_search</code>,
     <code>hybrid_search</code>, and searches that combine meaning with
@@ -318,7 +326,8 @@
 
     <nav class="prevnext" aria-label="Lesson navigation">
             <a class="prev" href="../crawl/00-introduction.html"><span>Previous</span>Why Graphs, and Why Now: An Introduction to AstraeaDB</a>
-                </nav>
+                  <a class="next" href="../crawl/r-02-vector-search.html"><span>Next</span>Vector and Hybrid Search with AstraeaDB in R</a>
+          </nav>
   </main>
 </div>
 

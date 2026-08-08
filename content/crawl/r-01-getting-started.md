@@ -31,28 +31,9 @@ server up. It ships as a program you install with `cargo`, the build tool that
 comes with Rust. If you do not already have a Rust toolchain, get one from
 [rustup.rs](https://rustup.rs) first.
 
-Building the server also relies on Protocol Buffers, a data format from Google,
-so on a fresh Linux machine you first need a few system packages. On Debian or
-Ubuntu, one command installs all of them:
+<!-- include: _shared/install-server.md -->
 
-<!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds" -->
-```bash
-sudo apt-get install -y protobuf-compiler libprotobuf-dev pkg-config libssl-dev build-essential
-```
-
-On macOS with [Homebrew](https://brew.sh), the equivalent is `brew install protobuf`.
-
-<!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds" -->
-```bash
-# Installs the `astraeadb` binary (compiles from source; takes a few minutes)
-cargo install --git https://github.com/AstraeaDB/AstraeaDB-Official.git astraea-cli
-
-# Start the server (JSON/TCP on 127.0.0.1:7687, data persisted to disk)
-astraeadb serve
-```
-
-Leave that terminal running, because it is now your database. A few other
-subcommands are worth knowing. `astraeadb status` runs a quick health check.
+A few other subcommands are worth knowing. `astraeadb status` runs a quick health check.
 `astraeadb shell` opens an interactive prompt where you type commands and see
 results right away. `astraeadb serve --port 7700` overrides the default port when
 `7687` is already taken. Everything below runs in a second terminal (or an R
@@ -60,23 +41,19 @@ session) while the server keeps running in the first.
 
 ## Installing the R client and connecting
 
-The client is on CRAN, the Comprehensive R Archive Network, which is the official
-place R downloads packages from. Installing it is the usual one-liner:
+You install the R client straight from its GitHub repository. The `remotes`
+package knows how to do that, so install it first if you do not already have it:
 
-<!-- verify: skip reason="the CRAN package is not published yet, so this line 404s today (DESIGN.md Q1); the install_github line below is the one that works and the one the image build uses" -->
-```r
-install.packages("AstraeaDB")
-```
-
-If it has not reached your CRAN mirror yet, you can install the development
-version straight from GitHub instead. It is the same package with the same
-functions:
-
-<!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds" -->
+<!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would reinstall the package every time" -->
 ```r
 # install.packages("remotes")
 remotes::install_github("AstraeaDB/R-AstraeaDB")
 ```
+
+A release on CRAN, the Comprehensive R Archive Network, which is the official
+place R downloads packages from, is planned. Once it lands you will be able to
+run `install.packages("AstraeaDB")` instead, and everything else in this post
+will work unchanged.
 
 Now you can connect. The package gives you a client object, and you call its
 functions (its methods) using the `$` sign, as in `client$create_node(...)`.

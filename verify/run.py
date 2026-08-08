@@ -20,6 +20,7 @@ it rather than killing the whole file.
 import argparse
 import base64
 import json
+import re
 import shlex
 import subprocess
 import sys
@@ -28,8 +29,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "site"))
 from extract import extract  # noqa: E402
 from normalize import matches, normalize  # noqa: E402
+# Shared fragments are spliced in at build time. Verification has to splice them
+# the same way, or runnable code inside a fragment is published without ever
+# having been executed.
+from build import expand_includes  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 VERIFY = ROOT / "verify"
@@ -119,11 +125,34 @@ def r_block_files(blocks):
 # --------------------------------------------------------------- orchestration
 
 
+SERVER_TOML = """[server]
+bind_address = "127.0.0.1"
+port = 7687
+
+[storage]
+data_dir = "/tmp/astraea/data"
+wal_dir = "/tmp/astraea/wal"
+buffer_pool_size = 1024
+
+[vector]
+dimension = {dim}
+metric = "cosine"
+"""
+
+
 def build_container_script(lesson, groups, extra_files):
     """One shell script that boots the server and runs every language group."""
+    # A store pins its embedding dimension on first insert, so the server has
+    # to match what the lesson teaches. Most lessons use embeddinggemma's
+    # native 768, but the Crawl vector lessons deliberately use short
+    # hand-written vectors so a beginner can see what an embedding is without
+    # running a model, and run-01 uses the Elliptic dataset's 165 features.
+    dim = int(lesson.get("vector_dim", 768))
+    cfg = base64.b64encode(SERVER_TOML.format(dim=dim).encode()).decode()
     s = [
         "set -u",
         "mkdir -p /tmp/astraea/data /tmp/astraea/wal",
+        f"echo {cfg} | base64 -d > /etc/astraeadb/server.toml",
         # Start the server the lesson will talk to, inside the container.
         "astraeadb serve --config /etc/astraeadb/server.toml >/tmp/server.log 2>&1 &",
         "SRV=$!",
@@ -155,32 +184,38 @@ def build_container_script(lesson, groups, extra_files):
     return "\n".join(s) + "\n"
 
 
+MARKER_RE = re.compile(
+    r"@@ASTRAEA (START (\d+)|EXIT (\d+) (-?\d+)|SERVERUP|SERVERFAIL|DONE)"
+)
+
+
 def parse_output(text):
-    """Split the interleaved container output back into per-block segments."""
-    segs, cur, order = {}, None, []
-    exits, server_up = {}, False
-    for line in text.splitlines():
-        if line.startswith(MARK + " START "):
-            cur = int(line.rsplit(" ", 1)[1])
-            segs.setdefault(cur, [])
-            order.append(cur)
-            continue
-        if line.startswith(MARK + " EXIT "):
-            parts = line.split()
-            exits[int(parts[2])] = int(parts[3])
-            cur = None
-            continue
-        if line.startswith(MARK + " SERVERUP"):
-            server_up = True
-            continue
-        if line.startswith(MARK + " SERVERFAIL"):
-            server_up = False
-            continue
-        if line.startswith(MARK + " DONE"):
-            continue
+    """Split the interleaved container output back into per-block segments.
+
+    Markers are matched ANYWHERE in the stream, not just at the start of a
+    line. A block whose last write has no trailing newline (R's `cat` on a
+    string is the common case) leaves its EXIT marker glued to the end of that
+    line, and a line-anchored parser silently loses the exit code and reports
+    the block as never completed.
+    """
+    segs, exits, server_up = {}, {}, False
+    cur, pos = None, 0
+    for m in MARKER_RE.finditer(text):
         if cur is not None:
-            segs[cur].append(line)
-    return {k: "\n".join(v) for k, v in segs.items()}, exits, server_up
+            segs.setdefault(cur, []).append(text[pos:m.start()])
+        kind = m.group(1)
+        if kind.startswith("START"):
+            cur = int(m.group(2))
+            segs.setdefault(cur, [])
+        elif kind.startswith("EXIT"):
+            exits[int(m.group(3))] = int(m.group(4))
+            cur = None
+        elif kind == "SERVERUP":
+            server_up = True
+        elif kind == "SERVERFAIL":
+            server_up = False
+        pos = m.end()
+    return ({k: "".join(v).strip("\n") for k, v in segs.items()}, exits, server_up)
 
 
 def run_lesson(lesson, manifest, keep_going=False, timeout=900):
@@ -190,7 +225,16 @@ def run_lesson(lesson, manifest, keep_going=False, timeout=900):
     src = Path(lesson["file"])
     if not src.is_absolute():
         src = CONTENT / src
-    blocks, errors = extract(src)
+
+    # Expand includes into a temporary file so fragment code is extracted and
+    # run exactly as a reader will see it on the page.
+    expanded = expand_includes(src.read_text(encoding="utf-8"), src)
+    tmp = VERIFY / f".expanded-{lid}.md"
+    tmp.write_text(expanded, encoding="utf-8")
+    try:
+        blocks, errors = extract(tmp)
+    finally:
+        tmp.unlink(missing_ok=True)
     if errors:
         for e in errors:
             print(f"verify: error: {e}", file=sys.stderr)

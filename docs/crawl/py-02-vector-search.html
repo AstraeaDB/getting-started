@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vector and Hybrid Search with AstraeaDB in Python &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="alternate" data-track="r" href="../crawl/r-02-vector-search.html">
+</head>
+<body data-tier="crawl" data-track="py" data-lesson="crawl-py-02">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class="current"><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Vector and Hybrid Search with AstraeaDB in Python</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#why-vectors-live-next-to-the-graph"
+      id="toc-why-vectors-live-next-to-the-graph">Why vectors live next
+      to the graph</a></li>
+      <li><a href="#recap-connect-and-rebuild-this-time-with-embeddings"
+      id="toc-recap-connect-and-rebuild-this-time-with-embeddings">Recap:
+      connect and rebuild, this time with embeddings</a></li>
+      <li><a href="#vector_search-find-movies-with-a-similar-feel"
+      id="toc-vector_search-find-movies-with-a-similar-feel"><code>vector_search</code>:
+      find movies with a similar feel</a></li>
+      <li><a
+      href="#hybrid_search-blend-graph-connections-with-vector-similarity"
+      id="toc-hybrid_search-blend-graph-connections-with-vector-similarity"><code>hybrid_search</code>:
+      blend graph connections with vector similarity</a></li>
+      <li><a
+      href="#semantic_neighbors-and-semantic_walk-steer-toward-a-concept"
+      id="toc-semantic_neighbors-and-semantic_walk-steer-toward-a-concept"><code>semantic_neighbors</code>
+      and <code>semantic_walk</code>: steer toward a concept</a></li>
+      <li><a href="#whats-next" id="toc-whats-next">What's next</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Turn your movie graph into a recommender by combining its
+    connections with search over embedding vectors.</em></p>
+    <p>In the first post, <a href="./py-01-getting-started.html">Getting
+    Started with AstraeaDB in Python: A Graph + Vector Database in
+    Minutes</a>, we started a server, connected with
+    <code>AstraeaClient</code>, and built a small movie knowledge graph.
+    A knowledge graph stores facts as nodes joined by labeled
+    connections, so ours recorded who acted in what and which genre a
+    film belongs to. Those facts are exact, but they cannot tell you
+    that two movies simply feel alike. In this post we attach a short
+    list of numbers, called an embedding, to each movie, then use
+    AstraeaDB's vector and hybrid search to answer the question every
+    recommender is really asking: what else feels like this one?</p>
+    <h2 id="why-vectors-live-next-to-the-graph">Why vectors live next to
+    the graph</h2>
+    <p>A graph handles exact facts well: Keanu Reeves acted in <em>The
+    Matrix</em>. It struggles with softer questions, though. The idea
+    that "these two movies have a similar mood" is not a connection you
+    can draw by hand, because similarity is a matter of degree rather
+    than a simple yes or no. An embedding captures that degree. It is a
+    list of numbers, also called a vector, that places each item at a
+    point in an imaginary space where items sitting close together are
+    alike. Picture it like placing towns on a map, where neighbors tend
+    to share a climate. AstraeaDB stores these vectors on the nodes and
+    builds a fast search structure over them, an HNSW index
+    (Hierarchical Navigable Small World), right beside the graph.
+    Because both live in one database, a single system can answer "who
+    directed this?" and "which movies are closest in meaning to this
+    one?"</p>
+    <p>When AstraeaDB compares two vectors, it reports a distance, a
+    single number measuring how far apart they are. The rule to remember
+    is simple: a smaller distance means the two items are more
+    similar.</p>
+    <h2 id="recap-connect-and-rebuild-this-time-with-embeddings">Recap:
+    connect and rebuild, this time with embeddings</h2>
+    <p>If you followed the first post you already have the graph, but
+    this time each <code>Movie</code> also carries a small embedding for
+    its plot. To keep the example easy to paste and run, we use
+    hand-written vectors of four numbers each, and you can read the four
+    positions as <code>[sci-fi, action, romance, drama]</code>. In a
+    real system you would generate them from each movie's plot text with
+    an embedding model, such as a sentence-transformer or an embeddings
+    service you call over the web. One rule always holds: every vector
+    you store must have the same number of values, a property called its
+    dimensionality.</p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Toy &quot;plot&quot; embeddings. Axes ~ [sci-fi, action, romance, drama].</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>MOVIES <span class="op">=</span> {</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;The Matrix&quot;</span>:         (<span class="dv">1999</span>, [<span class="fl">0.90</span>, <span class="fl">0.80</span>, <span class="fl">0.05</span>, <span class="fl">0.20</span>]),</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;The Matrix Reloaded&quot;</span>:(<span class="dv">2003</span>, [<span class="fl">0.85</span>, <span class="fl">0.85</span>, <span class="fl">0.05</span>, <span class="fl">0.15</span>]),</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;John Wick&quot;</span>:          (<span class="dv">2014</span>, [<span class="fl">0.10</span>, <span class="fl">0.95</span>, <span class="fl">0.05</span>, <span class="fl">0.25</span>]),</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;Inception&quot;</span>:          (<span class="dv">2010</span>, [<span class="fl">0.80</span>, <span class="fl">0.55</span>, <span class="fl">0.15</span>, <span class="fl">0.55</span>]),</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;Interstellar&quot;</span>:       (<span class="dv">2014</span>, [<span class="fl">0.85</span>, <span class="fl">0.35</span>, <span class="fl">0.25</span>, <span class="fl">0.75</span>]),</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;The Notebook&quot;</span>:       (<span class="dv">2004</span>, [<span class="fl">0.05</span>, <span class="fl">0.10</span>, <span class="fl">0.95</span>, <span class="fl">0.80</span>]),</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;Forrest Gump&quot;</span>:       (<span class="dv">1994</span>, [<span class="fl">0.10</span>, <span class="fl">0.20</span>, <span class="fl">0.45</span>, <span class="fl">0.90</span>]),</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co"># Open a connection and keep it open for the rest of this lesson.</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>client.<span class="ex">connect</span>()</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Movies carry the embedding via the create_node `embedding` argument.</span></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>movies <span class="op">=</span> {}</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> title, (year, vec) <span class="kw">in</span> MOVIES.items():</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    movies[title] <span class="op">=</span> client.create_node(</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        [<span class="st">&quot;Movie&quot;</span>], {<span class="st">&quot;title&quot;</span>: title, <span class="st">&quot;year&quot;</span>: year}, embedding<span class="op">=</span>vec</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="co"># A few people, and who acted in / directed what.</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>people <span class="op">=</span> {}</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name <span class="kw">in</span> [<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;Carrie-Anne Moss&quot;</span>,</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>             <span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;Christopher Nolan&quot;</span>]:</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    people[name] <span class="op">=</span> client.create_node([<span class="st">&quot;Person&quot;</span>], {<span class="st">&quot;name&quot;</span>: name})</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> acted(name, title):</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    client.create_edge(people[name], movies[title], <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> directed(name, title):</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    client.create_edge(people[name], movies[title], <span class="st">&quot;DIRECTED&quot;</span>)</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>acted(<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>)</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>acted(<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>)</span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>acted(<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;John Wick&quot;</span>)</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a>acted(<span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>)</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a>acted(<span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>)</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>directed(<span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>)</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>directed(<span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>)</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>directed(<span class="st">&quot;Christopher Nolan&quot;</span>, <span class="st">&quot;Inception&quot;</span>)</span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>directed(<span class="st">&quot;Christopher Nolan&quot;</span>, <span class="st">&quot;Interstellar&quot;</span>)</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;movies:&quot;</span>, <span class="bu">len</span>(movies), <span class="st">&quot;people:&quot;</span>, <span class="bu">len</span>(people))</span></code></pre></div>
+    <p>Everything from here on reuses the <code>client</code> you opened
+    above, so run it in the same session. <code>client</code>,
+    <code>movies</code>, and <code>people</code> all stay in scope.</p>
+    <h2
+    id="vector_search-find-movies-with-a-similar-feel"><code>vector_search</code>:
+    find movies with a similar feel</h2>
+    <p>The most direct kind of recommendation is a nearest-neighbor
+    search: you hand the database a query vector and get back the stored
+    nodes whose vectors are closest to it. Here we ask for movies that
+    suit a sci-fi action night, meaning ones that score high on the
+    first two axes and low on romance and drama:</p>
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>vibe <span class="op">=</span> [<span class="fl">0.90</span>, <span class="fl">0.90</span>, <span class="fl">0.05</span>, <span class="fl">0.10</span>]          <span class="co"># what we&#39;re in the mood for</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>hits <span class="op">=</span> client.vector_search(vibe, k<span class="op">=</span><span class="dv">5</span>)   <span class="co"># list of {node_id, distance, score}</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>id_to_title <span class="op">=</span> {nid: t <span class="cf">for</span> t, nid <span class="kw">in</span> movies.items()}</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> h <span class="kw">in</span> hits:</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    title <span class="op">=</span> id_to_title.get(h[<span class="st">&quot;node_id&quot;</span>], <span class="ss">f&quot;node </span><span class="sc">{</span>h[<span class="st">&#39;node_id&#39;</span>]<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span>title<span class="sc">:22s}</span><span class="ss"> distance=</span><span class="sc">{</span>h[<span class="st">&#39;distance&#39;</span>]<span class="sc">:.4f}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>You will see the <em>Matrix</em> films and <em>John Wick</em>
+    rise to the top, while <em>The Notebook</em> falls to the bottom,
+    which is exactly the ordering our axes encode. Each result carries a
+    <code>node_id</code>, a <code>distance</code>, and a
+    <code>score</code>. The <code>score</code> field is a legacy alias
+    of <code>distance</code>: it holds the very same number and is kept
+    only so older code keeps working. Do not read it as "higher score is
+    better." Here, a lower number is better.</p>
+    <p>A common variation is "find more movies like this one." Instead
+    of writing a query vector by hand, you use an existing movie's own
+    embedding as the query. A node is always closest to itself, so you
+    simply skip the first result:</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>query_vec <span class="op">=</span> MOVIES[<span class="st">&quot;The Matrix&quot;</span>][<span class="dv">1</span>]      <span class="co"># The Matrix&#39;s own embedding</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>similar <span class="op">=</span> client.vector_search(query_vec, k<span class="op">=</span><span class="dv">4</span>)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>similar <span class="op">=</span> [h <span class="cf">for</span> h <span class="kw">in</span> similar <span class="cf">if</span> h[<span class="st">&quot;node_id&quot;</span>] <span class="op">!=</span> movies[<span class="st">&quot;The Matrix&quot;</span>]]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;More like The Matrix:&quot;</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>      [id_to_title[h[<span class="st">&quot;node_id&quot;</span>]] <span class="cf">for</span> h <span class="kw">in</span> similar])</span></code></pre></div>
+    <h2
+    id="hybrid_search-blend-graph-connections-with-vector-similarity"><code>hybrid_search</code>:
+    blend graph connections with vector similarity</h2>
+    <p>Plain vector search ignores everything the graph already knows. A
+    good recommender should respect connections as well. If you are
+    browsing an actor's page, movies near that actor in the graph are
+    usually more relevant than a random film that happens to have a
+    similar embedding. Hybrid search does exactly this, and "hybrid"
+    just means it mixes two kinds of information. It starts from an
+    anchor node, the node you want results to stay near, explores
+    outward up to <code>max_hops</code> steps away (one hop being one
+    connection you follow), and ranks the candidates by combining two
+    signals:</p>
+    <ul>
+    <li>Graph proximity measures how close a candidate is to the anchor
+    by counting connections.</li>
+    <li>Vector similarity measures how close a candidate's embedding is
+    to your query vector.</li>
+    </ul>
+    <p>The <code>alpha</code> argument is the dial between the two
+    signals. Setting <code>alpha=0</code> uses graph proximity alone,
+    <code>alpha=1</code> uses vector similarity alone, and
+    <code>0.5</code> gives an even mix. Below we anchor on Keanu Reeves
+    and ask for sci-fi-leaning recommendations near him:</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>scifi <span class="op">=</span> [<span class="fl">0.95</span>, <span class="fl">0.50</span>, <span class="fl">0.05</span>, <span class="fl">0.20</span>]</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>blended <span class="op">=</span> client.hybrid_search(</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    anchor<span class="op">=</span>people[<span class="st">&quot;Keanu Reeves&quot;</span>],</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    query_vector<span class="op">=</span>scifi,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    max_hops<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    k<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    alpha<span class="op">=</span><span class="fl">0.5</span>,          <span class="co"># half graph proximity, half vibe</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> h <span class="kw">in</span> blended:       <span class="co"># list of {node_id, score}</span></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    label <span class="op">=</span> id_to_title.get(h[<span class="st">&quot;node_id&quot;</span>], <span class="ss">f&quot;node </span><span class="sc">{</span>h[<span class="st">&#39;node_id&#39;</span>]<span class="sc">}</span><span class="ss">&quot;</span>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span>label<span class="sc">:22s}</span><span class="ss"> score=</span><span class="sc">{</span>h[<span class="st">&#39;score&#39;</span>]<span class="sc">:.4f}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>Try adjusting <code>alpha</code>. Push it toward <code>0</code>
+    and the results stay close to Keanu's actual filmography no matter
+    the query. Push it toward <code>1</code> and the graph fades into
+    the background, leaving something close to a plain
+    <code>vector_search</code>. That single setting lets you tune how
+    much to trust the connections versus the content, without rewriting
+    the query itself.</p>
+    <h2
+    id="semantic_neighbors-and-semantic_walk-steer-toward-a-concept"><code>semantic_neighbors</code>
+    and <code>semantic_walk</code>: steer toward a concept</h2>
+    <p>Sometimes you do not want the closest match overall. Instead, you
+    want to move through the graph in the direction of a particular
+    idea. You give AstraeaDB a concept vector, which is just an
+    embedding that stands for the theme you are chasing, and it ranks or
+    steps through neighboring nodes by how well each points toward that
+    theme. Moving from node to node along connections like this is
+    called traversing the graph.</p>
+    <p><code>semantic_neighbors</code> ranks the immediate neighbors of
+    a node, meaning the nodes one connection away, by how close they sit
+    to a concept. Starting from <em>Inception</em>, we can ask which of
+    its connected nodes lean most toward thoughtful science fiction:</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>cerebral_scifi <span class="op">=</span> [<span class="fl">0.90</span>, <span class="fl">0.30</span>, <span class="fl">0.10</span>, <span class="fl">0.60</span>]</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>near <span class="op">=</span> client.semantic_neighbors(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    movies[<span class="st">&quot;Inception&quot;</span>], cerebral_scifi,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    direction<span class="op">=</span><span class="st">&quot;outgoing&quot;</span>, k<span class="op">=</span><span class="dv">5</span>,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>)                                  <span class="co"># list of {node_id, distance}</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Neighbors of Inception, by concept:&quot;</span>, near)</span></code></pre></div>
+    <p><code>semantic_walk</code> goes further. From a starting node it
+    takes up to <code>max_hops</code> steps, and at each step it moves
+    to whichever neighbor best matches the concept. This is a greedy
+    path, meaning it always takes the best-looking next step rather than
+    planning the whole route ahead, and it is guided by meaning instead
+    of by connection type alone:</p>
+    <div class="sourceCode" id="cb6"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>path <span class="op">=</span> client.semantic_walk(</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    movies[<span class="st">&quot;The Matrix&quot;</span>], cerebral_scifi, max_hops<span class="op">=</span><span class="dv">3</span>,</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Concept walk from The Matrix:&quot;</span>, path)</span></code></pre></div>
+    <p>Think of these two methods as the exploring half of a
+    recommender. <code>vector_search</code> answers "what is most
+    similar overall?", <code>hybrid_search</code> answers "what is
+    relevant given where I already am?", and the semantic walk answers
+    "if I keep leaning into this theme, where do I end up?" All three
+    read from the same vectors and the same graph, so there is no
+    separate vector store to keep in sync.</p>
+    <h2 id="whats-next">What's next</h2>
+    <p>With these five methods you have built the core of a recommender:
+    nearest-neighbor lookups, a tunable blend of graph and vector
+    signals, and concept-guided exploration. In the final post, <a
+    href="./py-03-algorithms-graphrag.html">Graph Algorithms,
+    Time-Travel, and GraphRAG with AstraeaDB in Python</a>, we will add
+    <code>User</code> nodes and <code>RATED</code> edges. We will rank
+    the most influential people and movies with PageRank, an algorithm
+    that scores each node by how many well-connected nodes point to it.
+    We will group similar nodes into genre-like communities with
+    Louvain, a method that finds clusters whose members are tightly
+    linked. We will query the graph as it looked on a past date using
+    time-travel traversals, which ask questions about an earlier state
+    of the data. We will finish by feeding a small piece of the graph
+    into GraphRAG, short for graph retrieval-augmented generation, which
+    hands relevant graph facts to a language model so it can answer
+    questions in plain English.</p>
+    <p>When you are finished with this lesson, close the connection you
+    opened at the start:</p>
+    <div class="sourceCode" id="cb7"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>client.close()</span></code></pre></div>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../crawl/py-01-getting-started.html"><span>Previous</span>Getting Started with AstraeaDB in Python</a>
+                  <a class="next" href="../crawl/py-03-algorithms-graphrag.html"><span>Next</span>Graph Algorithms, Time-Travel, and GraphRAG in Python</a>
+          </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 4a319f9 on 2026-08-08</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

@@ -39,6 +39,9 @@ INCLUDE_RE = re.compile(r"^[ \t]*<!--[ \t]*include:[ \t]*(\S+?)[ \t]*-->[ \t]*$"
 # The template renders the title from lessons.toml, so a leading H1 in the
 # source would give every page two of them. Ported blog posts all carry one.
 LEADING_H1_RE = re.compile(r"\A(?:\s*<!--.*?-->\s*)*\s*#[ \t]+[^\n]*\n", re.S)
+# Sibling posts are linked as ./name.md so the sources stay readable on GitHub.
+# The published site serves .html, so those links 404 unless rewritten here.
+MD_LINK_RE = re.compile(r"(\]\((?!https?://)[^)]*?)\.md(#[^)]*)?\)")
 FENCE_RE = re.compile(r"^[ \t]*```+[ \t]*([A-Za-z0-9_+-]+)", re.M)
 # A fragment is shared by both tracks, so it must not commit to a language.
 BANNED_FRAGMENT_LANGS = {"python", "py", "r", "rust"}
@@ -125,7 +128,22 @@ def validate(m):
 # ------------------------------------------------------------ include pass
 
 
+# An include directive only expands when it is alone on its line. Written at
+# the end of a paragraph it renders as an invisible HTML comment and the
+# included content silently disappears, so catch it rather than ship a page
+# with a missing section.
+STRAY_INCLUDE_RE = re.compile(r"^(?!\s*<!--\s*include:).*\S.*<!--\s*include:\s*(\S+?)\s*-->", re.M)
+
+
 def expand_includes(text, origin, stack=()):
+    for mo in STRAY_INCLUDE_RE.finditer(text):
+        line = text[: mo.start()].count("\n") + 1
+        die(
+            f"{origin}:{line}: include of {mo.group(1)!r} is not alone on its line, "
+            "so it would be ignored and its content would vanish from the page. "
+            "Put the directive on its own line."
+        )
+
     """Expand <!-- include: path --> against content/, recursively.
 
     pandoc sees one flat document, so heading levels stay correct.
@@ -258,6 +276,16 @@ def build_sidebar(manifest, lessons, current_id):
                 f'<a href="{href}">{html.escape(L["title"])}</a></li>'
             )
         out.append("</ul>")
+    pages = [p for p in manifest.get("page", [])]
+    if pages:
+        out.append('<h2 class="tier">Reference</h2>')
+        out.append("<ul>")
+        for pg in pages:
+            cls = "current" if pg["id"] == current_id else ""
+            href = Path(pg["file"]).with_suffix(".html").as_posix()
+            out.append(f'<li data-track="both" class="{cls}">'
+                       f'<a href="{href}">{html.escape(pg["title"])}</a></li>')
+        out.append("</ul>")
     out.append("</nav>")
     return "\n".join(out)
 
@@ -294,6 +322,7 @@ def render_lesson(pandoc, manifest, lessons, lesson, report, strict):
     # Drop the source's own H1; the template supplies it from the manifest, so
     # keeping both would put two <h1> elements on every ported page.
     body = LEADING_H1_RE.sub("", body, count=1)
+    body = MD_LINK_RE.sub(lambda m: f"{m.group(1)}.html{m.group(2) or ''})", body)
 
     badge, badge_cls = verification_state(lesson, report, strict)
     prev, nxt = prev_next(lessons, lesson)
@@ -340,6 +369,41 @@ def render_lesson(pandoc, manifest, lessons, lesson, report, strict):
     if proc.stderr.strip():
         warn(f"{lesson['id']}: {proc.stderr.strip()}")
     return out_path
+
+
+def render_page(pandoc, manifest, lessons, page):
+    """A standalone page: rendered with the lesson template, but with no tier,
+    no track, and no place in the prev/next chain. The glossary is one."""
+    src = CONTENT / page["file"]
+    if not src.is_file():
+        die(f"page {page['id']!r}: content/{page['file']} does not exist")
+    body = expand_includes(src.read_text(encoding="utf-8"), src)
+    body = LEADING_H1_RE.sub("", body, count=1)
+    body = MD_LINK_RE.sub(lambda m: f"{m.group(1)}.html{m.group(2) or ''})", body)
+
+    out_path = DOCS / Path(page["file"]).with_suffix(".html")
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    depth = len(Path(page["file"]).parts) - 1
+    root = "../" * depth
+    site = manifest.get("site", {})
+
+    argv = [
+        pandoc, "--standalone",
+        "--template", str(TEMPLATES / "lesson.html"),
+        "--syntax-highlighting", "tango",
+        "--from", "gfm", "--to", "html5",
+        "-V", f"pagetitle={page['title']}",
+        "-V", f"sitetitle={site.get('title', '')}",
+        "-V", f"root={root}",
+        "-V", f"repo={site.get('repo', '')}",
+        "-V", "badge=Reference page, no code to verify",
+        "-V", "badgeclass=unverified",
+        "-V", f"sidebar={build_sidebar(manifest, lessons, page['id'])}",
+        "-o", str(out_path),
+    ]
+    proc = subprocess.run(argv, input=body, text=True, capture_output=True)
+    if proc.returncode != 0:
+        die(f"pandoc failed on page {page['id']}:\n{proc.stderr.strip()}")
 
 
 def fill(template_path, mapping):
@@ -497,6 +561,8 @@ def main():
     DOCS.mkdir(exist_ok=True)
     for L in targets:
         render_lesson(pandoc, manifest, lessons, L, report, args.strict)
+    for pg in manifest.get("page", []):
+        render_page(pandoc, manifest, lessons, pg)
 
     render_index(manifest, lessons, report, args.strict)
     render_status(manifest, lessons, report)

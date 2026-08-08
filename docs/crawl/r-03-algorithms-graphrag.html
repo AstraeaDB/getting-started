@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graph Algorithms, Time-Travel, and GraphRAG in R &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="alternate" data-track="py" href="../crawl/py-03-algorithms-graphrag.html">
+</head>
+<body data-tier="crawl" data-track="r" data-lesson="crawl-r-03">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class="current"><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Graph Algorithms, Time-Travel, and GraphRAG in R</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#where-we-left-off" id="toc-where-we-left-off">Where
+      we left off</a></li>
+      <li><a href="#ranking-influence-with-pagerank"
+      id="toc-ranking-influence-with-pagerank">Ranking influence with
+      PageRank</a></li>
+      <li><a href="#finding-communities-with-louvain"
+      id="toc-finding-communities-with-louvain">Finding communities with
+      Louvain</a></li>
+      <li><a href="#finding-the-bridges-with-betweenness-centrality"
+      id="toc-finding-the-bridges-with-betweenness-centrality">Finding
+      the bridges with betweenness centrality</a></li>
+      <li><a href="#time-travel-the-graph-as-of-a-past-date"
+      id="toc-time-travel-the-graph-as-of-a-past-date">Time travel: the
+      graph as of a past date</a></li>
+      <li><a href="#zooming-in-with-subgraphs-and-statistics"
+      id="toc-zooming-in-with-subgraphs-and-statistics">Zooming in with
+      subgraphs and statistics</a></li>
+      <li><a href="#graphrag-from-subgraph-to-answer"
+      id="toc-graphrag-from-subgraph-to-answer">GraphRAG: from subgraph
+      to answer</a></li>
+      <li><a href="#wrapping-up-the-series"
+      id="toc-wrapping-up-the-series">Wrapping up the series</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Rank the most influential nodes, uncover hidden communities,
+    rewind the graph to an earlier date, and let it answer questions in
+    plain language, all from R.</em></p>
+    <p>In <a href="./r-01-getting-started.html">Getting Started with
+    AstraeaDB in R</a> we built a small movie knowledge graph, a network
+    of nodes joined by labeled links, and explored it with breadth-first
+    search (BFS, which fans out level by level from a starting node) and
+    shortest paths. In <a href="./r-02-vector-search.html">Vector and
+    Hybrid Search with AstraeaDB in R</a> we added embeddings, which are
+    numeric fingerprints of each item, and turned the graph into a
+    recommender. This third and final post puts a graph database to
+    fuller use. We will rank nodes by influence, group them into
+    communities, query the graph as it existed on a past date, and close
+    with GraphRAG. GraphRAG hands a small connected slice of the graph
+    (a subgraph) to a large language model (LLM), the kind of system
+    behind chat assistants, so it can answer questions using your own
+    data. There are no new dependencies to install, and everything runs
+    against a local copy of the database started with
+    <code>astraeadb serve</code>.</p>
+    <h2 id="where-we-left-off">Where we left off</h2>
+    <p>If you worked through the first post, you already have this
+    graph. If not, the block below rebuilds it from scratch. AstraeaDB
+    is what its authors call a Vector-Property Graph. That means it
+    stores labeled nodes and edges, each able to carry named properties
+    (small pieces of data such as a title or a year), alongside a vector
+    index for similarity search, all inside a single Rust program.
+    Later, in the time-travel section, we will add <code>User</code>
+    nodes and <code>RATED</code> edges.</p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(AstraeaDB)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span><span class="fu">astraea_server_available</span>()) <span class="fu">stop</span>(<span class="st">&quot;start `astraeadb serve` first&quot;</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>client <span class="ot">&lt;-</span> <span class="fu">astraea_connect</span>()   <span class="co"># host = &quot;127.0.0.1&quot;, port = 7687L</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>add_movie  <span class="ot">&lt;-</span> <span class="cf">function</span>(t, y) client<span class="sc">$</span><span class="fu">create_node</span>(<span class="st">&quot;Movie&quot;</span>,  <span class="fu">list</span>(<span class="at">title =</span> t, <span class="at">year =</span> y))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>add_person <span class="ot">&lt;-</span> <span class="cf">function</span>(n)    client<span class="sc">$</span><span class="fu">create_node</span>(<span class="st">&quot;Person&quot;</span>, <span class="fu">list</span>(<span class="at">name =</span> n))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>add_genre  <span class="ot">&lt;-</span> <span class="cf">function</span>(n)    client<span class="sc">$</span><span class="fu">create_node</span>(<span class="st">&quot;Genre&quot;</span>,  <span class="fu">list</span>(<span class="at">name =</span> n))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>edge <span class="ot">&lt;-</span> <span class="cf">function</span>(s, t, type) client<span class="sc">$</span><span class="fu">create_edge</span>(s, t, <span class="at">edge_type =</span> type)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>m <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">matrix    =</span> <span class="fu">add_movie</span>(<span class="st">&quot;The Matrix&quot;</span>, <span class="dv">1999</span><span class="dt">L</span>),</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">reloaded  =</span> <span class="fu">add_movie</span>(<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="dv">2003</span><span class="dt">L</span>),</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">wick      =</span> <span class="fu">add_movie</span>(<span class="st">&quot;John Wick&quot;</span>, <span class="dv">2014</span><span class="dt">L</span>),</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">inception =</span> <span class="fu">add_movie</span>(<span class="st">&quot;Inception&quot;</span>, <span class="dv">2010</span><span class="dt">L</span>),</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">knight    =</span> <span class="fu">add_movie</span>(<span class="st">&quot;The Dark Knight&quot;</span>, <span class="dv">2008</span><span class="dt">L</span>),</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>  <span class="at">inter     =</span> <span class="fu">add_movie</span>(<span class="st">&quot;Interstellar&quot;</span>, <span class="dv">2014</span><span class="dt">L</span>))</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>p <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>  <span class="at">keanu =</span> <span class="fu">add_person</span>(<span class="st">&quot;Keanu Reeves&quot;</span>),  <span class="at">lana  =</span> <span class="fu">add_person</span>(<span class="st">&quot;Lana Wachowski&quot;</span>),</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">nolan =</span> <span class="fu">add_person</span>(<span class="st">&quot;Christopher Nolan&quot;</span>), <span class="at">leo =</span> <span class="fu">add_person</span>(<span class="st">&quot;Leonardo DiCaprio&quot;</span>),</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>  <span class="at">bale  =</span> <span class="fu">add_person</span>(<span class="st">&quot;Christian Bale&quot;</span>))</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>g <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">scifi =</span> <span class="fu">add_genre</span>(<span class="st">&quot;Sci-Fi&quot;</span>), <span class="at">action =</span> <span class="fu">add_genre</span>(<span class="st">&quot;Action&quot;</span>),</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>          <span class="at">thriller =</span> <span class="fu">add_genre</span>(<span class="st">&quot;Thriller&quot;</span>))</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(p<span class="sc">$</span>keanu, m<span class="sc">$</span>matrix, <span class="st">&quot;ACTED_IN&quot;</span>); <span class="fu">edge</span>(p<span class="sc">$</span>keanu, m<span class="sc">$</span>reloaded, <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(p<span class="sc">$</span>keanu, m<span class="sc">$</span>wick, <span class="st">&quot;ACTED_IN&quot;</span>);   <span class="fu">edge</span>(p<span class="sc">$</span>leo, m<span class="sc">$</span>inception, <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(p<span class="sc">$</span>bale, m<span class="sc">$</span>knight, <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(p<span class="sc">$</span>lana, m<span class="sc">$</span>matrix, <span class="st">&quot;DIRECTED&quot;</span>);  <span class="fu">edge</span>(p<span class="sc">$</span>lana, m<span class="sc">$</span>reloaded, <span class="st">&quot;DIRECTED&quot;</span>)</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(p<span class="sc">$</span>nolan, m<span class="sc">$</span>inception, <span class="st">&quot;DIRECTED&quot;</span>); <span class="fu">edge</span>(p<span class="sc">$</span>nolan, m<span class="sc">$</span>knight, <span class="st">&quot;DIRECTED&quot;</span>)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(p<span class="sc">$</span>nolan, m<span class="sc">$</span>inter, <span class="st">&quot;DIRECTED&quot;</span>)</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(m<span class="sc">$</span>matrix, g<span class="sc">$</span>scifi, <span class="st">&quot;IN_GENRE&quot;</span>);    <span class="fu">edge</span>(m<span class="sc">$</span>reloaded, g<span class="sc">$</span>scifi, <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(m<span class="sc">$</span>inception, g<span class="sc">$</span>scifi, <span class="st">&quot;IN_GENRE&quot;</span>); <span class="fu">edge</span>(m<span class="sc">$</span>inter, g<span class="sc">$</span>scifi, <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(m<span class="sc">$</span>matrix, g<span class="sc">$</span>action, <span class="st">&quot;IN_GENRE&quot;</span>);   <span class="fu">edge</span>(m<span class="sc">$</span>wick, g<span class="sc">$</span>action, <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(m<span class="sc">$</span>knight, g<span class="sc">$</span>action, <span class="st">&quot;IN_GENRE&quot;</span>);   <span class="fu">edge</span>(m<span class="sc">$</span>inception, g<span class="sc">$</span>thriller, <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a><span class="fu">edge</span>(m<span class="sc">$</span>knight, g<span class="sc">$</span>thriller, <span class="st">&quot;IN_GENRE&quot;</span>)</span></code></pre></div>
+    <p>We will print readable names often, so it helps to define one
+    small helper first. <code>get_node()</code> returns a list with
+    <code>labels</code> and <code>properties</code>, and each of our
+    nodes carries either a <code>title</code> (for movies) or a
+    <code>name</code> (for people and genres).</p>
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>label_of <span class="ot">&lt;-</span> <span class="cf">function</span>(nid) {</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>  props <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">get_node</span>(<span class="fu">as.integer</span>(nid))<span class="sc">$</span>properties</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(props<span class="sc">$</span>title)) props<span class="sc">$</span>title <span class="cf">else</span> props<span class="sc">$</span>name</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+    <h2 id="ranking-influence-with-pagerank">Ranking influence with
+    PageRank</h2>
+    <p>PageRank is an algorithm that scores each node by how many
+    important nodes point to it, and how important those pointing nodes
+    are in turn. It is the same idea that once helped Google rank web
+    pages: a page linked from many respected pages is judged important,
+    and that importance flows along the links. In our movie graph, a
+    film that many well-connected actors and directors touch, or a genre
+    that ties lots of films together, rises to the top. The
+    <code>run_pagerank()</code> method computes these scores inside the
+    database and returns a named mapping from each node's id to its
+    score.</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>pr     <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">run_pagerank</span>()               <span class="co"># damping = 0.85 by default</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>scores <span class="ot">&lt;-</span> <span class="fu">sort</span>(<span class="fu">unlist</span>(pr), <span class="at">decreasing =</span> <span class="cn">TRUE</span>) <span class="co"># named numeric, high to low</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (nid <span class="cf">in</span> <span class="fu">names</span>(<span class="fu">head</span>(scores, <span class="dv">5</span>))) {</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;%-22s %.4f</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="fu">label_of</span>(nid), scores[[nid]]))</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+    <p>The most connected nodes lead the ranking, because many edges
+    converge on them. Expect the <code>Sci-Fi</code> genre,
+    <code>The Matrix</code>, and busy people such as Christopher Nolan
+    near the top. You can tune the calculation with the
+    <code>damping</code>, <code>max_iterations</code>, and
+    <code>tolerance</code> arguments, though the defaults work well for
+    a graph this small.</p>
+    <h2 id="finding-communities-with-louvain">Finding communities with
+    Louvain</h2>
+    <p>Where PageRank ranks individual nodes, Louvain community
+    detection looks for groups. It is a method that splits the graph
+    into clusters, called communities, whose members link to each other
+    far more than they link to everything else. On a movie graph, those
+    clusters tend to line up with genres and creative teams. The
+    <code>run_louvain()</code> method returns the number of communities
+    it found, along with a mapping from each node's id to the id of its
+    community.</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>lv   <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">run_louvain</span>()</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Communities found:&quot;</span>, lv<span class="sc">$</span>num_communities, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>comm   <span class="ot">&lt;-</span> <span class="fu">unlist</span>(lv<span class="sc">$</span>communities)          <span class="co"># node_id -&gt; community_id</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>groups <span class="ot">&lt;-</span> <span class="fu">split</span>(<span class="fu">names</span>(comm), comm)        <span class="co"># community_id -&gt; vector of node ids</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (cid <span class="cf">in</span> <span class="fu">names</span>(groups)) {</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  members <span class="ot">&lt;-</span> <span class="fu">vapply</span>(groups[[cid]], label_of, <span class="fu">character</span>(<span class="dv">1</span>))</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;Community %s: %s</span><span class="sc">\n</span><span class="st">&quot;</span>, cid, <span class="fu">paste</span>(members, <span class="at">collapse =</span> <span class="st">&quot;, &quot;</span>)))</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+    <p>You can expect roughly a "Keanu / Matrix / John Wick" cluster and
+    a "Nolan / Inception / Dark Knight" cluster, with each genre pulled
+    toward whichever side it connects to most. You never had to tell the
+    database which nodes belonged together, because the groupings
+    emerged from the edges alone. That is one of the strengths of
+    modeling data as a graph. To cluster only part of the graph, pass a
+    vector of node ids through the <code>nodes</code> argument.</p>
+    <h2 id="finding-the-bridges-with-betweenness-centrality">Finding the
+    bridges with betweenness centrality</h2>
+    <p>Influence can mean more than one thing. Betweenness centrality
+    measures how often a node sits on the shortest path between two
+    other nodes. Centrality here simply means a numeric score for how
+    central, or well-placed, a node is within the network. A node with
+    high betweenness acts as a bridge: a person who worked across two
+    otherwise separate clusters, or a genre shared by rival franchises,
+    can score high even when its PageRank is modest.</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>bc <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">run_betweenness_centrality</span>()</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (nid <span class="cf">in</span> <span class="fu">names</span>(<span class="fu">head</span>(<span class="fu">sort</span>(<span class="fu">unlist</span>(bc), <span class="at">decreasing =</span> <span class="cn">TRUE</span>), <span class="dv">3</span>))) {</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;%-22s %.4f</span><span class="sc">\n</span><span class="st">&quot;</span>, <span class="fu">label_of</span>(nid), <span class="fu">unlist</span>(bc)[[nid]]))</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div>
+    <p>AstraeaDB includes several related measures. The
+    <code>run_degree_centrality()</code> method counts each node's raw
+    number of connections and accepts a <code>direction</code> argument,
+    while <code>run_connected_components()</code> reports which separate
+    islands of nodes exist. Use degree centrality when you care about
+    sheer popularity, and betweenness when you care about which nodes
+    hold the network together.</p>
+    <h2 id="time-travel-the-graph-as-of-a-past-date">Time travel: the
+    graph as of a past date</h2>
+    <p>This is a feature that most databases lack. Every edge can carry
+    a <code>valid_from</code> timestamp, recorded as epoch milliseconds
+    (the number of milliseconds since the start of 1970, a common way to
+    store a date as a plain number). Because each edge remembers when it
+    became valid, AstraeaDB can answer a query as if you were standing
+    at any chosen moment in the past. This ability to ask historical
+    questions is often called a temporal, or time-travel, query. To try
+    it, we add a few users and ratings that happened on specific
+    dates.</p>
+    <div class="sourceCode" id="cb6"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>u <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">alice =</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="st">&quot;User&quot;</span>, <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Alice&quot;</span>)),</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>          <span class="at">bob   =</span> client<span class="sc">$</span><span class="fu">create_node</span>(<span class="st">&quot;User&quot;</span>, <span class="fu">list</span>(<span class="at">name =</span> <span class="st">&quot;Bob&quot;</span>)))</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># convert a date to epoch-milliseconds</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>ts <span class="ot">&lt;-</span> <span class="cf">function</span>(date) <span class="fu">as.numeric</span>(<span class="fu">as.POSIXct</span>(date, <span class="at">tz =</span> <span class="st">&quot;UTC&quot;</span>)) <span class="sc">*</span> <span class="dv">1000</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(u<span class="sc">$</span>alice, m<span class="sc">$</span>matrix,    <span class="at">edge_type =</span> <span class="st">&quot;RATED&quot;</span>,</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>                   <span class="at">properties =</span> <span class="fu">list</span>(<span class="at">rating =</span> <span class="dv">5</span><span class="dt">L</span>), <span class="at">valid_from =</span> <span class="fu">ts</span>(<span class="st">&quot;2023-01-10&quot;</span>))</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(u<span class="sc">$</span>alice, m<span class="sc">$</span>inception, <span class="at">edge_type =</span> <span class="st">&quot;RATED&quot;</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>                   <span class="at">properties =</span> <span class="fu">list</span>(<span class="at">rating =</span> <span class="dv">4</span><span class="dt">L</span>), <span class="at">valid_from =</span> <span class="fu">ts</span>(<span class="st">&quot;2024-06-01&quot;</span>))</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">create_edge</span>(u<span class="sc">$</span>bob,   m<span class="sc">$</span>wick,      <span class="at">edge_type =</span> <span class="st">&quot;RATED&quot;</span>,</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>                   <span class="at">properties =</span> <span class="fu">list</span>(<span class="at">rating =</span> <span class="dv">5</span><span class="dt">L</span>), <span class="at">valid_from =</span> <span class="fu">ts</span>(<span class="st">&quot;2024-02-15&quot;</span>))</span></code></pre></div>
+    <p>Now we can ask what Alice had rated as of New Year's Day 2024.
+    Her <code>Inception</code> rating is dated June 2024, so at that
+    cutoff it should not exist yet, because an edge with a
+    <code>valid_from</code> timestamp only comes into being from that
+    moment onward.</p>
+    <div class="sourceCode" id="cb7"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>cutoff <span class="ot">&lt;-</span> <span class="fu">ts</span>(<span class="st">&quot;2024-01-01&quot;</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">neighbors_at</span>(u<span class="sc">$</span>alice, <span class="st">&quot;outgoing&quot;</span>, cutoff)   <span class="co"># only the Matrix rating</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">bfs_at</span>(u<span class="sc">$</span>alice, <span class="at">max_depth =</span> <span class="dv">2</span><span class="dt">L</span>, <span class="at">timestamp =</span> cutoff)</span></code></pre></div>
+    <p>The <code>neighbors_at</code> method returns only the
+    <code>RATED</code> edge to <code>The Matrix</code>, because the
+    <code>Inception</code> rating has not happened yet at that
+    timestamp. The <code>bfs_at</code> method applies the same
+    historical snapshot but walks several hops outward from Alice, where
+    a hop means one step along an edge, instead of stopping at her
+    immediate neighbors. This is genuinely useful in practice: you can
+    reproduce a recommendation exactly as a user saw it last quarter, or
+    check what the graph knew before a particular event. The
+    <code>dfs_at</code> and <code>shortest_path_at</code> methods
+    complete the set of time-aware traversals.</p>
+    <h2 id="zooming-in-with-subgraphs-and-statistics">Zooming in with
+    subgraphs and statistics</h2>
+    <p>Before handing any data to a language model, it helps to look at
+    the neighborhood we are working with. A subgraph is simply a smaller
+    piece cut out of the full graph: a chosen node plus the nodes and
+    edges around it. The <code>graph_stats()</code> method gives a
+    high-level count of everything in the store, and
+    <code>get_subgraph()</code> pulls out a bounded region centered on
+    one node.</p>
+    <div class="sourceCode" id="cb8"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>stats <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">graph_stats</span>()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Nodes:&quot;</span>, stats<span class="sc">$</span>total_nodes, <span class="st">&quot;Edges:&quot;</span>, stats<span class="sc">$</span>total_edges, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>sub <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">get_subgraph</span>(m<span class="sc">$</span>matrix, <span class="at">hops =</span> <span class="dv">2</span><span class="dt">L</span>, <span class="at">max_nodes =</span> <span class="dv">25</span><span class="dt">L</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">&quot;Subgraph:&quot;</span>, <span class="fu">length</span>(sub<span class="sc">$</span>nodes), <span class="st">&quot;nodes,&quot;</span>, <span class="fu">length</span>(sub<span class="sc">$</span>edges), <span class="st">&quot;edges</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+    <p>Reaching two hops out from <code>The Matrix</code> gathers its
+    cast, its directors, its genres, and the sibling movies that those
+    genres connect to. The result is a tidy, self-contained slice of the
+    graph.</p>
+    <h2 id="graphrag-from-subgraph-to-answer">GraphRAG: from subgraph to
+    answer</h2>
+    <p>GraphRAG is a form of retrieval-augmented generation, usually
+    shortened to RAG. In ordinary RAG, a program first retrieves some
+    relevant documents and then asks a language model to write an answer
+    using them, so the answer is grounded in real source material rather
+    than the model's memory. GraphRAG follows the same recipe, except
+    the retrieved material is a subgraph rather than loose chunks of
+    text. AstraeaDB splits the work into two steps, and the first needs
+    no language model at all. The <code>extract_subgraph()</code> method
+    turns a neighborhood into plain, readable text that you can inspect,
+    log, or store for reuse.</p>
+    <div class="sourceCode" id="cb9"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>context <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">extract_subgraph</span>(m<span class="sc">$</span>matrix, <span class="at">hops =</span> <span class="dv">2</span><span class="dt">L</span>, <span class="at">max_nodes =</span> <span class="dv">25</span><span class="dt">L</span>,</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">format =</span> <span class="st">&quot;structured&quot;</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co"># The call returns a list: nodes_count, edges_count, estimated_tokens, text.</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(context<span class="sc">$</span>nodes_count, <span class="st">&quot;nodes,&quot;</span>, context<span class="sc">$</span>edges_count, <span class="st">&quot;edges</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(context<span class="sc">$</span>text)   <span class="co"># human-readable context, no model required</span></span></code></pre></div>
+    <p>That text is exactly what the model will be given: the nodes,
+    their properties, and the edges between them, written out as prose.
+    Being able to read it is a real advantage when debugging, since
+    plain vector-based RAG usually hides the material it retrieved.</p>
+    <p>The second step, <code>graph_rag()</code>, does the same
+    retrieval and packages it together with your question, returning a
+    list of <code>question</code>, <code>context</code>,
+    <code>nodes_in_context</code>, <code>edges_in_context</code>,
+    <code>estimated_tokens</code>, <code>anchor_node_id</code>, and
+    <code>note</code>. Writing the final answer needs a language model,
+    and that has to be configured on the server, for example a local <a
+    href="https://ollama.com">Ollama</a> instance or an API key set in
+    the server's environment. Until you configure one the call still
+    succeeds and still does the retrieval, and <code>note</code> tells
+    you that completion is unavailable. Once a provider is configured,
+    the same call also returns the generated answer.</p>
+    <div class="sourceCode" id="cb10"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>answer <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">graph_rag</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">question  =</span> <span class="st">&quot;Who directed The Matrix, and what genres is it in?&quot;</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">anchor    =</span> m<span class="sc">$</span>matrix,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">hops      =</span> <span class="dv">2</span><span class="dt">L</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">max_nodes =</span> <span class="dv">25</span><span class="dt">L</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(answer<span class="sc">$</span>nodes_in_context, <span class="st">&quot;nodes in context,&quot;</span>,</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    answer<span class="sc">$</span>estimated_tokens, <span class="st">&quot;estimated tokens</span><span class="sc">\n</span><span class="st">&quot;</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(answer<span class="sc">$</span>note, <span class="st">&quot;</span><span class="sc">\n</span><span class="st">&quot;</span>)</span></code></pre></div>
+    <p>Because the answer is built from a retrieved subgraph rather than
+    the model's own memory, it stays faithful to your data, and you can
+    always point to the exact <code>extract_subgraph()</code> text that
+    produced it.</p>
+    <div class="sourceCode" id="cb11"><pre
+    class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">disconnect</span>()</span></code></pre></div>
+    <h2 id="wrapping-up-the-series">Wrapping up the series</h2>
+    <p>Across three posts, you have gone from an empty database to a
+    capable graph application written entirely in R. The first post
+    covered the fundamentals: connecting, modeling nodes and edges, and
+    traversing them. The second added embeddings for vector and hybrid
+    search, turning the graph into a recommender. This post added the
+    analysis and reasoning layer: PageRank and Louvain for structure,
+    betweenness centrality for the bridge nodes, time-travel queries for
+    point-in-time answers, and GraphRAG to turn all of it into
+    plain-language responses.</p>
+    <p>The common thread is that AstraeaDB keeps graph structure, vector
+    similarity, temporal history, and language-model grounding in a
+    single store, all reachable through a few <code>client$...</code>
+    calls. You can swap the small movie dataset for your own domain,
+    whether that is customers and orders, papers and citations, or
+    services and their dependencies, and the same handful of methods
+    still apply. From here, you might generate real embeddings with a
+    dedicated model, connect a language-model provider so that
+    <code>graph_rag()</code> works, and explore the <code>query()</code>
+    interface, which accepts GQL (Graph Query Language, an emerging
+    standard for querying graphs) for anything the R6 methods do not
+    cover. Everything shown here has an equivalent in the parallel
+    Python series.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../crawl/r-02-vector-search.html"><span>Previous</span>Vector and Hybrid Search with AstraeaDB in R</a>
+                  <a class="next" href="../crawl/08-ui-explore-your-graph.html"><span>Next</span>See Your Graph: Visual Exploration with the Astraea UI</a>
+          </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 4a319f9 on 2026-08-08</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

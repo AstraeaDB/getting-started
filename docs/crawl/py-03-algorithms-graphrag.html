@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graph Algorithms, Time-Travel, and GraphRAG in Python &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="alternate" data-track="r" href="../crawl/r-03-algorithms-graphrag.html">
+</head>
+<body data-tier="crawl" data-track="py" data-lesson="crawl-py-03">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class="current"><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Graph Algorithms, Time-Travel, and GraphRAG in Python</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#rebuilding-the-graph"
+      id="toc-rebuilding-the-graph">Rebuilding the graph</a></li>
+      <li><a href="#who-matters-most-pagerank-and-centrality"
+      id="toc-who-matters-most-pagerank-and-centrality">Who matters
+      most? PageRank and centrality</a></li>
+      <li><a href="#communities-without-labels-louvain"
+      id="toc-communities-without-labels-louvain">Communities without
+      labels: Louvain</a></li>
+      <li><a href="#time-travel-the-graph-as-of-a-past-date"
+      id="toc-time-travel-the-graph-as-of-a-past-date">Time-travel: the
+      graph as of a past date</a></li>
+      <li><a href="#zooming-in-subgraphs-and-stats"
+      id="toc-zooming-in-subgraphs-and-stats">Zooming in: subgraphs and
+      stats</a></li>
+      <li><a href="#from-graph-to-prompt-graphrag"
+      id="toc-from-graph-to-prompt-graphrag">From graph to prompt:
+      GraphRAG</a></li>
+      <li><a href="#a-quick-pandas-detour"
+      id="toc-a-quick-pandas-detour">A quick pandas detour</a></li>
+      <li><a href="#wrapping-up-the-series"
+      id="toc-wrapping-up-the-series">Wrapping up the series</a></li>
+      </ul>
+    </details>
+    
+    <p><em>You can rank the most connected nodes, discover hidden
+    communities, rewind the graph to a past date, and feed a small slice
+    of it to a language model, all from Python.</em></p>
+    <p>In <a href="./py-01-getting-started.html"><em>Getting Started
+    with AstraeaDB in Python</em></a> we built a small movie knowledge
+    graph, a set of records (nodes) joined by relationships (edges). In
+    <a href="./py-02-vector-search.html"><em>Vector and Hybrid Search
+    with AstraeaDB in Python</em></a> we turned it into a recommender
+    using embeddings. This final post covers three features that a graph
+    database is especially good at. The first is a set of graph
+    algorithms that run inside the database itself. The second is
+    temporal queries, which reconstruct what the graph looked like on an
+    earlier date. The third is GraphRAG, a technique for packaging a
+    small slice of the graph as background for a language model.
+    Everything here runs against a live <code>astraeadb serve</code> on
+    the address <code>127.0.0.1:7687</code>.</p>
+    <h2 id="rebuilding-the-graph">Rebuilding the graph</h2>
+    <p>If you followed post 1, you already have this graph and can skip
+    ahead. Otherwise, the block below rebuilds the whole thing at once.
+    It adds a <code>Genre</code> layer now and, later in the post,
+    <code>User</code> nodes for ratings.</p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> collections <span class="im">import</span> defaultdict</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>client.<span class="ex">connect</span>()</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>genres <span class="op">=</span> {g: client.create_node([<span class="st">&quot;Genre&quot;</span>], {<span class="st">&quot;name&quot;</span>: g})</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>          <span class="cf">for</span> g <span class="kw">in</span> [<span class="st">&quot;Action&quot;</span>, <span class="st">&quot;Sci-Fi&quot;</span>, <span class="st">&quot;Drama&quot;</span>]}</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>people <span class="op">=</span> {p: client.create_node([<span class="st">&quot;Person&quot;</span>], {<span class="st">&quot;name&quot;</span>: p})</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>          <span class="cf">for</span> p <span class="kw">in</span> [<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;Sandra Bullock&quot;</span>, <span class="st">&quot;Al Pacino&quot;</span>,</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>                    <span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;Christopher Nolan&quot;</span>]}</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co"># (title, year, genres, actors, director)</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>movie_rows <span class="op">=</span> [</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;The Matrix&quot;</span>, <span class="dv">1999</span>, [<span class="st">&quot;Sci-Fi&quot;</span>, <span class="st">&quot;Action&quot;</span>], [<span class="st">&quot;Keanu Reeves&quot;</span>], <span class="st">&quot;Lana Wachowski&quot;</span>),</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;John Wick&quot;</span>, <span class="dv">2014</span>, [<span class="st">&quot;Action&quot;</span>], [<span class="st">&quot;Keanu Reeves&quot;</span>], <span class="va">None</span>),</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Speed&quot;</span>, <span class="dv">1994</span>, [<span class="st">&quot;Action&quot;</span>], [<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;Sandra Bullock&quot;</span>], <span class="va">None</span>),</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;The Lake House&quot;</span>, <span class="dv">2006</span>, [<span class="st">&quot;Drama&quot;</span>], [<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;Sandra Bullock&quot;</span>], <span class="va">None</span>),</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Heat&quot;</span>, <span class="dv">1995</span>, [<span class="st">&quot;Action&quot;</span>, <span class="st">&quot;Drama&quot;</span>], [<span class="st">&quot;Al Pacino&quot;</span>], <span class="va">None</span>),</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Inception&quot;</span>, <span class="dv">2010</span>, [<span class="st">&quot;Sci-Fi&quot;</span>, <span class="st">&quot;Action&quot;</span>], [], <span class="st">&quot;Christopher Nolan&quot;</span>),</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>movies <span class="op">=</span> {}</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> title, year, gs, actors, director <span class="kw">in</span> movie_rows:</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    mid <span class="op">=</span> client.create_node([<span class="st">&quot;Movie&quot;</span>], {<span class="st">&quot;title&quot;</span>: title, <span class="st">&quot;year&quot;</span>: year})</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    movies[title] <span class="op">=</span> mid</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> g <span class="kw">in</span> gs:</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>        client.create_edge(mid, genres[g], <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> actor <span class="kw">in</span> actors:</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>        client.create_edge(people[actor], mid, <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> director:</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>        client.create_edge(people[director], mid, <span class="st">&quot;DIRECTED&quot;</span>)</span></code></pre></div>
+    <p>Notice that Keanu Reeves acts in four of the six movies. Keep him
+    in mind, because the algorithms are about to notice him too.</p>
+    <h2 id="who-matters-most-pagerank-and-centrality">Who matters most?
+    PageRank and centrality</h2>
+    <p>PageRank is a scoring method first made famous by web search. It
+    gives each node a score based not only on how many other nodes point
+    to it, but on how important those pointing nodes are in turn. A node
+    referenced by many well-connected nodes ends up with a high score.
+    <code>run_pagerank</code> runs this same idea over your own graph.
+    It returns a plain Python dictionary, a set of key-and-value pairs,
+    that maps each node's identifier, given as a string, to its score. A
+    higher score means the node sits closer to the center of all the
+    connections. We can use it to find the most important nodes
+    overall.</p>
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>scores <span class="op">=</span> client.run_pagerank()   <span class="co"># {&quot;12&quot;: 0.087, ...}</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>top <span class="op">=</span> <span class="bu">sorted</span>(scores.items(), key<span class="op">=</span><span class="kw">lambda</span> kv: kv[<span class="dv">1</span>], reverse<span class="op">=</span><span class="va">True</span>)[:<span class="dv">5</span>]</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> nid, score <span class="kw">in</span> top:</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    node <span class="op">=</span> client.get_node(<span class="bu">int</span>(nid))</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    name <span class="op">=</span> node[<span class="st">&quot;properties&quot;</span>].get(<span class="st">&quot;name&quot;</span>) <span class="kw">or</span> node[<span class="st">&quot;properties&quot;</span>].get(<span class="st">&quot;title&quot;</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span>name<span class="sc">:16s}</span><span class="ss"> </span><span class="sc">{</span>score<span class="sc">:.4f}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>Keanu Reeves and the genres his movies belong to rise to the top,
+    because many connections pass through them.
+    <code>run_pagerank</code> also accepts <code>damping</code>,
+    <code>max_iterations</code>, and <code>tolerance</code> if you want
+    to adjust how the calculation settles on its final numbers, plus an
+    optional <code>nodes=[...]</code> list to score only a subset of the
+    graph.</p>
+    <p>A simpler and faster measure is degree centrality. Centrality is
+    any measure of how important a node is, and the degree version
+    simply counts how many connections a node has.
+    <code>run_degree_centrality</code> returns the same
+    <code>{node_id: score}</code> shape and takes a
+    <code>direction</code> of <code>"outgoing"</code>,
+    <code>"incoming"</code>, or <code>"both"</code>.</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>deg <span class="op">=</span> client.run_degree_centrality(direction<span class="op">=</span><span class="st">&quot;both&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>busiest <span class="op">=</span> <span class="bu">max</span>(deg, key<span class="op">=</span>deg.get)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;Most connected node:&quot;</span>, client.get_node(<span class="bu">int</span>(busiest))[<span class="st">&quot;properties&quot;</span>])</span></code></pre></div>
+    <p>PageRank rewards being connected to other well-connected nodes,
+    while degree centrality only counts connections. When the two
+    measures disagree about a node, that difference is often worth
+    investigating. There is also
+    <code>run_betweenness_centrality</code>, which finds nodes that sit
+    on many of the shortest paths between other nodes. Those nodes act
+    as bridges between otherwise separate parts of the graph.</p>
+    <h2 id="communities-without-labels-louvain">Communities without
+    labels: Louvain</h2>
+    <p>We labeled the genres by hand. Could the graph discover those
+    clusters on its own? The <code>run_louvain</code> method does
+    exactly that. Louvain community detection is an algorithm that
+    automatically groups nodes into communities, where a community is a
+    set of nodes with many connections among themselves and fewer
+    connections to the rest of the graph. It returns a dictionary with
+    two keys: <code>communities</code>, which maps each node's
+    identifier to a community number, and <code>num_communities</code>,
+    the total count.</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> client.run_louvain()</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span>result[<span class="st">&#39;num_communities&#39;</span>]<span class="sc">}</span><span class="ss"> communities detected&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>groups <span class="op">=</span> defaultdict(<span class="bu">list</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> nid, community <span class="kw">in</span> result[<span class="st">&quot;communities&quot;</span>].items():</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    node <span class="op">=</span> client.get_node(<span class="bu">int</span>(nid))</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    props <span class="op">=</span> node[<span class="st">&quot;properties&quot;</span>]</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    groups[community].append(props.get(<span class="st">&quot;title&quot;</span>) <span class="kw">or</span> props.get(<span class="st">&quot;name&quot;</span>))</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> community, members <span class="kw">in</span> groups.items():</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;Community </span><span class="sc">{</span>community<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>members<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>The communities tend to echo the genre structure we built by
+    hand. Action movies and the actors they share group together, and
+    dramas gather elsewhere. This is the useful part. On a real dataset
+    where nobody has labeled anything in advance, Louvain finds the
+    hidden groupings for you.</p>
+    <h2 id="time-travel-the-graph-as-of-a-past-date">Time-travel: the
+    graph as of a past date</h2>
+    <p>This next feature is one that sets AstraeaDB apart. Each edge can
+    carry a <code>valid_from</code> timestamp, recorded as the number of
+    milliseconds since the start of 1970, a common way for computers to
+    represent a moment in time. Temporal queries, sometimes called
+    time-travel queries, let you ask what the graph looked like at any
+    past moment. We will add <code>User</code> nodes and
+    <code>RATED</code> edges that come into existence on specific
+    dates.</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> datetime <span class="im">import</span> datetime, timezone</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> ms(year, month, day):</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">int</span>(datetime(year, month, day, tzinfo<span class="op">=</span>timezone.utc).timestamp() <span class="op">*</span> <span class="dv">1000</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>alice <span class="op">=</span> client.create_node([<span class="st">&quot;User&quot;</span>], {<span class="st">&quot;name&quot;</span>: <span class="st">&quot;Alice&quot;</span>})</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>bob <span class="op">=</span> client.create_node([<span class="st">&quot;User&quot;</span>], {<span class="st">&quot;name&quot;</span>: <span class="st">&quot;Bob&quot;</span>})</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>client.create_edge(alice, movies[<span class="st">&quot;The Matrix&quot;</span>], <span class="st">&quot;RATED&quot;</span>,</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>                   properties<span class="op">=</span>{<span class="st">&quot;rating&quot;</span>: <span class="dv">5</span>}, valid_from<span class="op">=</span>ms(<span class="dv">2020</span>, <span class="dv">1</span>, <span class="dv">1</span>))</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>client.create_edge(alice, movies[<span class="st">&quot;John Wick&quot;</span>], <span class="st">&quot;RATED&quot;</span>,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>                   properties<span class="op">=</span>{<span class="st">&quot;rating&quot;</span>: <span class="dv">4</span>}, valid_from<span class="op">=</span>ms(<span class="dv">2023</span>, <span class="dv">6</span>, <span class="dv">1</span>))</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>client.create_edge(bob, movies[<span class="st">&quot;The Matrix&quot;</span>], <span class="st">&quot;RATED&quot;</span>,</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>                   properties<span class="op">=</span>{<span class="st">&quot;rating&quot;</span>: <span class="dv">4</span>}, valid_from<span class="op">=</span>ms(<span class="dv">2024</span>, <span class="dv">2</span>, <span class="dv">1</span>))</span></code></pre></div>
+    <p>Who had rated <em>The Matrix</em> as of the start of 2021? Only
+    Alice, because Bob's rating does not exist yet on that timeline. The
+    <code>neighbors_at</code> method answers this by ignoring any edge
+    whose <code>valid_from</code> is later than the timestamp you pass
+    in. It returns a list of <code>{node_id, edge_id}</code>
+    dictionaries.</p>
+    <div class="sourceCode" id="cb6"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>as_of_2021 <span class="op">=</span> ms(<span class="dv">2021</span>, <span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>raters <span class="op">=</span> client.neighbors_at(movies[<span class="st">&quot;The Matrix&quot;</span>], <span class="st">&quot;incoming&quot;</span>, as_of_2021)</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> r <span class="kw">in</span> raters:</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(client.get_node(r[<span class="st">&quot;node_id&quot;</span>])[<span class="st">&quot;properties&quot;</span>][<span class="st">&quot;name&quot;</span>], <span class="st">&quot;had rated it&quot;</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># -&gt; Alice had rated it</span></span></code></pre></div>
+    <p>Run the same call with <code>ms(2024, 6, 1)</code> and Bob
+    appears too. The <code>bfs_at</code> method applies the same time
+    filter to a full traversal, which means following connections
+    outward from a starting node step by step. The code below finds
+    everything reachable from Alice as of early 2021.</p>
+    <div class="sourceCode" id="cb7"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>reachable <span class="op">=</span> client.bfs_at(alice, max_depth<span class="op">=</span><span class="dv">2</span>, timestamp<span class="op">=</span>as_of_2021)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> entry <span class="kw">in</span> reachable:</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;depth&quot;</span>, entry[<span class="st">&quot;depth&quot;</span>], client.get_node(entry[<span class="st">&quot;node_id&quot;</span>])[<span class="st">&quot;properties&quot;</span>])</span></code></pre></div>
+    <p>As of that date, Alice reaches <em>The Matrix</em> and its genres
+    but not <em>John Wick</em>, which she will not rate until 2023. You
+    do not need to save separate snapshots or keep a separate history
+    table, because the past is stored directly in the graph. The methods
+    <code>dfs_at</code> and <code>shortest_path_at</code> round out the
+    set of temporal tools.</p>
+    <h2 id="zooming-in-subgraphs-and-stats">Zooming in: subgraphs and
+    stats</h2>
+    <p>Before we hand any context to a language model, here are two
+    helper methods. <code>graph_stats</code> gives a high-level count of
+    everything in the store, and <code>get_subgraph</code> pulls out the
+    raw nodes and edges around a center node so you can inspect them or
+    draw them. A subgraph is simply a small slice of the larger graph: a
+    chosen node together with its nearby neighbors and the connections
+    among them.</p>
+    <div class="sourceCode" id="cb8"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>stats <span class="op">=</span> client.graph_stats()</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;nodes:&quot;</span>, stats[<span class="st">&quot;total_nodes&quot;</span>], <span class="st">&quot;edges:&quot;</span>, stats[<span class="st">&quot;total_edges&quot;</span>])</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>sub <span class="op">=</span> client.get_subgraph(movies[<span class="st">&quot;The Matrix&quot;</span>], hops<span class="op">=</span><span class="dv">2</span>, max_nodes<span class="op">=</span><span class="dv">50</span>)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;subgraph:&quot;</span>, <span class="bu">len</span>(sub[<span class="st">&quot;nodes&quot;</span>]), <span class="st">&quot;nodes,&quot;</span>, <span class="bu">len</span>(sub[<span class="st">&quot;edges&quot;</span>]), <span class="st">&quot;edges&quot;</span>)</span></code></pre></div>
+    <h2 id="from-graph-to-prompt-graphrag">From graph to prompt:
+    GraphRAG</h2>
+    <p>GraphRAG builds on an idea called retrieval-augmented generation,
+    usually shortened to RAG. The idea is to answer a question by first
+    fetching relevant information and then handing it to a language
+    model, also known as a large language model or LLM, so the model can
+    base its answer on real data rather than only on its training. In
+    ordinary RAG, the fetched information is a set of text passages. In
+    GraphRAG, it is a subgraph instead, so the model sees how things are
+    related rather than a handful of disconnected snippets. AstraeaDB
+    builds this in two steps, and the first step needs no language model
+    at all.</p>
+    <p>The <code>extract_subgraph</code> method walks outward from a
+    center node and turns the result into plain text, flattening the
+    nodes and connections into readable lines. It returns
+    <code>{nodes_count, edges_count, estimated_tokens, text}</code>.
+    That text is the exact context that would be sent to a model, so you
+    can print it and inspect it at no cost.</p>
+    <div class="sourceCode" id="cb9"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>context <span class="op">=</span> client.extract_subgraph(movies[<span class="st">&quot;The Matrix&quot;</span>], hops<span class="op">=</span><span class="dv">2</span>, <span class="bu">format</span><span class="op">=</span><span class="st">&quot;structured&quot;</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(context[<span class="st">&quot;nodes_count&quot;</span>], <span class="st">&quot;nodes,&quot;</span>, context[<span class="st">&quot;edges_count&quot;</span>], <span class="st">&quot;edges&quot;</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(context[<span class="st">&quot;text&quot;</span>])</span></code></pre></div>
+    <p>The <code>format</code> argument also accepts
+    <code>"prose"</code>, <code>"triples"</code>, or <code>"json"</code>
+    if you prefer a different layout for that text. Once the context
+    looks right, the <code>graph_rag</code> method does the same
+    retrieval and packages it together with your question, returning
+    <code>{question, context, nodes_in_context, edges_in_context, estimated_tokens, anchor_node_id, note}</code>.</p>
+    <div class="sourceCode" id="cb10"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> client.graph_rag(</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>    question<span class="op">=</span><span class="st">&quot;Which action movies star Keanu Reeves?&quot;</span>,</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    anchor<span class="op">=</span>people[<span class="st">&quot;Keanu Reeves&quot;</span>],</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    hops<span class="op">=</span><span class="dv">2</span>,</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">&quot;nodes_in_context&quot;</span>], <span class="st">&quot;nodes in context&quot;</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;(context used ~&quot;</span>, result[<span class="st">&quot;estimated_tokens&quot;</span>], <span class="st">&quot;tokens)&quot;</span>)</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">&quot;note&quot;</span>])</span></code></pre></div>
+    <p>Writing the final answer needs a language model, and that has to
+    be configured on the server, for example a local Ollama installation
+    or an API key set in the server's configuration. Until you configure
+    one, the call still succeeds and still does the retrieval: you get
+    the assembled context, the counts, and a <code>note</code> reading
+    "LLM completion requires server-side provider configuration. Use the
+    context with your own LLM." That is a useful way to work, because
+    you can build and test the whole retrieval pipeline, and check
+    exactly what the model would see, before connecting a model at all.
+    Once a provider is configured, the same call also returns the
+    generated answer.</p>
+    <h2 id="a-quick-pandas-detour">A quick pandas detour</h2>
+    <p>Graph results are often the starting point for an analysis you
+    will finish in pandas, a popular Python library for working with
+    tables of data. Its main structure is the DataFrame, which is a
+    table of rows and columns much like a spreadsheet. The client ships
+    optional DataFrame helpers, which you install with
+    <code>pip install "astraeadb[pandas]"</code>.</p>
+    <div class="sourceCode" id="cb11"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb.dataframe <span class="im">import</span> export_nodes_df</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>movie_ids <span class="op">=</span> client.find_by_label(<span class="st">&quot;Movie&quot;</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> export_nodes_df(client, movie_ids)   <span class="co"># node_id, labels, + flattened properties</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(df.sort_values(<span class="st">&quot;year&quot;</span>)[[<span class="st">&quot;title&quot;</span>, <span class="st">&quot;year&quot;</span>]])</span></code></pre></div>
+    <p>You can also build a DataFrame directly from a GQL query, GQL
+    being the graph query language used to ask the database questions.
+    The <code>query_dict</code> method always returns a plain
+    <code>{columns, rows}</code> dictionary, which loads straight into
+    pandas.</p>
+    <div class="sourceCode" id="cb12"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> pandas <span class="im">as</span> pd</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>res <span class="op">=</span> client.query_dict(<span class="st">&quot;MATCH (m:Movie) RETURN m.title, m.year&quot;</span>)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>frame <span class="op">=</span> pd.DataFrame(res[<span class="st">&quot;rows&quot;</span>], columns<span class="op">=</span>res[<span class="st">&quot;columns&quot;</span>])</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(frame)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>client.close()</span></code></pre></div>
+    <p>From here it is ordinary pandas work. You can join PageRank
+    scores onto the table, group ratings by year, or export the results
+    to a CSV file.</p>
+    <h2 id="wrapping-up-the-series">Wrapping up the series</h2>
+    <p>Across three posts we went from an empty database to a capable
+    system, all in Python and all against the same small movie graph.
+    Post 1 covered nodes, edges, traversals, and the GQL query language.
+    Post 2 added embeddings, which are numeric representations of
+    meaning, for vector, hybrid, and semantic search, giving us a
+    recommender in a few dozen lines. This post added algorithms that
+    run inside the server (PageRank, Louvain, and centrality),
+    time-travel queries that reconstruct the graph at any past moment,
+    and GraphRAG, which turns relationships into context a language
+    model can use.</p>
+    <p>The common thread is that AstraeaDB keeps graph structure, vector
+    similarity, temporal history, and retrieval in a single store, so
+    you do not have to stitch together four separate systems to build
+    one intelligent application. With these three posts, you have seen
+    the full set of tools. You can now point them at your own data and
+    see what the graph reveals.</p>
+    <p><em>Everything shown in these posts is real, runnable API, so you
+    can try each example against your own AstraeaDB instance.</em></p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../crawl/py-02-vector-search.html"><span>Previous</span>Vector and Hybrid Search with AstraeaDB in Python</a>
+                  <a class="next" href="../crawl/08-ui-explore-your-graph.html"><span>Next</span>See Your Graph: Visual Exploration with the Astraea UI</a>
+          </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 4a319f9 on 2026-08-08</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

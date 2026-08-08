@@ -12,4 +12,9 @@ RUN apt-get update && apt-get install -y python3 python3-pip python3-venv \
 # equivalent of the venv a reader would be using.
 RUN pip install --no-cache-dir --break-system-packages astraeadb
 
+# crawl-py-03 uses the client's DataFrame helpers, which need pandas. The
+# lesson tells the reader to install it, so the image must have it too or
+# verification fails on something the reader would not hit.
+RUN pip install --no-cache-dir --break-system-packages pandas
+
 RUN python3 -c "import astraeadb; print('astraeadb python client', astraeadb.__version__ if hasattr(astraeadb,'__version__') else 'ok')"

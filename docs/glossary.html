@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-tier="" data-track="" data-lesson="">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class="current"><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Glossary</h1>
+
+    
+    <p>Every term the lessons use is defined here in ordinary words. A
+    lesson links here the first time it uses one of these, so nothing
+    has to be explained twice and nothing is assumed.</p>
+    <h2 id="graph-terms">Graph terms</h2>
+    <p><strong>Graph.</strong> A collection of items and the connections
+    between them. A social network is a graph: the people are the items
+    and the friendships are the connections.</p>
+    <p><strong>Node.</strong> One item in a graph. A movie, a person, or
+    a server is a node. Every node has a whole number called an ID that
+    you use to refer to it later.</p>
+    <p><strong>Edge.</strong> One connection between two nodes. An edge
+    has a direction, so an <code>ACTED_IN</code> edge that points from a
+    person to a film means something different from one pointing the
+    other way.</p>
+    <p><strong>Label.</strong> A category name attached to a node, such
+    as <code>Movie</code> or <code>Person</code>. A node can carry more
+    than one.</p>
+    <p><strong>Property.</strong> A named detail stored on a node or an
+    edge, such as a title or a year.</p>
+    <p><strong>Traversal.</strong> Following edges from one node to the
+    next in order to reach nodes further away.</p>
+    <p><strong>Breadth-first search (BFS).</strong> A traversal that
+    explores a graph one level at a time: first everything one step from
+    the start, then everything two steps away. Use it when you want the
+    nearest things first.</p>
+    <p><strong>Depth-first search (DFS).</strong> A traversal that
+    follows one path as far as it goes before backing up and trying
+    another. Use it when you want to reach far parts of the graph
+    quickly.</p>
+    <p><strong>Shortest path.</strong> The fewest edges that connect two
+    nodes.</p>
+    <p><strong>Subgraph.</strong> A smaller piece cut out of a larger
+    graph, usually everything within a few steps of some starting
+    node.</p>
+    <p><strong>Graph Query Language (GQL).</strong> A written language
+    for asking a graph database questions, in the same way that SQL asks
+    questions of a table-shaped database.</p>
+    <h2 id="vector-and-search-terms">Vector and search terms</h2>
+    <p><strong>Vector.</strong> A list of numbers.</p>
+    <p><strong>Embedding.</strong> A vector that represents the meaning
+    of something, such as a sentence or an image, as a point in space,
+    arranged so that things with similar meanings sit close together.
+    Comparing two embeddings is how a database judges whether two things
+    mean roughly the same thing.</p>
+    <p><strong>Dimension.</strong> How many numbers are in a vector.
+    This site uses 768 throughout, because that is what the
+    <code>embeddinggemma</code> model produces.</p>
+    <p><strong>Cosine distance.</strong> One way of measuring how far
+    apart two embeddings are. Smaller means more similar.</p>
+    <p><strong>Vector search.</strong> Finding the stored items whose
+    embeddings are closest to a query embedding, which is how you search
+    by meaning rather than by keyword.</p>
+    <p><strong>Hierarchical Navigable Small World (HNSW).</strong> The
+    structure AstraeaDB uses to find nearby embeddings quickly without
+    comparing the query against every stored item.</p>
+    <p><strong>Hybrid search.</strong> Ranking results by combining two
+    signals: how close items are in the graph, and how similar their
+    embeddings are.</p>
+    <h2 id="language-model-terms">Language-model terms</h2>
+    <p><strong>Large language model (LLM).</strong> A program trained on
+    a large amount of text that can write an answer to a question posed
+    in ordinary language.</p>
+    <p><strong>Retrieval-augmented generation (RAG).</strong> Answering
+    a question by first fetching relevant material and then giving it to
+    a language model, so the answer is based on real source material
+    rather than only on what the model absorbed in training.</p>
+    <p><strong>GraphRAG.</strong> Retrieval-augmented generation where
+    the fetched material is a subgraph rather than loose passages of
+    text, so the model sees how facts relate to each other and every
+    claim can be traced back to a node.</p>
+    <p><strong>Linearization.</strong> Turning a subgraph into plain
+    readable text so that a language model can be given it as input.</p>
+    <h2 id="practical-terms">Practical terms</h2>
+    <p><strong>Server.</strong> The database program running in the
+    background, holding your data.</p>
+    <p><strong>Client.</strong> The library your own code uses to send
+    requests to the server.</p>
+    <p><strong>Port.</strong> A numbered channel on a machine that a
+    server listens on. AstraeaDB uses <code>7687</code> by default, so
+    the full local address is <code>127.0.0.1:7687</code>, where
+    <code>127.0.0.1</code> means this machine.</p>
+    <p><strong>Write-ahead log (WAL).</strong> A file the server appends
+    to before changing its main data file, so that an interrupted write
+    can be recovered rather than lost.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+                </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge unverified">Reference page, no code to verify</p>
+  <p>
+    <a href="status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>See Your Graph: Visual Exploration with the Astraea UI &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-tier="crawl" data-track="both" data-lesson="crawl-08-ui">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class="current"><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>See Your Graph: Visual Exploration with the Astraea UI</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#what-the-dashboard-is"
+      id="toc-what-the-dashboard-is">What the dashboard is</a></li>
+      <li><a href="#what-you-need" id="toc-what-you-need">What you
+      need</a></li>
+      <li><a href="#install-and-run-it"
+      id="toc-install-and-run-it">Install and run it</a></li>
+      <li><a href="#log-in" id="toc-log-in">Log in</a></li>
+      <li><a href="#run-a-query-that-draws-a-graph"
+      id="toc-run-a-query-that-draws-a-graph">Run a query that draws a
+      graph</a></li>
+      <li><a href="#explore-the-graph-by-hand"
+      id="toc-explore-the-graph-by-hand">Explore the graph by
+      hand</a></li>
+      <li><a href="#run-graph-algorithms"
+      id="toc-run-graph-algorithms">Run graph algorithms</a></li>
+      <li><a href="#save-a-picture" id="toc-save-a-picture">Save a
+      picture</a></li>
+      <li><a href="#where-this-fits" id="toc-where-this-fits">Where this
+      fits</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Install the AstraeaDB dashboard and explore your movie graph
+    with queries, visual layouts, and graph algorithms.</em></p>
+    <p>In the earlier posts you built a movie knowledge graph and
+    explored it with code. Code is precise, but a picture makes
+    structure obvious at a glance. The Astraea UI is a web dashboard for
+    AstraeaDB that draws your graph in the browser and lets you query
+    it, arrange it, and run graph algorithms with a few clicks. This
+    post installs the dashboard and uses it to explore the same movie
+    graph you already built.</p>
+    <h2 id="what-the-dashboard-is">What the dashboard is</h2>
+    <p>The Astraea UI is a small web application that runs in your
+    browser and talks to your AstraeaDB server. It has three main areas:
+    a Query Console for running queries, a Graph Explorer for seeing the
+    graph as a picture, and a panel of graph algorithms. The application
+    is written in Rust and compiled to WebAssembly, usually shortened to
+    WASM, which is a format that lets compiled code run inside a web
+    page. You do not need to know Rust to use the dashboard. You only
+    need Rust's tools to build it once.</p>
+    <h2 id="what-you-need">What you need</h2>
+    <p>Because the dashboard is a Rust program, you need Rust's tools
+    plus a couple of extras. Install the following:</p>
+    <ul>
+    <li>Rust itself, from <a href="https://rustup.rs">rustup.rs</a>,
+    together with the WebAssembly build target, which you add with
+    <code>rustup target add wasm32-unknown-unknown</code>.</li>
+    <li><code>cargo-leptos</code>, the build tool for Leptos (the Rust
+    web framework the dashboard is built on). Install it with
+    <code>cargo install cargo-leptos --version 0.3.5</code>.</li>
+    <li>Node.js version 18 or newer, and the Tailwind CSS command-line
+    tool that styles the pages, which you install with
+    <code>npm install -g @tailwindcss/cli</code>.</li>
+    </ul>
+    <h2 id="install-and-run-it">Install and run it</h2>
+    <p>Clone the repository, install its local dependencies, and start
+    it in watch mode:</p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">git</span> clone https://github.com/AstraeaDB/astraea-ui.git</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">cd</span> astraea-ui</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="ex">npm</span> install</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> leptos watch</span></code></pre></div>
+    <p>The first <code>cargo leptos watch</code> compiles the dashboard,
+    which takes a few minutes. After that it serves the dashboard at
+    <code>http://localhost:3100</code> and rebuilds automatically
+    whenever you change a file. Make sure your AstraeaDB server is
+    already running, using the <code>astraeadb serve</code> step from
+    the getting-started posts. The dashboard connects to
+    <code>127.0.0.1:7687</code> by default. If your server runs
+    somewhere else, set the <code>ASTRAEA_HOST</code> and
+    <code>ASTRAEA_PORT</code> environment variables before you start
+    it.</p>
+    <h2 id="log-in">Log in</h2>
+    <p>Open <code>http://localhost:3100</code> and you will see a login
+    screen. If your server has authentication turned off, which is the
+    default, type any value as the key and you will be signed in with
+    full Admin access. When a server has authentication enabled instead,
+    your key decides your role, which is one of Reader, Writer, or
+    Admin.</p>
+    <h2 id="run-a-query-that-draws-a-graph">Run a query that draws a
+    graph</h2>
+    <p>The Query Console runs GQL, the graph query language you met in
+    the earlier posts. One habit is worth learning here. To get a
+    picture back rather than a table, return whole nodes and the
+    relationships between them, not individual properties. Returning
+    <code>p.name</code> gives you text in a table, while returning
+    <code>p</code> hands the dashboard a full node it can draw. Try
+    Keanu Reeves and his co-stars:</p>
+    <pre><code>MATCH (keanu:Person {name: &#39;Keanu Reeves&#39;})-[r1:ACTED_IN]-&gt;(m:Movie)&lt;-[r2:ACTED_IN]-(costar:Person)
+RETURN keanu, r1, m, r2, costar</code></pre>
+    <p>This reads as a sentence: find Keanu, follow his
+    <code>ACTED_IN</code> links to the movies he is in, then follow
+    <code>ACTED_IN</code> links backward from those movies to everyone
+    else who appeared in them. Returning the people, the movies, and the
+    two relationships gives the dashboard a small connected graph with
+    Keanu at the center, his films around him, and every co-star
+    attached. If the console shows the result as a table or as raw data
+    instead of a drawing, do not worry, because the same node and
+    relationship data is what the Graph Explorer renders as a
+    picture.</p>
+    <h2 id="explore-the-graph-by-hand">Explore the graph by hand</h2>
+    <p>The Graph Explorer draws a neighborhood of the graph starting
+    from one node. It asks for a center node's ID and a depth, where
+    depth is how many steps outward to follow. To find an ID, use the
+    "Find by Label" quick action and choose <code>Person</code> or
+    <code>Movie</code>, or read one from a query result, since every
+    node the console returns includes its <code>id</code>. Enter that ID
+    as the center and set the depth to 2. A depth of 1 shows only the
+    immediate neighbors, while a depth of 2 brings in the next ring, so
+    an actor expands into their films and then into those films' genres
+    and co-stars.</p>
+    <p>Once the graph is on screen, try the layout options. A Force
+    layout lets connected nodes pull together while unrelated ones drift
+    apart, which makes clusters easy to see. You can also filter by
+    label or by edge type to hide everything except, for example, movies
+    and the genres they belong to.</p>
+    <h2 id="run-graph-algorithms">Run graph algorithms</h2>
+    <p>The Graph Algorithms panel runs a calculation on the server and
+    shows the result on top of the picture.</p>
+    <ul>
+    <li>PageRank scores each node by how much it is pointed to by other
+    important nodes, and how important those nodes are in turn. It is
+    the idea that once ranked web pages. In a movie graph, prolific
+    actors and widely shared genres score high, and the dashboard draws
+    those nodes larger.</li>
+    <li>Louvain community detection groups nodes that connect to each
+    other far more than they connect to the rest of the graph. On a
+    movie graph those groups tend to line up with franchises and genres,
+    and the dashboard gives each group its own color.</li>
+    <li>Shortest path highlights the fewest steps between two nodes you
+    choose. Picking two actors from different franchises makes a good
+    test, because the highlighted route shows how the whole graph is
+    connected through the films they share.</li>
+    </ul>
+    <h2 id="save-a-picture">Save a picture</h2>
+    <p>When a view looks the way you want, the Export button saves the
+    current graph as a PNG image or as a JSON file. The image is handy
+    for slides and documentation, and the JSON lets you reload the same
+    view later or process it in another tool.</p>
+    <h2 id="where-this-fits">Where this fits</h2>
+    <p>You now have a visual way to explore the same graph you built
+    with code. The Query Console answers precise questions, the Graph
+    Explorer reveals structure at a glance, and the algorithm overlays
+    surface the influence and the communities that you would otherwise
+    have to compute by hand. If you have not built the movie graph yet,
+    start with <a href="./r-01-getting-started.html">Getting Started
+    with AstraeaDB in R</a> or <a
+    href="./py-01-getting-started.html">Getting Started with AstraeaDB
+    in Python</a>, then come back here to see what you made.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../crawl/r-03-algorithms-graphrag.html"><span>Previous</span>Graph Algorithms, Time-Travel, and GraphRAG in R</a>
+                </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge unverified">Awaiting manual check</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

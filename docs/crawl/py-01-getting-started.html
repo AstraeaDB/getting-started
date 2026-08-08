@@ -27,12 +27,21 @@
   <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
   <li data-track="py" class="current"><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
   <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
   </ul>
   <h2 class="tier">Walk</h2>
   <ul>
   </ul>
   <h2 class="tier">Run</h2>
   <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
   </ul>
   </nav>
 
@@ -108,11 +117,11 @@
     is to get the server running. Because AstraeaDB is written in Rust,
     you need Rust's build tools, which you can get from <a
     href="https://rustup.rs">rustup.rs</a> if you do not already have
-    them. Building the server also relies on Protocol Buffers, a data
-    format from Google, so on a fresh Linux machine you first need a few
-    system packages. On Debian or Ubuntu, one command installs all of
-    them:</p>
-    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time" -->
+    them.</p>
+    <p>Building the server relies on Protocol Buffers, a data format
+    from Google, so on a fresh Linux machine you first need a few system
+    packages. On Debian or Ubuntu, one command installs all of them:</p>
+    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would reinstall the same packages every time" -->
 
     <div class="sourceCode" id="cb1"><pre
     class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install <span class="at">-y</span> protobuf-compiler libprotobuf-dev pkg-config libssl-dev build-essential</span></code></pre></div>
@@ -120,7 +129,7 @@
     equivalent is <code>brew install protobuf</code>. With those in
     place, you can install the command-line program using
     <code>cargo</code>, which is Rust's package and build tool:</p>
-    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time" -->
+    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds" -->
 
     <div class="sourceCode" id="cb2"><pre
     class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Installs the `astraeadb` binary (compiles from source; takes a few minutes)</span></span>
@@ -128,8 +137,8 @@
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Start the server (JSON/TCP on 127.0.0.1:7687, data persisted to disk)</span></span>
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">astraeadb</span> serve</span></code></pre></div>
-    <p>Leave <code>astraeadb serve</code> running in this terminal
-    window, and open a second window for your Python work. A few other
+    <p>Leave that terminal running, because it is now your database.</p>
+    <p>Open a second terminal window for your Python work. A few other
     commands are worth knowing:</p>
     <!-- verify: skip reason="a reference list of commands, not a script: `astraeadb shell` opens an interactive REPL and `astraeadb serve --port 7700` starts a second server whose gRPC port collides with the one the harness already runs" -->
 
@@ -181,6 +190,12 @@
     <code>Genre</code>, joined by three kinds of edges:
     <code>ACTED_IN</code>, <code>DIRECTED</code>, and
     <code>IN_GENRE</code>.</p>
+    <p>The <code>with</code> form above is the safest way to run a
+    single piece of work, because it always closes the connection. For
+    the rest of this lesson you will build up a graph across several
+    steps, so it is easier to open one connection with
+    <code>connect()</code> and keep it open until the end. You will
+    close it yourself in the last step.</p>
     <p>The <code>create_node(labels, properties)</code> method returns
     the new node's ID as a whole number. The code below stores those IDs
     in dictionaries so it can connect edges by looking up nodes by
@@ -188,60 +203,64 @@
     <div class="sourceCode" id="cb6"><pre
     class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>) <span class="im">as</span> client:</span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- People (actors and directors) ---</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    people <span class="op">=</span> {}</span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> name <span class="kw">in</span> [<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;Laurence Fishburne&quot;</span>,</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                 <span class="st">&quot;Sandra Bullock&quot;</span>, <span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;Chad Stahelski&quot;</span>]:</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        people[name] <span class="op">=</span> client.create_node([<span class="st">&quot;Person&quot;</span>], {<span class="st">&quot;name&quot;</span>: name})</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- Movies ---</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    movies <span class="op">=</span> {}</span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> title, year, plot <span class="kw">in</span> [</span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;The Matrix&quot;</span>,          <span class="dv">1999</span>, <span class="st">&quot;A hacker discovers reality is a simulation.&quot;</span>),</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="dv">2003</span>, <span class="st">&quot;Neo fights on to free humankind.&quot;</span>),</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;John Wick&quot;</span>,           <span class="dv">2014</span>, <span class="st">&quot;A retired hitman comes back for revenge.&quot;</span>),</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Speed&quot;</span>,               <span class="dv">1994</span>, <span class="st">&quot;A bus wired to explode if it slows down.&quot;</span>),</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    ]:</span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        movies[title] <span class="op">=</span> client.create_node(</span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&quot;Movie&quot;</span>], {<span class="st">&quot;title&quot;</span>: title, <span class="st">&quot;year&quot;</span>: year, <span class="st">&quot;plot&quot;</span>: plot})</span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- Genres ---</span></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    genres <span class="op">=</span> {}</span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> name <span class="kw">in</span> [<span class="st">&quot;Science Fiction&quot;</span>, <span class="st">&quot;Action&quot;</span>]:</span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        genres[name] <span class="op">=</span> client.create_node([<span class="st">&quot;Genre&quot;</span>], {<span class="st">&quot;name&quot;</span>: name})</span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- Edges: source, target, type ---</span></span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> actor, film <span class="kw">in</span> [</span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;John Wick&quot;</span>),  (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;Speed&quot;</span>),</span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Laurence Fishburne&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Laurence Fishburne&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Sandra Bullock&quot;</span>, <span class="st">&quot;Speed&quot;</span>),</span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>    ]:</span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>        client.create_edge(people[actor], movies[film], <span class="st">&quot;ACTED_IN&quot;</span>)</span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> director, film <span class="kw">in</span> [</span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Chad Stahelski&quot;</span>, <span class="st">&quot;John Wick&quot;</span>),</span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>    ]:</span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>        client.create_edge(people[director], movies[film], <span class="st">&quot;DIRECTED&quot;</span>)</span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> film, genre <span class="kw">in</span> [</span>
-<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;The Matrix&quot;</span>, <span class="st">&quot;Science Fiction&quot;</span>), (<span class="st">&quot;The Matrix&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
-<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="st">&quot;Science Fiction&quot;</span>), (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
-<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;John Wick&quot;</span>, <span class="st">&quot;Action&quot;</span>), (<span class="st">&quot;Speed&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
-<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>    ]:</span>
-<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>        client.create_edge(movies[film], genres[genre], <span class="st">&quot;IN_GENRE&quot;</span>)</span></code></pre></div>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Open a connection and keep it open for the rest of this lesson.</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>client.<span class="ex">connect</span>()</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># --- People (actors and directors) ---</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>people <span class="op">=</span> {}</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name <span class="kw">in</span> [<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;Laurence Fishburne&quot;</span>,</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>             <span class="st">&quot;Sandra Bullock&quot;</span>, <span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;Chad Stahelski&quot;</span>]:</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    people[name] <span class="op">=</span> client.create_node([<span class="st">&quot;Person&quot;</span>], {<span class="st">&quot;name&quot;</span>: name})</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Movies ---</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>movies <span class="op">=</span> {}</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> title, year, plot <span class="kw">in</span> [</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;The Matrix&quot;</span>,          <span class="dv">1999</span>, <span class="st">&quot;A hacker discovers reality is a simulation.&quot;</span>),</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="dv">2003</span>, <span class="st">&quot;Neo fights on to free humankind.&quot;</span>),</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;John Wick&quot;</span>,           <span class="dv">2014</span>, <span class="st">&quot;A retired hitman comes back for revenge.&quot;</span>),</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Speed&quot;</span>,               <span class="dv">1994</span>, <span class="st">&quot;A bus wired to explode if it slows down.&quot;</span>),</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    movies[title] <span class="op">=</span> client.create_node(</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>        [<span class="st">&quot;Movie&quot;</span>], {<span class="st">&quot;title&quot;</span>: title, <span class="st">&quot;year&quot;</span>: year, <span class="st">&quot;plot&quot;</span>: plot})</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Genres ---</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>genres <span class="op">=</span> {}</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name <span class="kw">in</span> [<span class="st">&quot;Science Fiction&quot;</span>, <span class="st">&quot;Action&quot;</span>]:</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    genres[name] <span class="op">=</span> client.create_node([<span class="st">&quot;Genre&quot;</span>], {<span class="st">&quot;name&quot;</span>: name})</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Edges: source, target, type ---</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> actor, film <span class="kw">in</span> [</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;John Wick&quot;</span>),  (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;Speed&quot;</span>),</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Laurence Fishburne&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Laurence Fishburne&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Sandra Bullock&quot;</span>, <span class="st">&quot;Speed&quot;</span>),</span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>    client.create_edge(people[actor], movies[film], <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> director, film <span class="kw">in</span> [</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Chad Stahelski&quot;</span>, <span class="st">&quot;John Wick&quot;</span>),</span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>    client.create_edge(people[director], movies[film], <span class="st">&quot;DIRECTED&quot;</span>)</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> film, genre <span class="kw">in</span> [</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;The Matrix&quot;</span>, <span class="st">&quot;Science Fiction&quot;</span>), (<span class="st">&quot;The Matrix&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="st">&quot;Science Fiction&quot;</span>), (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
+<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;John Wick&quot;</span>, <span class="st">&quot;Action&quot;</span>), (<span class="st">&quot;Speed&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
+<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a>]:</span>
+<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a>    client.create_edge(movies[film], genres[genre], <span class="st">&quot;IN_GENRE&quot;</span>)</span></code></pre></div>
     <p>That code creates twelve nodes and eighteen edges, small enough
     to follow by hand. Edges have a direction: an <code>ACTED_IN</code>
     edge points from a person to a movie, and that direction matters
     when you read the graph back.</p>
     <h2 id="reading-it-back">Reading it back</h2>
-    <p>The remaining examples assume you are still inside that same
-    <code>with</code> block. Start by reading a single node. The
-    <code>get_node(id)</code> method returns a dictionary containing the
-    node's <code>labels</code> and <code>properties</code>:</p>
+    <p>The remaining examples reuse the <code>client</code> you opened
+    above, so run them in the same session, one after another. Start by
+    reading a single node. The <code>get_node(id)</code> method returns
+    a dictionary containing the node's <code>labels</code> and
+    <code>properties</code>:</p>
     <div class="sourceCode" id="cb7"><pre
     class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>matrix <span class="op">=</span> movies[<span class="st">&quot;The Matrix&quot;</span>]</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(client.get_node(matrix))</span>
@@ -326,6 +345,13 @@
 <span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># {&#39;total_nodes&#39;: 12, &#39;total_edges&#39;: 18, &#39;labels&#39;: {...}, ...}</span></span></code></pre></div>
     <p>That is twelve nodes and eighteen edges, exactly what you
     inserted.</p>
+    <p>Because you opened this connection with <code>connect()</code>
+    rather than a <code>with</code> block, you close it yourself when
+    you are finished:</p>
+    <div class="sourceCode" id="cb15"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>client.close()</span></code></pre></div>
+    <p>The server keeps running and your graph stays on disk, so the
+    next post can pick up exactly where this one stops.</p>
     <h2 id="whats-next">What's next</h2>
     <p>You now have a running AstraeaDB server, a working Python
     connection, and a small but complete knowledge graph that you can
@@ -333,7 +359,7 @@
     a graph and vector database.</p>
     <p>The other half is where the database puts those embeddings to
     work. In the next post, <strong><a
-    href="./py-02-vector-search.md">Vector and Hybrid Search with
+    href="./py-02-vector-search.html">Vector and Hybrid Search with
     AstraeaDB in Python</a></strong>, you will attach an embedding to
     each movie's plot and use <code>vector_search</code> to find films
     whose descriptions are closest in meaning to a phrase you provide.
@@ -345,12 +371,13 @@
 
     <nav class="prevnext" aria-label="Lesson navigation">
             <a class="prev" href="../crawl/00-introduction.html"><span>Previous</span>Why Graphs, and Why Now: An Introduction to AstraeaDB</a>
-                </nav>
+                  <a class="next" href="../crawl/py-02-vector-search.html"><span>Next</span>Vector and Hybrid Search with AstraeaDB in Python</a>
+          </nav>
   </main>
 </div>
 
 <footer class="sitefoot">
-  <p class="badge red">Verification FAILED against AstraeaDB 4a319f9 on 2026-08-08</p>
+  <p class="badge green">Verified against AstraeaDB 4a319f9 on 2026-08-08</p>
   <p>
     <a href="../status.html">Verification status</a> &middot;
     <a href="https://github.com/AstraeaDB/getting-started">Source</a>

@@ -45,6 +45,13 @@ outcome = "You can build an investigation graph from raw telemetry, hunt across 
 time = "about 6 hours"
 prereqs = "Walk. One lesson needs Rust."
 
+# Standalone pages. Not lessons: they have no tier, no track, and no place in
+# the prev/next chain, but they are rendered and linked from every page.
+[[page]]
+id = "glossary"
+title = "Glossary"
+file = "glossary.md"
+
 # ---------------------------------------------------------------- Crawl (8)
 
 # PLANNED lessons are commented out below. A lesson in this manifest with no
@@ -84,63 +91,65 @@ sibling = "crawl-py-01"
 verify = "required"
 source = "blogs/r-01-getting-started.md"
 
-# [[lesson]]
-# id = "crawl-py-02"
-# title = "Vector and Hybrid Search with AstraeaDB in Python"
-# tier = "crawl"
-# track = "py"
-# order = 20
-# file = "crawl/py-02-vector-search.md"
-# sibling = "crawl-r-02"
-# verify = "required"
-# source = "blogs/py-02-vector-search.md"
+[[lesson]]
+id = "crawl-py-02"
+title = "Vector and Hybrid Search with AstraeaDB in Python"
+tier = "crawl"
+track = "py"
+order = 20
+file = "crawl/py-02-vector-search.md"
+sibling = "crawl-r-02"
+vector_dim = 4   # the lesson teaches with short hand-written vectors
+verify = "required"
+source = "blogs/py-02-vector-search.md"
 
-# [[lesson]]
-# id = "crawl-r-02"
-# title = "Vector and Hybrid Search with AstraeaDB in R"
-# tier = "crawl"
-# track = "r"
-# order = 20
-# file = "crawl/r-02-vector-search.md"
-# sibling = "crawl-py-02"
-# verify = "required"
-# source = "blogs/r-02-vector-search.md"
+[[lesson]]
+id = "crawl-r-02"
+title = "Vector and Hybrid Search with AstraeaDB in R"
+tier = "crawl"
+track = "r"
+order = 20
+file = "crawl/r-02-vector-search.md"
+sibling = "crawl-py-02"
+vector_dim = 4   # the lesson teaches with short hand-written vectors
+verify = "required"
+source = "blogs/r-02-vector-search.md"
 
-# [[lesson]]
-# id = "crawl-py-03"
-# title = "Graph Algorithms, Time-Travel, and GraphRAG in Python"
-# tier = "crawl"
-# track = "py"
-# order = 30
-# file = "crawl/py-03-algorithms-graphrag.md"
-# sibling = "crawl-r-03"
-# verify = "required"
-# source = "blogs/py-03-algorithms-graphrag.md"
+[[lesson]]
+id = "crawl-py-03"
+title = "Graph Algorithms, Time-Travel, and GraphRAG in Python"
+tier = "crawl"
+track = "py"
+order = 30
+file = "crawl/py-03-algorithms-graphrag.md"
+sibling = "crawl-r-03"
+verify = "required"
+source = "blogs/py-03-algorithms-graphrag.md"
 
-# [[lesson]]
-# id = "crawl-r-03"
-# title = "Graph Algorithms, Time-Travel, and GraphRAG in R"
-# tier = "crawl"
-# track = "r"
-# order = 30
-# file = "crawl/r-03-algorithms-graphrag.md"
-# sibling = "crawl-py-03"
-# verify = "required"
-# source = "blogs/r-03-algorithms-graphrag.md"
+[[lesson]]
+id = "crawl-r-03"
+title = "Graph Algorithms, Time-Travel, and GraphRAG in R"
+tier = "crawl"
+track = "r"
+order = 30
+file = "crawl/r-03-algorithms-graphrag.md"
+sibling = "crawl-py-03"
+verify = "required"
+source = "blogs/r-03-algorithms-graphrag.md"
 
-# [[lesson]]
-# id = "crawl-08-ui"
-# title = "See Your Graph: Visual Exploration with the Astraea UI"
-# tier = "crawl"
-# track = "both"
-# order = 40
-# file = "crawl/08-ui-explore-your-graph.md"
-# # Drives a browser, so it cannot run in a container. Human checklist instead
-# # (DESIGN.md 7.4); status.html shows it as manually verified with a date.
-# verify = "manual"
-# source = "blogs/ui-explore-your-graph.md"
-#
-# # ----------------------------------------------------------------- Walk (7)
+[[lesson]]
+id = "crawl-08-ui"
+title = "See Your Graph: Visual Exploration with the Astraea UI"
+tier = "crawl"
+track = "both"
+order = 40
+file = "crawl/08-ui-explore-your-graph.md"
+# Drives a browser, so it cannot run in a container. Human checklist instead
+# (DESIGN.md 7.4); status.html shows it as manually verified with a date.
+verify = "manual"
+source = "blogs/ui-explore-your-graph.md"
+
+# ----------------------------------------------------------------- Walk (7)
 
 # [[lesson]]
 # id = "walk-01-embeddings"
