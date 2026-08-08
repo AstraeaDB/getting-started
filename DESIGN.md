@@ -104,7 +104,7 @@ Two further findings on the existing HTML:
   `ui-explore-your-graph.md` have **no export at all**. The Python track is
   therefore not at parity with R in the Medium artifacts. For the *site* this
   gap closes automatically, because the build renders every lesson from
-  markdown. For Medium it is a real gap, handled by task T7.
+  markdown. Medium is dropped (Q7), so this is not a gap at all.
 
 ### 2.3 Package availability, checked today
 
@@ -616,11 +616,10 @@ Pandoc is already the tool that produced every existing HTML file in `blogs/`,
 so staying with it keeps one converter in the house rather than two. The
 `.nojekyll` file stops Pages from trying to process the pandoc output.
 
-**The Medium exports.** The existing self-contained pages stay a separate
-output, produced by `just medium <lesson-id>`, which runs pandoc with
-`--embed-resources --standalone` and no site template. They are written to
-`medium/` and are not part of the site. Whether to keep producing them at all is
-Q7.
+**The Medium exports are gone.** Q7 is resolved: Medium is not a publication
+target, and the five self-contained RStudio pages were deleted in `e0a1332`.
+There is no `just medium` recipe and no `medium/` directory. The site is the
+only HTML output, which also removes the drift that left two exports stale.
 
 **Disposition of the rag scaffold** is the table in section 2.1. In short:
 delete `ingest.py`, `query.py`, and `corpus/`; rewrite `justfile` and
@@ -687,13 +686,10 @@ run at the same time as their siblings in the same phase.
   the block, the exit code, and the diagnosis. The R install path must be
   confirmed working end to end in the container, not assumed.
   *after:* T5.
-- **T7 [documentarian] Close the Medium export gap.** Regenerate the stale
-  `r-02` and `r-03` exports and produce the missing `py-02`, `py-03`, and
-  `ui-explore-your-graph` exports.
-  *Accept:* all eight Crawl lessons have a current `medium/*.html`, each newer
-  than its source markdown. **Skip this task entirely if Q7 answers that Medium
-  is no longer a target.**
-  *after:* T5. **[parallel with T6]**
+- **T7 ~~[documentarian] Close the Medium export gap.~~ DROPPED 2026-08-07.**
+  Q7 resolved: Medium is not a publication target and the five RStudio exports
+  were deleted in `e0a1332`. Task count is therefore **29**, not 30. No `medium/`
+  directory and no `just medium` recipe are built.
 - **T8 [tester] Write and run the UI manual checklist.** Build the Astraea UI
   from source on the host, follow `crawl-08-ui` step by step, and record which
   steps work.
@@ -878,16 +874,15 @@ the URL at `https://astraeadb.github.io/getting-started/`.
 `AstraeaDB-Official`'s README link to the site as the primary entry point? T1
 and T30 are both blocked on this answer.
 
-**Q7. Is Medium still a publication target?**
-The seven existing 635 KB HTML files are self-contained pandoc exports built for
-pasting into Medium. Three posts have no export, and two of the R exports are
+**Q7. Is Medium still a publication target? RESOLVED 2026-08-07: no.**
+The five existing 635 KB HTML files were self-contained pandoc exports built for
+pasting into Medium. Three posts had no export, and two of the R exports were
 stale relative to the 2026-08-05 editorial rewrite.
-*Recommendation:* keep the site as the canonical home and treat Medium exports
-as an optional on-demand output via `just medium <lesson-id>`. If Medium is
-still a target, T7 closes the five-post gap. If it is not, we delete the seven
-existing exports, drop T7 entirely, and save ongoing maintenance. Please pick
-one, because "keep them around and hope they stay current" is what produced the
-two stale files.
+*Answer:* the user confirmed these came out of RStudio and are not important.
+All five were deleted in commit `e0a1332`, along with a stray `DESIGN.html`.
+Medium is not a publication target. **T7 is dropped**, there is no `just medium`
+recipe, and section 8 needs no dual-output path. The paired `.md` files remain
+the canonical sources and the site is the only HTML output.
 
 **Q8. Ollama during verification: expose the host, or install it in the image?**
 The host's `ollama` binds `127.0.0.1:11434`, so containers on `192.168.64.0/24`
