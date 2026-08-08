@@ -27,6 +27,10 @@ verify LESSON:
 verify-all:
     {{python}} verify/run.py --all
 
+# Prove the harness itself works, without touching report.json.
+self-test:
+    {{python}} verify/run.py --self-test
+
 # Build the four verification container images. MODE is "fast" or "install".
 images MODE="fast":
     # --mode install rebuilds from scratch, running the exact apt-get and

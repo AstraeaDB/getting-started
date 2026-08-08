@@ -1,0 +1,76 @@
+{
+  "generated": "2026-08-08T03:11:06+00:00",
+  "runs": [
+    {
+      "lesson": "crawl-py-01",
+      "green": false,
+      "blocks": 10,
+      "skipped": [
+        {
+          "block": 0,
+          "lang": "bash",
+          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time"
+        },
+        {
+          "block": 1,
+          "lang": "bash",
+          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time"
+        },
+        {
+          "block": 2,
+          "lang": "bash",
+          "reason": "a reference list of commands, not a script: `astraeadb shell` opens an interactive REPL and `astraeadb serve --port 7700` starts a second server whose gRPC port collides with the one the harness already runs"
+        },
+        {
+          "block": 3,
+          "lang": "bash",
+          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time"
+        }
+      ],
+      "rev": "4a319f9",
+      "date": "2026-08-08",
+      "image": "astraea-verify-py",
+      "failure": "block 6 (python, line 130) exited 1: ConnectionError: not connected; call connect() or use context manager",
+      "failures": [
+        "block 6 (python, line 130) exited 1: ConnectionError: not connected; call connect() or use context manager",
+        "block 7 (python, line 139) exited 1: ConnectionError: not connected; call connect() or use context manager",
+        "block 8 (python, line 148) exited 1: ConnectionError: not connected; call connect() or use context manager",
+        "block 9 (python, line 156) exited 1: ConnectionError: not connected; call connect() or use context manager",
+        "block 10 (python, line 166) exited 1: ConnectionError: not connected; call connect() or use context manager",
+        "block 11 (python, line 172) exited 1: ConnectionError: not connected; call connect() or use context manager",
+        "block 12 (python, line 183) exited 1: ConnectionError: not connected; call connect() or use context manager",
+        "block 13 (python, line 199) exited 1: ConnectionError: not connected; call connect() or use context manager"
+      ]
+    },
+    {
+      "lesson": "crawl-r-01",
+      "green": true,
+      "blocks": 10,
+      "skipped": [
+        {
+          "block": 0,
+          "lang": "bash",
+          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds"
+        },
+        {
+          "block": 1,
+          "lang": "bash",
+          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds"
+        },
+        {
+          "block": 2,
+          "lang": "r",
+          "reason": "the CRAN package is not published yet, so this line 404s today (DESIGN.md Q1); the install_github line below is the one that works and the one the image build uses"
+        },
+        {
+          "block": 3,
+          "lang": "r",
+          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds"
+        }
+      ],
+      "rev": "4a319f9",
+      "date": "2026-08-08",
+      "image": "astraea-verify-r"
+    }
+  ]
+}

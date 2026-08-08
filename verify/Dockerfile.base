@@ -1,0 +1,41 @@
+# Parent image for every verification container.
+#
+# The apt-get line below is the SAME line the Crawl lessons tell a reader to
+# run, and the cargo install line is the same one they print. Building this
+# image is therefore the test of the install instructions, not a separate
+# approximation of them (DESIGN.md 7.2). If a lesson's install text changes,
+# change it here too, or the site is testing something it no longer teaches.
+
+FROM debian:bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Verbatim from content/_shared/install-server.md. curl and git are extra:
+# a reader already has them, a slim container does not.
+RUN apt-get update && apt-get install -y \
+      protobuf-compiler libprotobuf-dev pkg-config libssl-dev build-essential \
+      curl git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# AstraeaDB is edition 2024, which needs Rust 1.85 or newer. Pinned rather than
+# floating on stable so a toolchain release cannot turn a green lesson red
+# overnight.
+ARG RUST_VERSION=1.90.0
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+      | sh -s -- -y --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION}
+ENV PATH=/root/.cargo/bin:$PATH
+
+# The install line the lessons print. ASTRAEADB_REF pins the revision so a
+# verification run is reproducible; --mode install passes the current HEAD.
+ARG ASTRAEADB_GIT=https://github.com/AstraeaDB/AstraeaDB-Official.git
+ARG ASTRAEADB_REF=main
+RUN cargo install --git ${ASTRAEADB_GIT} --rev ${ASTRAEADB_REF} astraea-cli \
+    || cargo install --git ${ASTRAEADB_GIT} --branch ${ASTRAEADB_REF} astraea-cli
+
+# Fail the build now rather than at lesson-run time if the binary is missing.
+RUN astraeadb --version
+
+# Every lesson gets a server on the port the lesson text names, inside the
+# container, so 127.0.0.1:7687 in a snippet is the real thing being tested.
+COPY server.toml /etc/astraeadb/server.toml
+WORKDIR /work

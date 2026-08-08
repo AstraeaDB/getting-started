@@ -112,12 +112,16 @@
     format from Google, so on a fresh Linux machine you first need a few
     system packages. On Debian or Ubuntu, one command installs all of
     them:</p>
+    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time" -->
+
     <div class="sourceCode" id="cb1"><pre
     class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install <span class="at">-y</span> protobuf-compiler libprotobuf-dev pkg-config libssl-dev build-essential</span></code></pre></div>
     <p>On macOS with <a href="https://brew.sh">Homebrew</a>, the
     equivalent is <code>brew install protobuf</code>. With those in
     place, you can install the command-line program using
     <code>cargo</code>, which is Rust's package and build tool:</p>
+    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time" -->
+
     <div class="sourceCode" id="cb2"><pre
     class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Installs the `astraeadb` binary (compiles from source; takes a few minutes)</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> install <span class="at">--git</span> https://github.com/AstraeaDB/AstraeaDB-Official.git astraea-cli</span>
@@ -127,6 +131,8 @@
     <p>Leave <code>astraeadb serve</code> running in this terminal
     window, and open a second window for your Python work. A few other
     commands are worth knowing:</p>
+    <!-- verify: skip reason="a reference list of commands, not a script: `astraeadb shell` opens an interactive REPL and `astraeadb serve --port 7700` starts a second server whose gRPC port collides with the one the harness already runs" -->
+
     <div class="sourceCode" id="cb3"><pre
     class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">astraeadb</span> status              <span class="co"># quick health check</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">astraeadb</span> shell               <span class="co"># interactive REPL</span></span>
@@ -136,6 +142,8 @@
     <p>In your second terminal window, install the client from PyPI, the
     Python Package Index, which is the standard online catalog of Python
     libraries:</p>
+    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time" -->
+
     <div class="sourceCode" id="cb4"><pre
     class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install astraeadb</span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or, to add pandas + Arrow Flight support:</span></span>
@@ -342,7 +350,7 @@
 </div>
 
 <footer class="sitefoot">
-  <p class="badge unverified">Not yet verified</p>
+  <p class="badge red">Verification FAILED against AstraeaDB 4a319f9 on 2026-08-08</p>
   <p>
     <a href="../status.html">Verification status</a> &middot;
     <a href="https://github.com/AstraeaDB/getting-started">Source</a>

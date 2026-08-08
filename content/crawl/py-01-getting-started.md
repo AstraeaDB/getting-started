@@ -14,12 +14,14 @@ You can picture AstraeaDB as a labeled graph. The items in it are called nodes, 
 
 The Python client is a small library that sends your requests to a running AstraeaDB server. The server is the database program running in the background, and the client is the code in your program that talks to it. On your own computer they communicate at the address `127.0.0.1:7687`, where `127.0.0.1` means this machine and `7687` is the port, a numbered channel the server listens on. The first step is to get the server running. Because AstraeaDB is written in Rust, you need Rust's build tools, which you can get from [rustup.rs](https://rustup.rs) if you do not already have them. Building the server also relies on Protocol Buffers, a data format from Google, so on a fresh Linux machine you first need a few system packages. On Debian or Ubuntu, one command installs all of them:
 
+<!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time" -->
 ```bash
 sudo apt-get install -y protobuf-compiler libprotobuf-dev pkg-config libssl-dev build-essential
 ```
 
 On macOS with [Homebrew](https://brew.sh), the equivalent is `brew install protobuf`. With those in place, you can install the command-line program using `cargo`, which is Rust's package and build tool:
 
+<!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time" -->
 ```bash
 # Installs the `astraeadb` binary (compiles from source; takes a few minutes)
 cargo install --git https://github.com/AstraeaDB/AstraeaDB-Official.git astraea-cli
@@ -30,6 +32,7 @@ astraeadb serve
 
 Leave `astraeadb serve` running in this terminal window, and open a second window for your Python work. A few other commands are worth knowing:
 
+<!-- verify: skip reason="a reference list of commands, not a script: `astraeadb shell` opens an interactive REPL and `astraeadb serve --port 7700` starts a second server whose gRPC port collides with the one the harness already runs" -->
 ```bash
 astraeadb status              # quick health check
 astraeadb shell               # interactive REPL
@@ -40,6 +43,7 @@ astraeadb serve --port 7700   # run on a different port
 
 In your second terminal window, install the client from PyPI, the Python Package Index, which is the standard online catalog of Python libraries:
 
+<!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time" -->
 ```bash
 pip install astraeadb
 # or, to add pandas + Arrow Flight support:

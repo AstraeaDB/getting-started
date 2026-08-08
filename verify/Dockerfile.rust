@@ -1,0 +1,12 @@
+# Rust lesson image, for run-01-fraud-elliptic. astraea-gnn has no wire
+# protocol, so that lesson has to be Rust (DESIGN.md 5.1).
+FROM astraea-verify-base
+
+# Warm the registry with the published 0.3.1 crates so a lesson's `cargo build`
+# is not dominated by a cold index fetch.
+RUN cargo new /tmp/warm && cd /tmp/warm \
+ && cargo add astraea-core@0.3.1 astraea-graph@0.3.1 astraea-vector@0.3.1 \
+      astraea-storage@0.3.1 astraea-rag@0.3.1 \
+ && cargo build --release \
+ && cd / && rm -rf /tmp/warm
+WORKDIR /work

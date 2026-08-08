@@ -1,0 +1,17 @@
+# Config for the in-container AstraeaDB server that every lesson runs against.
+# 7687 is the port the lesson text names, so the snippet under test connects to
+# the literal address the reader will type.
+[server]
+bind_address = "127.0.0.1"
+port = 7687
+
+[storage]
+data_dir = "/tmp/astraea/data"
+wal_dir = "/tmp/astraea/wal"
+buffer_pool_size = 1024
+
+# 768 is embeddinggemma's native width, which the site standardizes on
+# (DESIGN.md Q9). Must match astraea-config/default.toml on the host.
+[vector]
+dimension = 768
+metric = "cosine"

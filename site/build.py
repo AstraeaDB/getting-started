@@ -209,14 +209,19 @@ def verification_state(lesson, report, strict):
         return ("Not yet verified", "unverified")
 
     if not rec.get("green"):
-        # A recorded failure is always fatal. This is a regression, not an
-        # absence, and publishing it would put a known-broken snippet in front
-        # of a reader.
-        die(
-            f"{lid}: last verification run was RED "
-            f"({rec.get('failure', 'no detail recorded')}). "
-            "Fix the lesson or re-run `just verify " + lid + "`."
-        )
+        # A recorded failure blocks publishing but not authoring. Under
+        # --strict (release) it is fatal, because shipping a known-broken
+        # snippet to a reader is the thing this whole harness exists to
+        # prevent. Without --strict the page still renders, carrying a red
+        # badge and a status.html row naming the failure, because someone
+        # fixing that lesson needs to be able to build and read it.
+        msg = (f"{lid}: last verification run was RED "
+               f"({rec.get('failure', 'no detail recorded')})")
+        if strict:
+            die(msg + " (--strict). Fix the lesson or re-run `just verify " + lid + "`.")
+        warn(msg)
+        return (f"Verification FAILED against AstraeaDB {rec.get('rev', '?')} "
+                f"on {rec.get('date', '?')}", "red")
 
     return (f"Verified against AstraeaDB {rec.get('rev', '?')} on {rec.get('date', '?')}", "green")
 
