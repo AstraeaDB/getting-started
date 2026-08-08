@@ -1,2 +1,34 @@
-profile = "single-node-server"
-instance_name_default = "rag-template-demo"
+# Config for the AUTHORING AstraeaDB instance, used by `just up`.
+#
+# Lesson authors point at this while writing, because STYLE.md requires that
+# any output a lesson claims be checked against a live server rather than
+# imagined. Verification does NOT use it: verify/run.py starts a fresh server
+# inside a container for every lesson, so no lesson can depend on state left
+# behind by another (DESIGN.md 2.1, 7.3).
+#
+# `just up` runs `astraeadb serve --config` against this file directly rather
+# than going through astraea-launcher. The launcher generates its own config
+# with only [server] and [storage] sections and never reads this file, so a
+# launcher-managed instance cannot be given a [vector] section. Since the site
+# teaches 768 dimensions, a 128-dim authoring server would reject the first
+# embedding an author tried to insert. Filed as DEV-LAUNCHER-VECTOR in the
+# backlog; until that lands, this project owns its own server lifecycle.
+#
+# Port 7687 is deliberate: it is the same port the lessons print, so an author
+# can run a lesson's snippet verbatim against their authoring server.
+
+[server]
+bind_address = "127.0.0.1"
+port = 7687
+
+[storage]
+data_dir = ".astraea/data"
+wal_dir = ".astraea/wal"
+buffer_pool_size = 1024
+
+# 768 is embeddinggemma's native width (DESIGN.md Q9). Containers get the same
+# section, so authoring and verification agree. Unrelated to the kg-astraea
+# sidecar, which is pinned at 128 for the code knowledge graph.
+[vector]
+dimension = 768
+metric = "cosine"

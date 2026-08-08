@@ -811,6 +811,8 @@ do not control.
 *Also decide:* should the R package's CRAN submission be treated as a
 prerequisite for launch, or as a follow-up?
 
+*ANSWER* Note in the docs that the CRAN submission has been made and is awaiting manual review. Explain how to check to see if the package is available in CRAN, and that if it isn't showing in their mirror, they can install from GitHub
+
 **Q2. Should `astraea-cli` be published to crates.io before the site launches?
 RESOLVED 2026-08-07: yes, and it is far cheaper than this question assumed.**
 Only five crates are on crates.io at 0.3.1 (`astraea-core`, `astraea-graph`,
@@ -866,6 +868,8 @@ amount of work for no benefit. If it must stay private, the three cyber lessons
 need to be scoped down to what the site can ship itself, which is a material
 reduction in the Run tier.
 
+*ANSWER* Keep them private, but borrow liberally from them. It is not necessary to reproduce all of the functionality, but demonstrate the advanced features. Keep a directory of scripts the user might need, but explain that going into detail on each of them is beyond the scope of the document, and they should review the code (which should be heavily commented) to understand it further.
+
 **Q4. How do we handle the two large external datasets?**
 `run-01-fraud-elliptic` needs the Elliptic Bitcoin dataset, which requires
 Kaggle credentials and is 203,769 nodes. The cyber lessons need LANL, whose
@@ -881,6 +885,8 @@ LANL may be redistributed. If the answer is no for either, that lesson becomes
 "here is how to get the data yourself" and its code is verified against a
 synthetic graph of the same shape instead.
 
+*ANSWER* Explain how to get the data for the user. You may verify the code works on the data already existing locally today (the gnn-elliptinc data should be here: /Users/jimharris/Documents/gnn-elliptic-demo)
+
 **Q5. Are Walk and Run Python-only, or do they need R parallel tracks too?**
 CONCEPT.md specifies parallel Python and R tracks for Crawl and is silent about
 the other two tiers. All four Walk and cyber source demos are Python, and
@@ -892,6 +898,8 @@ than a whole parallel lesson. State this on the landing page so an R reader is
 not surprised at the end of Crawl. Building full R versions of twelve lessons
 roughly doubles the writing and the verification cost for material whose source
 demos are all Python.
+
+*ANSWER* Go with your recommendation for now
 
 **Q6. Where does the site live? RESOLVED 2026-08-07: a new public
 `AstraeaDB/getting-started`.**
@@ -981,6 +989,7 @@ of roughly 1,200 words: what problem it solves, how to install it, one worked
 example, and where to read more. Expanding either into a multi-part series is a
 follow-up once the twenty-lesson path is live. Confirm that this is the right
 depth, or say which of the two deserves more.
+
 
 ---
 

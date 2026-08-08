@@ -16,21 +16,36 @@ lessons are reachable from a single `index.html` landing page.
 
 See [`CONCEPT.md`](CONCEPT.md) for the original brief.
 
-## Template
+## Origin
 
-Scaffolded from `templates/rag/` on 2026-08-07. This project shows a
-minimal retrieval-only RAG pipeline over a small corpus. Augment the
-corpus under `corpus/`; tune the chunker in `ingest.py`.
+Scaffolded from `templates/rag/` on 2026-08-07, then restructured by T1 on the
+same day. The rag scaffold was the closest available starting point, not a
+description of the project: `ingest.py`, `query.py`, and `corpus/` were deleted
+and the directory now follows [`DESIGN.md`](DESIGN.md) section 3.1. Nothing of
+the template's retrieval pipeline remains.
 
 ## Getting started
 
 ```bash
-just up                  # launch backing AstraeaDB
-just ingest              # embed corpus/*.md into DocChunk nodes
-just query "your q"      # vector search, prints top-k chunks
-just down                # stop (data persists)
+just build               # render content/ into docs/
+just serve               # preview at http://127.0.0.1:8000
+just verify crawl-py-01  # run one lesson's code blocks in a container
+just verify-all          # run every lesson marked verify = "required"
+just up / just down      # authoring AstraeaDB instance (not used by verify)
 ```
 
-Real graph-RAG (subgraph extraction + LLM completion via `astraea-rag`)
-is planned for Phase 5 when project subagents come online. For now,
-`query.py` does vector-only retrieval.
+See [`README.md`](README.md) for the full layout and the toolchain notes.
+
+## Where things stand
+
+Design v1 is complete: 29 tasks in 6 phases, with the content inventory,
+verification design, and open questions in [`DESIGN.md`](DESIGN.md). Phase 0
+(T1 through T4) builds the toolchain and gates everything after it. No lesson
+content has been ported yet.
+
+Resolved so far: the site lives in a new public `AstraeaDB/getting-started`
+published from `/docs` on `main` (Q6); embeddings are 768-dimensional, not
+truncated to 128 (Q9); Medium is not a publication target (Q7); and
+`astraea-cli` should reach crates.io, filed upstream as AstraeaDB issue #28
+(Q2). Six questions remain open in DESIGN.md section 10, none of which block
+Phase 0.
