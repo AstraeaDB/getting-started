@@ -727,8 +727,10 @@ Each follows the checklist in section 6 and produces a `Note` node plus a
   sampled subset is included; the three acts are confirmed to still run.
   *after:* T4, Q3. **[parallel]**
 - **T14 [tester] Audit `adb-claude-kit`** at `9e6c9bf`. *Accept:* audit note
-  filed; `docs/mcp-tool-coverage.md` reconciled against the 28 tools in
-  `ToolRegistry` (node_id=873); the standalone install path confirmed.
+  filed; `docs/mcp-tool-coverage.md` reconciled against the tools in `ToolRegistry`
+  (node_id=873); the standalone install path confirmed. **Corrected
+  2026-08-08: the registry holds 29 real tools, not 28. The 30th name,
+  `echo`, is defined inside a test in `tools/mod.rs`.**
   *after:* T4. **[parallel]**
 
 ### Phase 3: Walk. Each lesson depends on its audit.
@@ -869,6 +871,24 @@ need to be scoped down to what the site can ship itself, which is a material
 reduction in the Run tier.
 
 *ANSWER* Keep them private, but borrow liberally from them. It is not necessary to reproduce all of the functionality, but demonstrate the advanced features. Keep a directory of scripts the user might need, but explain that going into detail on each of them is beyond the scope of the document, and they should review the code (which should be heavily commented) to understand it further.
+
+**Q4. How do we handle the two large external datasets? PARTLY RESOLVED
+2026-08-08 by the Phase 2 audits: LANL is settled, Elliptic is not.**
+
+*LANL is CC0, public domain* (`cyber-graph-demo/README.md:154`, confirmed in the
+T13 audit, KG Note 2221). A derived sampled subset may be redistributed in the
+site repository with no permission needed, so the cyber lessons can ship data
+and be container-verified. That half of this question is closed.
+
+*The Elliptic licence remains unconfirmed.* The T12 audit (KG Note 2222) found
+no licence statement anywhere in `GNN-test-and-improve`, and the dataset is
+fetched with `kaggle datasets download -d ellipticco/elliptic-data-set`, which
+needs an account and CLI credentials. **This still needs a human decision**
+before `run-01` can ship any derived data. If redistribution is not permitted,
+`run-01` becomes "here is how to get the data yourself" and its code is verified
+against a synthetic graph of the same shape, 165 features included.
+
+The original question and reasoning follow.
 
 **Q4. How do we handle the two large external datasets?**
 `run-01-fraud-elliptic` needs the Elliptic Bitcoin dataset, which requires
