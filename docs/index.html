@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body class="landing">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <h1>Getting Started with AstraeaDB</h1>
+    <p>AstraeaDB is a database that stores your data as a graph, which is a
+network of items and the connections between them, and can also find
+items by meaning rather than by exact keyword. It is written in Rust and
+runs on your own machine.</p>
+<p>By the end of this path you will have built a knowledge graph from
+raw text, searched it by meaning, answered questions against it with a
+language model that can only cite what the graph actually contains, and
+used the same techniques to investigate fraud and intrusion.</p>
+<p>Start at the beginning if graphs are new to you. If you have used a
+graph database before, skim Crawl and start at Walk.</p>
+
+  </section>
+
+  <section class="chooser">
+    <h2>Choose your language</h2>
+    <p>Crawl runs as two parallel tracks. Pick one and the lesson lists below
+      follow you through the site. You can change your mind on any page.</p>
+    <div class="switcher big" role="group" aria-label="Language track">
+      <button type="button" data-set-track="py">Python</button>
+      <button type="button" data-set-track="r">R</button>
+      <button type="button" data-set-track="both">Show me both</button>
+    </div>
+  </section>
+
+  <section class="tier-card" id="crawl"><h2>Crawl</h2><p class="blurb">Get a server running and learn the basics. Pick Python or R and stay in it.</p><p class="outcome"><strong>After this tier:</strong> You can start AstraeaDB, create nodes and edges, run a vector search, and see your graph in a browser.</p><p class="meta">about 2 hours &middot; A terminal, and either Python 3.9+ or R 4.3+.</p><ul class="lesson-list"><li data-track="both"><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a><span class="tag">both</span></li>
+<li data-track="py"><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a><span class="tag">py</span></li>
+<li data-track="r"><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a><span class="tag">r</span></li></ul></section>
+<section class="tier-card" id="walk"><h2>Walk</h2><p class="blurb">Embeddings, semantic search, and GraphRAG over a real corpus.</p><p class="outcome"><strong>After this tier:</strong> You can turn a body of text into a knowledge graph and answer questions against it with an LLM grounded in what the graph actually says.</p><p class="meta">about 4 hours &middot; Crawl, plus Ollama running locally.</p><ul class="lesson-list"><li class="pending">These lessons are still being written.</li></ul></section>
+<section class="tier-card" id="run"><h2>Run</h2><p class="blurb">Investigative work on fraud and cyber graphs, and giving a coding assistant a memory.</p><p class="outcome"><strong>After this tier:</strong> You can build an investigation graph from raw telemetry, hunt across it with embeddings and time travel, and produce a report where every claim traces back to a node.</p><p class="meta">about 6 hours &middot; Walk. One lesson needs Rust.</p><ul class="lesson-list"><li class="pending">These lessons are still being written.</li></ul></section>
+
+  <section class="verifystrip">
+    <p>Verification has not been run yet. <a href="status.html">See the full verification status.</a></p>
+  </section>
+</main>
+
+<footer class="sitefoot">
+  <p>
+    <a href="https://github.com/AstraeaDB/getting-started">Source on GitHub</a> &middot;
+    MIT licensed &middot;
+    <a href="https://github.com/AstraeaDB/getting-started/blob/main/CONTRIBUTING.md">Writing style guide</a>
+  </p>
+  <p class="muted">&copy; 2026 the AstraeaDB authors. Contributions welcome.</p>
+</footer>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

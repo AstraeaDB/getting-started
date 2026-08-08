@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{sitetitle}}</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body class="landing">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="index.html">{{sitetitle}}</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <h1>{{sitetitle}}</h1>
+    {{intro}}
+  </section>
+
+  <section class="chooser">
+    <h2>Choose your language</h2>
+    <p>Crawl runs as two parallel tracks. Pick one and the lesson lists below
+      follow you through the site. You can change your mind on any page.</p>
+    <div class="switcher big" role="group" aria-label="Language track">
+      <button type="button" data-set-track="py">Python</button>
+      <button type="button" data-set-track="r">R</button>
+      <button type="button" data-set-track="both">Show me both</button>
+    </div>
+  </section>
+
+  {{cards}}
+
+  <section class="verifystrip">
+    <p>{{strip}} <a href="status.html">See the full verification status.</a></p>
+  </section>
+</main>
+
+<footer class="sitefoot">
+  <p>
+    <a href="{{repo}}">Source on GitHub</a> &middot;
+    {{license}} licensed &middot;
+    <a href="{{styleguide}}">Writing style guide</a>
+  </p>
+  <p class="muted">&copy; {{year}} the AstraeaDB authors. Contributions welcome.</p>
+</footer>
+
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,268 @@
+# THE manifest. A lesson that is not here does not exist; a lesson here with no
+# content file fails the build. That invariant is what makes "every lesson is
+# reachable from the landing page" structurally true (DESIGN.md 3.5).
+#
+# Fields
+#   id       stable slug. Also the samples/ and verify/ key. Never reuse.
+#   title    page <title> and sidebar text.
+#   tier     crawl | walk | run
+#   track    py | r | rust | both
+#   order    sort key within the tier. Gaps are fine and leave room to insert.
+#   file     path under content/, relative. Must exist or the build fails.
+#   sibling  id of the same lesson in the other track, if there is one. Drives
+#            the header track switcher (DESIGN.md 3.3). Must be symmetric.
+#   verify   required | manual | none
+#   source   provenance, for the audit trail. Not rendered.
+
+[site]
+title = "Getting Started with AstraeaDB"
+base_url = "https://astraeadb.github.io/getting-started/"
+repo = "https://github.com/AstraeaDB/getting-started"
+license = "MIT"
+style_guide = "https://github.com/AstraeaDB/getting-started/blob/main/CONTRIBUTING.md"
+
+[[tier]]
+name = "crawl"
+title = "Crawl"
+blurb = "Get a server running and learn the basics. Pick Python or R and stay in it."
+outcome = "You can start AstraeaDB, create nodes and edges, run a vector search, and see your graph in a browser."
+time = "about 2 hours"
+prereqs = "A terminal, and either Python 3.9+ or R 4.3+."
+
+[[tier]]
+name = "walk"
+title = "Walk"
+blurb = "Embeddings, semantic search, and GraphRAG over a real corpus."
+outcome = "You can turn a body of text into a knowledge graph and answer questions against it with an LLM grounded in what the graph actually says."
+time = "about 4 hours"
+prereqs = "Crawl, plus Ollama running locally."
+
+[[tier]]
+name = "run"
+title = "Run"
+blurb = "Investigative work on fraud and cyber graphs, and giving a coding assistant a memory."
+outcome = "You can build an investigation graph from raw telemetry, hunt across it with embeddings and time travel, and produce a report where every claim traces back to a node."
+time = "about 6 hours"
+prereqs = "Walk. One lesson needs Rust."
+
+# ---------------------------------------------------------------- Crawl (8)
+
+# PLANNED lessons are commented out below. A lesson in this manifest with no
+# content file is a hard build failure, which is what guarantees every listed
+# lesson is reachable. Uncomment each entry as its content lands. The full
+# 20-lesson inventory lives in DESIGN.md section 4.
+
+[[lesson]]
+id = "crawl-00-intro"
+title = "Why Graphs, and Why Now: An Introduction to AstraeaDB"
+tier = "crawl"
+track = "both"
+order = 0
+file = "crawl/00-introduction.md"
+verify = "none"
+source = "blogs/00-introduction.md"
+
+[[lesson]]
+id = "crawl-py-01"
+title = "Getting Started with AstraeaDB in Python"
+tier = "crawl"
+track = "py"
+order = 10
+file = "crawl/py-01-getting-started.md"
+sibling = "crawl-r-01"
+verify = "required"
+source = "blogs/py-01-getting-started.md"
+
+[[lesson]]
+id = "crawl-r-01"
+title = "Getting Started with AstraeaDB in R"
+tier = "crawl"
+track = "r"
+order = 10
+file = "crawl/r-01-getting-started.md"
+sibling = "crawl-py-01"
+verify = "required"
+source = "blogs/r-01-getting-started.md"
+
+# [[lesson]]
+# id = "crawl-py-02"
+# title = "Vector and Hybrid Search with AstraeaDB in Python"
+# tier = "crawl"
+# track = "py"
+# order = 20
+# file = "crawl/py-02-vector-search.md"
+# sibling = "crawl-r-02"
+# verify = "required"
+# source = "blogs/py-02-vector-search.md"
+
+# [[lesson]]
+# id = "crawl-r-02"
+# title = "Vector and Hybrid Search with AstraeaDB in R"
+# tier = "crawl"
+# track = "r"
+# order = 20
+# file = "crawl/r-02-vector-search.md"
+# sibling = "crawl-py-02"
+# verify = "required"
+# source = "blogs/r-02-vector-search.md"
+
+# [[lesson]]
+# id = "crawl-py-03"
+# title = "Graph Algorithms, Time-Travel, and GraphRAG in Python"
+# tier = "crawl"
+# track = "py"
+# order = 30
+# file = "crawl/py-03-algorithms-graphrag.md"
+# sibling = "crawl-r-03"
+# verify = "required"
+# source = "blogs/py-03-algorithms-graphrag.md"
+
+# [[lesson]]
+# id = "crawl-r-03"
+# title = "Graph Algorithms, Time-Travel, and GraphRAG in R"
+# tier = "crawl"
+# track = "r"
+# order = 30
+# file = "crawl/r-03-algorithms-graphrag.md"
+# sibling = "crawl-py-03"
+# verify = "required"
+# source = "blogs/r-03-algorithms-graphrag.md"
+
+# [[lesson]]
+# id = "crawl-08-ui"
+# title = "See Your Graph: Visual Exploration with the Astraea UI"
+# tier = "crawl"
+# track = "both"
+# order = 40
+# file = "crawl/08-ui-explore-your-graph.md"
+# # Drives a browser, so it cannot run in a container. Human checklist instead
+# # (DESIGN.md 7.4); status.html shows it as manually verified with a date.
+# verify = "manual"
+# source = "blogs/ui-explore-your-graph.md"
+#
+# # ----------------------------------------------------------------- Walk (7)
+
+# [[lesson]]
+# id = "walk-01-embeddings"
+# title = "What an Embedding Is, and How to Make One"
+# tier = "walk"
+# track = "py"
+# order = 10
+# file = "walk/01-embeddings.md"
+# verify = "required"
+# source = "astraeadb-embeddings-demo (private), tools/embeddings/embed.py"
+
+# [[lesson]]
+# id = "walk-02-semantic-search"
+# title = "Searching a Graph by Meaning, Not by Keyword"
+# tier = "walk"
+# track = "py"
+# order = 20
+# file = "walk/02-semantic-search.md"
+# verify = "required"
+# source = "astraeadb-embeddings-demo (private)"
+
+# [[lesson]]
+# id = "walk-03-text-to-graph"
+# title = "Turning a Book Into a Knowledge Graph"
+# tier = "walk"
+# track = "py"
+# order = 30
+# file = "walk/03-text-to-graph.md"
+# verify = "required"
+# source = "astraea-graphrag-demo"
+
+# [[lesson]]
+# id = "walk-04-graphrag"
+# title = "GraphRAG End to End: Retrieve, Extract, Linearize, Answer"
+# tier = "walk"
+# track = "py"
+# order = 40
+# file = "walk/04-graphrag.md"
+# verify = "required"
+# source = "astraea-graphrag-demo"
+
+# [[lesson]]
+# id = "walk-05-data-lake"
+# title = "A Metadata Graph Over a Messy Data Lake"
+# tier = "walk"
+# track = "py"
+# order = 50
+# file = "walk/05-data-lake.md"
+# verify = "required"
+# source = "data_lake_demo"
+
+# [[lesson]]
+# id = "walk-06-eunomia"
+# title = "Eunomia: A Semantic Cache in Front of Your Graph"
+# tier = "walk"
+# track = "py"
+# order = 60
+# file = "walk/06-eunomia.md"
+# verify = "required"
+# source = "AstraeaDB/eunomia, data_lake_demo/EUNOMIA_INTEGRATION.md"
+
+# [[lesson]]
+# id = "walk-07-a-llama"
+# title = "a-llama: A Local LLM Server That Remembers"
+# tier = "walk"
+# track = "py"
+# order = 70
+# file = "walk/07-a-llama.md"
+# verify = "required"
+# source = "AstraeaDB/a-llama"
+#
+# # ------------------------------------------------------------------ Run (5)
+
+# [[lesson]]
+# id = "run-01-fraud-elliptic"
+# title = "Finding Fraud: Classifying Bitcoin Transactions with an In-Database GNN"
+# tier = "run"
+# track = "rust"
+# order = 10
+# file = "run/01-fraud-elliptic.md"
+# # Rust because astraea-gnn has no wire protocol: the 33-variant Request enum
+# # has no GNN command, so this cannot be driven from any client (DESIGN.md 5.1).
+# verify = "required"
+# source = "GNN-test-and-improve"
+
+# [[lesson]]
+# id = "run-02-cyber-build"
+# title = "Building a Network Graph From Security Telemetry"
+# tier = "run"
+# track = "py"
+# order = 20
+# file = "run/02-cyber-build.md"
+# verify = "required"
+# source = "cyber-graph-demo (private) Act 1"
+
+# [[lesson]]
+# id = "run-03-cyber-hunt"
+# title = "Hunting Lateral Movement With Embeddings and Time Travel"
+# tier = "run"
+# track = "py"
+# order = 30
+# file = "run/03-cyber-hunt.md"
+# verify = "required"
+# source = "cyber-graph-demo (private) Act 2"
+
+# [[lesson]]
+# id = "run-04-cyber-report"
+# title = "Explaining an Investigation: GraphRAG for Audit-Grade Reports"
+# tier = "run"
+# track = "py"
+# order = 40
+# file = "run/04-cyber-report.md"
+# verify = "required"
+# source = "cyber-graph-demo (private) Act 3"
+
+# [[lesson]]
+# id = "run-05-ai-assisted-dev"
+# title = "Giving Your Coding Assistant a Memory"
+# tier = "run"
+# track = "py"
+# order = 50
+# file = "run/05-ai-assisted-dev.md"
+# verify = "required"
+# source = "adb-claude-kit"
+

@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>$pagetitle$ &middot; $sitetitle$</title>
+<link rel="stylesheet" href="$root$assets/site.css">
+$if(siblinghref)$
+<link rel="alternate" data-track="$siblingtrack$" href="$siblinghref$">
+$endif$
+</head>
+<body data-tier="$tier$" data-track="$track$" data-lesson="$lessonid$">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="$root$index.html">$sitetitle$</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  $sidebar$
+
+  <main id="main">
+    <h1>$pagetitle$</h1>
+
+    $if(toc)$
+    <details class="toc" open>
+      <summary>On this page</summary>
+      $toc$
+    </details>
+    $endif$
+
+    $body$
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+      $if(prevhref)$
+      <a class="prev" href="$prevhref$"><span>Previous</span>$prevtitle$</a>
+      $endif$
+      $if(nexthref)$
+      <a class="next" href="$nexthref$"><span>Next</span>$nexttitle$</a>
+      $endif$
+    </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge $badgeclass$">$badge$</p>
+  <p>
+    <a href="$root$status.html">Verification status</a> &middot;
+    <a href="$repo$">Source</a>
+  </p>
+</footer>
+
+<script src="$root$assets/site.js"></script>
+</body>
+</html>

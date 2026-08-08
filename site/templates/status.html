@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verification status &middot; {{sitetitle}}</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body class="statuspage">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="index.html">{{sitetitle}}</a>
+</header>
+
+<main id="main">
+  <h1>Verification status</h1>
+
+  <p>Every lesson marked <strong>green</strong> had all of its code blocks
+    executed inside a fresh container, against a real AstraeaDB server, on the
+    date shown. A lesson is green only when every block exits zero, every
+    expected output matches after normalization, every skipped block gives a
+    reason, and nothing wrote an error to stderr.</p>
+
+  <p>Anything not green is listed honestly below, including why a block was
+    skipped. The point of this page is that you can tell which parts of the
+    site are machine-checked and which are not.</p>
+
+  <table class="statustable">
+    <thead>
+      <tr><th>Lesson</th><th>Tier</th><th>Track</th><th>State</th><th>Detail</th></tr>
+    </thead>
+    <tbody>
+      {{rows}}
+    </tbody>
+  </table>
+
+  <p class="muted">Generated {{generated}}.</p>
+</main>
+
+<footer class="sitefoot">
+  <p><a href="index.html">Back to the lessons</a></p>
+</footer>
+
+</body>
+</html>

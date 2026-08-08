@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Getting Started with AstraeaDB in Python &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="alternate" data-track="r" href="../crawl/r-01-getting-started.html">
+</head>
+<body data-tier="crawl" data-track="py" data-lesson="crawl-py-01">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class="current"><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Getting Started with AstraeaDB in Python</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#what-astraeadb-actually-is"
+      id="toc-what-astraeadb-actually-is">What AstraeaDB actually
+      is</a></li>
+      <li><a href="#setting-up-the-server"
+      id="toc-setting-up-the-server">Setting up the server</a></li>
+      <li><a href="#installing-the-python-client"
+      id="toc-installing-the-python-client">Installing the Python
+      client</a></li>
+      <li><a href="#connecting" id="toc-connecting">Connecting</a></li>
+      <li><a href="#building-a-movie-knowledge-graph"
+      id="toc-building-a-movie-knowledge-graph">Building a movie
+      knowledge graph</a></li>
+      <li><a href="#reading-it-back" id="toc-reading-it-back">Reading it
+      back</a></li>
+      <li><a href="#walking-the-graph"
+      id="toc-walking-the-graph">Walking the graph</a></li>
+      <li><a href="#asking-questions-with-a-query-language"
+      id="toc-asking-questions-with-a-query-language">Asking questions
+      with a query language</a></li>
+      <li><a href="#taking-stock" id="toc-taking-stock">Taking
+      stock</a></li>
+      <li><a href="#whats-next" id="toc-whats-next">What's next</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Set up a graph database written in Rust, connect to it from
+    Python, and build your first knowledge graph in one
+    session.</em></p>
+    <p>Many databases force a trade-off. Some are good at storing the
+    relationships between things, while others are good at finding items
+    by meaning rather than by exact keywords. AstraeaDB, written in the
+    Rust programming language, does both at once. It stores your data as
+    a graph, which is a network of items and the connections between
+    them, and it can also attach a list of numbers, called an embedding,
+    to any item so it can find items with a similar meaning. This design
+    is called a Vector-Property Graph: every item and connection can
+    hold ordinary details, such as a name or a year, and can also carry
+    one of those number lists for similarity search. In this post you
+    will install the server, connect from Python, and build a small
+    movie knowledge graph you can query. Embeddings come in the second
+    post, so here the focus is on the graph basics.</p>
+    <h2 id="what-astraeadb-actually-is">What AstraeaDB actually is</h2>
+    <p>You can picture AstraeaDB as a labeled graph. The items in it are
+    called nodes, and the connections between them are called edges. A
+    node usually stands for a thing, such as a movie or a person, and an
+    edge stands for a relationship, such as one person acting in one
+    movie. Each node carries one or more labels, which are just category
+    names like <code>Movie</code> or <code>Person</code>. Nodes and
+    edges can also hold properties, the named details you choose: a
+    <code>Movie</code> node might have a title and a year, while an
+    <code>ACTED_IN</code> edge connects a <code>Person</code> node to a
+    <code>Movie</code> node. Every node and edge is given a whole number
+    called an ID, which you use to refer to it later. Nodes can also
+    carry an embedding for similarity search, but that feature waits for
+    the second post.</p>
+    <h2 id="setting-up-the-server">Setting up the server</h2>
+    <p>The Python client is a small library that sends your requests to
+    a running AstraeaDB server. The server is the database program
+    running in the background, and the client is the code in your
+    program that talks to it. On your own computer they communicate at
+    the address <code>127.0.0.1:7687</code>, where
+    <code>127.0.0.1</code> means this machine and <code>7687</code> is
+    the port, a numbered channel the server listens on. The first step
+    is to get the server running. Because AstraeaDB is written in Rust,
+    you need Rust's build tools, which you can get from <a
+    href="https://rustup.rs">rustup.rs</a> if you do not already have
+    them. Building the server also relies on Protocol Buffers, a data
+    format from Google, so on a fresh Linux machine you first need a few
+    system packages. On Debian or Ubuntu, one command installs all of
+    them:</p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install <span class="at">-y</span> protobuf-compiler libprotobuf-dev pkg-config libssl-dev build-essential</span></code></pre></div>
+    <p>On macOS with <a href="https://brew.sh">Homebrew</a>, the
+    equivalent is <code>brew install protobuf</code>. With those in
+    place, you can install the command-line program using
+    <code>cargo</code>, which is Rust's package and build tool:</p>
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Installs the `astraeadb` binary (compiles from source; takes a few minutes)</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> install <span class="at">--git</span> https://github.com/AstraeaDB/AstraeaDB-Official.git astraea-cli</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Start the server (JSON/TCP on 127.0.0.1:7687, data persisted to disk)</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">astraeadb</span> serve</span></code></pre></div>
+    <p>Leave <code>astraeadb serve</code> running in this terminal
+    window, and open a second window for your Python work. A few other
+    commands are worth knowing:</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">astraeadb</span> status              <span class="co"># quick health check</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="ex">astraeadb</span> shell               <span class="co"># interactive REPL</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="ex">astraeadb</span> serve <span class="at">--port</span> 7700   <span class="co"># run on a different port</span></span></code></pre></div>
+    <h2 id="installing-the-python-client">Installing the Python
+    client</h2>
+    <p>In your second terminal window, install the client from PyPI, the
+    Python Package Index, which is the standard online catalog of Python
+    libraries:</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install astraeadb</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="co"># or, to add pandas + Arrow Flight support:</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="ex">pip</span> install <span class="st">&quot;astraeadb[all]&quot;</span></span></code></pre></div>
+    <p>The base package installs quickly because it does not rely on any
+    large extra libraries. The optional extras shown above add
+    data-science conveniences that later posts use, so you can skip them
+    for now.</p>
+    <h2 id="connecting">Connecting</h2>
+    <p>The simplest way to connect uses Python's <code>with</code>
+    statement. When you open a <code>with</code> block,
+    <code>AstraeaClient</code> connects to the server automatically, and
+    when the block ends, it closes the connection for you, so you never
+    leave one open by accident:</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>) <span class="im">as</span> client:</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(client.graph_stats())   <span class="co"># a quick &quot;are we talking?&quot; check</span></span></code></pre></div>
+    <p>If that call prints a dictionary of statistics rather than a
+    connection error, everything is working. A dictionary is Python's
+    name for a collection of key-and-value pairs.
+    <code>AstraeaClient</code> automatically chooses the best way to
+    send data to the server. Two more specific clients exist if you ever
+    need them: <code>JsonClient</code>, which uses a plain text format,
+    and <code>ArrowClient</code>, which uses a faster format for large
+    tables and needs the <code>pyarrow</code> library. For this
+    tutorial, the default <code>AstraeaClient</code> is the right
+    choice.</p>
+    <h2 id="building-a-movie-knowledge-graph">Building a movie knowledge
+    graph</h2>
+    <p>Now you will fill a small graph with a few movies, the people who
+    made them, and their genres. The graph uses three kinds of nodes,
+    labeled <code>Movie</code>, <code>Person</code>, and
+    <code>Genre</code>, joined by three kinds of edges:
+    <code>ACTED_IN</code>, <code>DIRECTED</code>, and
+    <code>IN_GENRE</code>.</p>
+    <p>The <code>create_node(labels, properties)</code> method returns
+    the new node's ID as a whole number. The code below stores those IDs
+    in dictionaries so it can connect edges by looking up nodes by
+    name:</p>
+    <div class="sourceCode" id="cb6"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>) <span class="im">as</span> client:</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- People (actors and directors) ---</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    people <span class="op">=</span> {}</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> name <span class="kw">in</span> [<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;Laurence Fishburne&quot;</span>,</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>                 <span class="st">&quot;Sandra Bullock&quot;</span>, <span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;Chad Stahelski&quot;</span>]:</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>        people[name] <span class="op">=</span> client.create_node([<span class="st">&quot;Person&quot;</span>], {<span class="st">&quot;name&quot;</span>: name})</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- Movies ---</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>    movies <span class="op">=</span> {}</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> title, year, plot <span class="kw">in</span> [</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;The Matrix&quot;</span>,          <span class="dv">1999</span>, <span class="st">&quot;A hacker discovers reality is a simulation.&quot;</span>),</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="dv">2003</span>, <span class="st">&quot;Neo fights on to free humankind.&quot;</span>),</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;John Wick&quot;</span>,           <span class="dv">2014</span>, <span class="st">&quot;A retired hitman comes back for revenge.&quot;</span>),</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Speed&quot;</span>,               <span class="dv">1994</span>, <span class="st">&quot;A bus wired to explode if it slows down.&quot;</span>),</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    ]:</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>        movies[title] <span class="op">=</span> client.create_node(</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>            [<span class="st">&quot;Movie&quot;</span>], {<span class="st">&quot;title&quot;</span>: title, <span class="st">&quot;year&quot;</span>: year, <span class="st">&quot;plot&quot;</span>: plot})</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- Genres ---</span></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    genres <span class="op">=</span> {}</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> name <span class="kw">in</span> [<span class="st">&quot;Science Fiction&quot;</span>, <span class="st">&quot;Action&quot;</span>]:</span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>        genres[name] <span class="op">=</span> client.create_node([<span class="st">&quot;Genre&quot;</span>], {<span class="st">&quot;name&quot;</span>: name})</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># --- Edges: source, target, type ---</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> actor, film <span class="kw">in</span> [</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;John Wick&quot;</span>),  (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;Speed&quot;</span>),</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Carrie-Anne Moss&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Laurence Fishburne&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Laurence Fishburne&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Sandra Bullock&quot;</span>, <span class="st">&quot;Speed&quot;</span>),</span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a>    ]:</span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a>        client.create_edge(people[actor], movies[film], <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> director, film <span class="kw">in</span> [</span>
+<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Lana Wachowski&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
+<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;Chad Stahelski&quot;</span>, <span class="st">&quot;John Wick&quot;</span>),</span>
+<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>    ]:</span>
+<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a>        client.create_edge(people[director], movies[film], <span class="st">&quot;DIRECTED&quot;</span>)</span>
+<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> film, genre <span class="kw">in</span> [</span>
+<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;The Matrix&quot;</span>, <span class="st">&quot;Science Fiction&quot;</span>), (<span class="st">&quot;The Matrix&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
+<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="st">&quot;Science Fiction&quot;</span>), (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
+<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a>        (<span class="st">&quot;John Wick&quot;</span>, <span class="st">&quot;Action&quot;</span>), (<span class="st">&quot;Speed&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
+<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a>    ]:</span>
+<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a>        client.create_edge(movies[film], genres[genre], <span class="st">&quot;IN_GENRE&quot;</span>)</span></code></pre></div>
+    <p>That code creates twelve nodes and eighteen edges, small enough
+    to follow by hand. Edges have a direction: an <code>ACTED_IN</code>
+    edge points from a person to a movie, and that direction matters
+    when you read the graph back.</p>
+    <h2 id="reading-it-back">Reading it back</h2>
+    <p>The remaining examples assume you are still inside that same
+    <code>with</code> block. Start by reading a single node. The
+    <code>get_node(id)</code> method returns a dictionary containing the
+    node's <code>labels</code> and <code>properties</code>:</p>
+    <div class="sourceCode" id="cb7"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>matrix <span class="op">=</span> movies[<span class="st">&quot;The Matrix&quot;</span>]</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(client.get_node(matrix))</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="co"># {&#39;id&#39;: 7, &#39;labels&#39;: [&#39;Movie&#39;],</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co">#  &#39;properties&#39;: {&#39;title&#39;: &#39;The Matrix&#39;, &#39;year&#39;: 1999, &#39;plot&#39;: &#39;...&#39;}}</span></span></code></pre></div>
+    <p>To move from one node to the nodes connected to it, use the
+    <code>neighbors(id, direction, edge_type)</code> method. Because
+    <code>ACTED_IN</code> edges point into the movie, you find the cast
+    by asking for the incoming neighbors, the nodes whose edges point
+    toward this one. Each result is a dictionary of the form
+    <code>{node_id, edge_id}</code>:</p>
+    <div class="sourceCode" id="cb8"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> n <span class="kw">in</span> client.neighbors(matrix, direction<span class="op">=</span><span class="st">&quot;incoming&quot;</span>, edge_type<span class="op">=</span><span class="st">&quot;ACTED_IN&quot;</span>):</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>    person <span class="op">=</span> client.get_node(n[<span class="st">&quot;node_id&quot;</span>])</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(person[<span class="st">&quot;properties&quot;</span>][<span class="st">&quot;name&quot;</span>])</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Keanu Reeves / Carrie-Anne Moss / Laurence Fishburne</span></span></code></pre></div>
+    <p>To collect every node of one kind, the <code>find_by_label</code>
+    method returns a simple list of IDs:</p>
+    <div class="sourceCode" id="cb9"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(client.find_by_label(<span class="st">&quot;Movie&quot;</span>))   <span class="co"># [7, 8, 9, 10]</span></span></code></pre></div>
+    <h2 id="walking-the-graph">Walking the graph</h2>
+    <p>Reading one connection at a time is useful, but the real strength
+    of a graph database is following many connections in a row, which is
+    called traversal. The <code>bfs(start, max_depth)</code> method
+    performs a breadth-first search, abbreviated BFS. It explores the
+    graph one level at a time: first every node one step from the start,
+    then every node two steps away, and so on. It returns dictionaries
+    of the form <code>{node_id, depth}</code>, where <code>depth</code>
+    is how many steps a node sits from the start:</p>
+    <div class="sourceCode" id="cb10"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>keanu <span class="op">=</span> people[<span class="st">&quot;Keanu Reeves&quot;</span>]</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> hop <span class="kw">in</span> client.bfs(keanu, max_depth<span class="op">=</span><span class="dv">2</span>):</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    props <span class="op">=</span> client.get_node(hop[<span class="st">&quot;node_id&quot;</span>])[<span class="st">&quot;properties&quot;</span>]</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(hop[<span class="st">&quot;depth&quot;</span>], props)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># depth 1: the movies Keanu is in; depth 2: their genres and co-stars</span></span></code></pre></div>
+    <p>The <code>dfs(start, max_depth)</code> method does a similar walk
+    using depth-first search, abbreviated DFS. Instead of fanning out
+    level by level, it follows one path as far as it can before backing
+    up to try another, and it returns the node IDs in the order it
+    visited them:</p>
+    <div class="sourceCode" id="cb11"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(client.dfs(keanu, max_depth<span class="op">=</span><span class="dv">2</span>))   <span class="co"># [11, 7, 1, ...]</span></span></code></pre></div>
+    <p>When you want the link between two specific nodes, the
+    <code>shortest_path</code> method finds the fewest steps between
+    them. For example, you might ask how Keanu Reeves connects to the
+    Science Fiction genre. The answer runs through one of his
+    movies:</p>
+    <div class="sourceCode" id="cb12"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>path <span class="op">=</span> client.shortest_path(keanu, genres[<span class="st">&quot;Science Fiction&quot;</span>])</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(path)   <span class="co"># {&#39;path&#39;: [11, 7, 5], &#39;length&#39;: 2}</span></span></code></pre></div>
+    <p>The <code>path</code> value is a list of node IDs, and
+    <code>length</code> is the number of steps. Here there are two
+    steps: from Keanu Reeves to one of his movies, and from that movie
+    to Science Fiction.</p>
+    <h2 id="asking-questions-with-a-query-language">Asking questions
+    with a query language</h2>
+    <p>For questions you make up as you go, AstraeaDB understands a
+    graph query language, abbreviated GQL. A query language lets you
+    describe the pattern of data you want and have the database find
+    every match, rather than writing step-by-step method calls.
+    AstraeaDB's version reads much like Cypher, a popular query language
+    used by other graph databases. The <code>query()</code> method
+    returns a dictionary with <code>columns</code> and
+    <code>rows</code>, which fits neatly into a table:</p>
+    <div class="sourceCode" id="cb13"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> client.query(</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;MATCH (p:Person)-[:ACTED_IN]-&gt;(m:Movie) &quot;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;RETURN p.name, m.title, m.year&quot;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">&quot;columns&quot;</span>])       <span class="co"># [&#39;p.name&#39;, &#39;m.title&#39;, &#39;m.year&#39;]</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> row <span class="kw">in</span> result[<span class="st">&quot;rows&quot;</span>]:</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(row)                 <span class="co"># [&#39;Keanu Reeves&#39;, &#39;The Matrix&#39;, 1999], ...</span></span></code></pre></div>
+    <p>This is the same graph you built earlier, now described as a
+    query instead of a series of method calls. Use whichever approach
+    suits your task.</p>
+    <h2 id="taking-stock">Taking stock</h2>
+    <p>Finally, the <code>graph_stats()</code> method gives an overview
+    of the whole graph, including total counts and a breakdown by
+    label:</p>
+    <div class="sourceCode" id="cb14"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(client.graph_stats())</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="co"># {&#39;total_nodes&#39;: 12, &#39;total_edges&#39;: 18, &#39;labels&#39;: {...}, ...}</span></span></code></pre></div>
+    <p>That is twelve nodes and eighteen edges, exactly what you
+    inserted.</p>
+    <h2 id="whats-next">What's next</h2>
+    <p>You now have a running AstraeaDB server, a working Python
+    connection, and a small but complete knowledge graph that you can
+    create, read, walk through, and query. That covers the graph half of
+    a graph and vector database.</p>
+    <p>The other half is where the database puts those embeddings to
+    work. In the next post, <strong><a
+    href="./py-02-vector-search.md">Vector and Hybrid Search with
+    AstraeaDB in Python</a></strong>, you will attach an embedding to
+    each movie's plot and use <code>vector_search</code> to find films
+    whose descriptions are closest in meaning to a phrase you provide.
+    You will then combine two signals, how close nodes are in the graph
+    and how similar their embeddings are, using
+    <code>hybrid_search</code>, to build a simple recommendation engine.
+    Keep your server running, and the next post will continue from this
+    same graph.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../crawl/00-introduction.html"><span>Previous</span>Why Graphs, and Why Now: An Introduction to AstraeaDB</a>
+                </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge unverified">Not yet verified</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

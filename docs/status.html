@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verification status &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body class="statuspage">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="index.html">Getting Started with AstraeaDB</a>
+</header>
+
+<main id="main">
+  <h1>Verification status</h1>
+
+  <p>Every lesson marked <strong>green</strong> had all of its code blocks
+    executed inside a fresh container, against a real AstraeaDB server, on the
+    date shown. A lesson is green only when every block exits zero, every
+    expected output matches after normalization, every skipped block gives a
+    reason, and nothing wrote an error to stderr.</p>
+
+  <p>Anything not green is listed honestly below, including why a block was
+    skipped. The point of this page is that you can tell which parts of the
+    site are machine-checked and which are not.</p>
+
+  <table class="statustable">
+    <thead>
+      <tr><th>Lesson</th><th>Tier</th><th>Track</th><th>State</th><th>Detail</th></tr>
+    </thead>
+    <tbody>
+      <tr class="unverified"><td><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></td><td>crawl</td><td>both</td><td class="state">not checked</td><td>Prose only, no code blocks.</td></tr>
+<tr class="unverified"><td><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></td><td>crawl</td><td>py</td><td class="state">not run</td><td>No record in verify/report.json.</td></tr>
+<tr class="unverified"><td><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></td><td>crawl</td><td>r</td><td class="state">not run</td><td>No record in verify/report.json.</td></tr>
+    </tbody>
+  </table>
+
+  <p class="muted">Generated 2026-08-08 02:43 UTC.</p>
+</main>
+
+<footer class="sitefoot">
+  <p><a href="index.html">Back to the lessons</a></p>
+</footer>
+
+</body>
+</html>
