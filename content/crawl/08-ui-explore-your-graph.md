@@ -36,7 +36,7 @@ Open `http://localhost:3100` and you will see a login screen. If your server has
 
 ## Run a query that draws a graph
 
-The Query Console runs GQL, the graph query language you met in the earlier posts. One habit is worth learning here. To get a picture back rather than a table, return whole nodes and the relationships between them, not individual properties. Returning `p.name` gives you text in a table, while returning `p` hands the dashboard a full node it can draw. Try Keanu Reeves and his co-stars:
+The Query Console runs [GQL](../glossary.html#graph-query-language-gql), the graph query language you met in the earlier posts. One habit is worth learning here. To get a picture back rather than a table, return whole nodes and the relationships between them, not individual properties. Returning `p.name` gives you text in a table, while returning `p` hands the dashboard a full node it can draw. Try Keanu Reeves and his co-stars:
 
 ```
 MATCH (keanu:Person {name: 'Keanu Reeves'})-[r1:ACTED_IN]->(m:Movie)<-[r2:ACTED_IN]-(costar:Person)
@@ -57,7 +57,7 @@ The Graph Algorithms panel runs a calculation on the server and shows the result
 
 - PageRank scores each node by how much it is pointed to by other important nodes, and how important those nodes are in turn. It is the idea that once ranked web pages. In a movie graph, prolific actors and widely shared genres score high, and the dashboard draws those nodes larger.
 - Louvain community detection groups nodes that connect to each other far more than they connect to the rest of the graph. On a movie graph those groups tend to line up with franchises and genres, and the dashboard gives each group its own color.
-- Shortest path highlights the fewest steps between two nodes you choose. Picking two actors from different franchises makes a good test, because the highlighted route shows how the whole graph is connected through the films they share.
+- [Shortest path](../glossary.html#shortest-path) highlights the fewest steps between two nodes you choose. Picking two actors from different franchises makes a good test, because the highlighted route shows how the whole graph is connected through the films they share.
 
 ## Save a picture
 

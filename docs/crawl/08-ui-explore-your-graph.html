@@ -132,13 +132,14 @@
     Admin.</p>
     <h2 id="run-a-query-that-draws-a-graph">Run a query that draws a
     graph</h2>
-    <p>The Query Console runs GQL, the graph query language you met in
-    the earlier posts. One habit is worth learning here. To get a
-    picture back rather than a table, return whole nodes and the
-    relationships between them, not individual properties. Returning
-    <code>p.name</code> gives you text in a table, while returning
-    <code>p</code> hands the dashboard a full node it can draw. Try
-    Keanu Reeves and his co-stars:</p>
+    <p>The Query Console runs <a
+    href="../glossary.html#graph-query-language-gql">GQL</a>, the graph
+    query language you met in the earlier posts. One habit is worth
+    learning here. To get a picture back rather than a table, return
+    whole nodes and the relationships between them, not individual
+    properties. Returning <code>p.name</code> gives you text in a table,
+    while returning <code>p</code> hands the dashboard a full node it
+    can draw. Try Keanu Reeves and his co-stars:</p>
     <pre><code>MATCH (keanu:Person {name: &#39;Keanu Reeves&#39;})-[r1:ACTED_IN]-&gt;(m:Movie)&lt;-[r2:ACTED_IN]-(costar:Person)
 RETURN keanu, r1, m, r2, costar</code></pre>
     <p>This reads as a sentence: find Keanu, follow his
@@ -180,10 +181,11 @@ RETURN keanu, r1, m, r2, costar</code></pre>
     other far more than they connect to the rest of the graph. On a
     movie graph those groups tend to line up with franchises and genres,
     and the dashboard gives each group its own color.</li>
-    <li>Shortest path highlights the fewest steps between two nodes you
-    choose. Picking two actors from different franchises makes a good
-    test, because the highlighted route shows how the whole graph is
-    connected through the films they share.</li>
+    <li><a href="../glossary.html#shortest-path">Shortest path</a>
+    highlights the fewest steps between two nodes you choose. Picking
+    two actors from different franchises makes a good test, because the
+    highlighted route shows how the whole graph is connected through the
+    films they share.</li>
     </ul>
     <h2 id="save-a-picture">Save a picture</h2>
     <p>When a view looks the way you want, the Export button saves the

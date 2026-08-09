@@ -253,15 +253,18 @@
     <div class="sourceCode" id="cb9"><pre
     class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">find_by_label</span>(<span class="st">&quot;Movie&quot;</span>)   <span class="co"># the five Movie IDs</span></span></code></pre></div>
     <h2 id="first-traversals">First traversals</h2>
-    <p>A neighbor is one step away. A traversal goes further by
-    following a chain of edges across the graph. Breadth-first search,
-    available as <code>bfs</code>, fans out one level at a time and
-    reports each node it can reach along with that node's depth, meaning
-    how many steps away it is. Depth-first search, available as
-    <code>dfs</code>, instead follows each branch as far as it goes
-    before backing up, and it returns node IDs. Starting from Keanu with
-    a depth limit of 2, breadth-first search reaches his movies at depth
-    1 and their genres at depth 2.</p>
+    <p>A neighbor is one step away. A <a
+    href="../glossary.html#traversal">traversal</a> goes further by
+    following a chain of edges across the graph. <a
+    href="../glossary.html#breadth-first-search-bfs">Breadth-first
+    search</a>, available as <code>bfs</code>, fans out one level at a
+    time and reports each node it can reach along with that node's
+    depth, meaning how many steps away it is. <a
+    href="../glossary.html#depth-first-search-dfs">Depth-first
+    search</a>, available as <code>dfs</code>, instead follows each
+    branch as far as it goes before backing up, and it returns node IDs.
+    Starting from Keanu with a depth limit of 2, breadth-first search
+    reaches his movies at depth 1 and their genres at depth 2.</p>
     <div class="sourceCode" id="cb10"><pre
     class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">bfs</span>(keanu, <span class="at">max_depth =</span> <span class="dv">2</span><span class="dt">L</span>)   <span class="co"># list of { node_id, depth }</span></span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">dfs</span>(keanu, <span class="at">max_depth =</span> <span class="dv">2</span><span class="dt">L</span>)   <span class="co"># list of node IDs</span></span></code></pre></div>
@@ -281,10 +284,12 @@
     <p>The traversal functions cover the most common questions, but
     sometimes you would rather describe the answer you want and let the
     database work out the steps. For that, AstraeaDB understands a graph
-    query language, called GQL for short, whose style is similar to
-    Cypher (a widely used language for querying graph databases). You
-    send a query with <code>client$query()</code>, and it returns a
-    result made up of columns and rows:</p>
+    query language, called <a
+    href="../glossary.html#graph-query-language-gql">GQL</a> for short,
+    whose style is similar to Cypher (a widely used language for
+    querying graph databases). You send a query with
+    <code>client$query()</code>, and it returns a result made up of
+    columns and rows:</p>
     <div class="sourceCode" id="cb12"><pre
     class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>client<span class="sc">$</span><span class="fu">query</span>(<span class="st">&quot;MATCH (m:Movie) RETURN m.title, m.year&quot;</span>)</span>
 <span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="co"># columns: m.title, m.year</span></span>

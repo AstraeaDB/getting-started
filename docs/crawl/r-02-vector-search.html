@@ -75,20 +75,24 @@
     <p>In the first post, <a href="./r-01-getting-started.html">Getting
     Started with AstraeaDB in R</a>, we built a small movie knowledge
     graph made of actors, directors, genres, and the films that connect
-    them. We walked that graph with breadth-first search (a way of
-    exploring outward one step at a time), shortest paths, and a little
-    GQL (Graph Query Language, a way of asking how nodes connect). That
-    covered the <em>graph</em> half of AstraeaDB. This post covers the
-    other half, which is vectors. A vector is simply a list of numbers,
-    and an embedding is a vector that places the meaning or "feel" of
-    something at a point in space, so that similar things sit close
-    together. Every node in AstraeaDB can carry an embedding, and the
-    server keeps those embeddings in an HNSW index (short for
-    Hierarchical Navigable Small World, a structure that finds nearby
-    points quickly) right next to the graph. Because the two live
-    together, we can ask which movies feel similar and which films are
-    both close in the graph and close in meaning. Those two questions
-    sit at the heart of a recommender.</p>
+    them. We walked that graph with <a
+    href="../glossary.html#breadth-first-search-bfs">breadth-first
+    search</a> (a way of exploring outward one step at a time), shortest
+    paths, and a little <a
+    href="../glossary.html#graph-query-language-gql">GQL</a> (Graph
+    Query Language, a way of asking how nodes connect). That covered the
+    <em>graph</em> half of AstraeaDB. This post covers the other half,
+    which is vectors. A vector is simply a list of numbers, and an <a
+    href="../glossary.html#embedding">embedding</a> is a vector that
+    places the meaning or "feel" of something at a point in space, so
+    that similar things sit close together. Every node in AstraeaDB can
+    carry an embedding, and the server keeps those embeddings in an <a
+    href="../glossary.html#hierarchical-navigable-small-world-hnsw">HNSW</a>
+    index (short for Hierarchical Navigable Small World, a structure
+    that finds nearby points quickly) right next to the graph. Because
+    the two live together, we can ask which movies feel similar and
+    which films are both close in the graph and close in meaning. Those
+    two questions sit at the heart of a recommender.</p>
     <h2
     id="reconnecting-and-rebuilding-the-graph-now-with-embeddings">Reconnecting
     and rebuilding the graph, now with embeddings</h2>
@@ -174,12 +178,13 @@
     matters most is <code>distance</code>, and the rule is simple: a
     smaller distance means a closer match. Distance here measures how
     far apart two vectors point rather than how far apart they sit, a
-    method often called cosine distance. A movie whose vector points the
-    same way as the query lands near zero, while an unrelated one, such
-    as a pure romance, sits much farther out. <em>Inception</em> and
-    <em>Blade Runner</em> rise to the top because their vectors lean
-    hardest on the science fiction slot, which is exactly the mood we
-    asked for.</p>
+    method often called <a
+    href="../glossary.html#cosine-distance">cosine distance</a>. A movie
+    whose vector points the same way as the query lands near zero, while
+    an unrelated one, such as a pure romance, sits much farther out.
+    <em>Inception</em> and <em>Blade Runner</em> rise to the top because
+    their vectors lean hardest on the science fiction slot, which is
+    exactly the mood we asked for.</p>
     <p>You will also see a <code>score</code> field on every hit. It is
     a legacy alias of <code>distance</code>, the same value under an
     older name, so do not read it as "higher is better." Prefer
@@ -192,15 +197,16 @@
     results become your "more like this" list.</p>
     <h2 id="blending-graph-and-vector-hybrid_search">Blending graph and
     vector: <code>hybrid_search</code></h2>
-    <p>Vector search on its own ignores everything the graph knows, yet
-    the fact that you watched a Keanu Reeves film is a useful signal
-    too. Hybrid search combines both by weighing how similar the vectors
-    are alongside how the nodes connect in the graph. The
-    <code>hybrid_search</code> method starts from an anchor node, the
-    node you begin from, explores the graph outward up to
-    <code>max_hops</code> steps, and ranks the nodes it finds by a mix
-    of graph proximity (how close they are to the anchor) and vector
-    similarity (how close they are to a query vector). The
+    <p><a href="../glossary.html#vector-search">Vector search</a> on its
+    own ignores everything the graph knows, yet the fact that you
+    watched a Keanu Reeves film is a useful signal too. <a
+    href="../glossary.html#hybrid-search">Hybrid search</a> combines
+    both by weighing how similar the vectors are alongside how the nodes
+    connect in the graph. The <code>hybrid_search</code> method starts
+    from an anchor node, the node you begin from, explores the graph
+    outward up to <code>max_hops</code> steps, and ranks the nodes it
+    finds by a mix of graph proximity (how close they are to the anchor)
+    and vector similarity (how close they are to a query vector). The
     <code>alpha</code> setting controls the blend:</p>
     <ul>
     <li><code>alpha = 0.0</code> uses the graph only, ranking the
@@ -292,9 +298,10 @@
     <p>In a handful of calls, we have built the core of a recommender:
     content-based similarity with <code>vector_search</code>, a tunable
     blend of graph and vectors with <code>hybrid_search</code>, and
-    concept-steered traversal with <code>semantic_neighbors</code> and
-    <code>semantic_walk</code>. Every one of these runs against the same
-    store, with no separate vector database required.</p>
+    concept-steered <a href="../glossary.html#traversal">traversal</a>
+    with <code>semantic_neighbors</code> and <code>semantic_walk</code>.
+    Every one of these runs against the same store, with no separate
+    vector database required.</p>
     <p>In the final post, <a
     href="./r-03-algorithms-graphrag.html">Graph Algorithms,
     Time-Travel, and GraphRAG with AstraeaDB in R</a>, we will rank the
@@ -303,10 +310,11 @@
     genre-like communities with Louvain (a method that groups tightly
     connected nodes together), add timestamped <code>RATED</code> edges
     so we can query the graph as it stood on a past date, and finish by
-    connecting the graph to a GraphRAG pipeline, an approach that feeds
-    graph results to a language model so it can answer questions with
-    grounded facts. That post builds directly on the recommender we
-    started here.</p>
+    connecting the graph to a <a
+    href="../glossary.html#graphrag">GraphRAG</a> pipeline, an approach
+    that feeds graph results to a language model so it can answer
+    questions with grounded facts. That post builds directly on the
+    recommender we started here.</p>
 
     <nav class="prevnext" aria-label="Lesson navigation">
             <a class="prev" href="../crawl/r-01-getting-started.html"><span>Previous</span>Getting Started with AstraeaDB in R</a>

@@ -84,14 +84,15 @@
     by meaning rather than by exact keywords. AstraeaDB, written in the
     Rust programming language, does both at once. It stores your data as
     a graph, which is a network of items and the connections between
-    them, and it can also attach a list of numbers, called an embedding,
-    to any item so it can find items with a similar meaning. This design
-    is called a Vector-Property Graph: every item and connection can
-    hold ordinary details, such as a name or a year, and can also carry
-    one of those number lists for similarity search. In this post you
-    will install the server, connect from Python, and build a small
-    movie knowledge graph you can query. Embeddings come in the second
-    post, so here the focus is on the graph basics.</p>
+    them, and it can also attach a list of numbers, called an <a
+    href="../glossary.html#embedding">embedding</a>, to any item so it
+    can find items with a similar meaning. This design is called a
+    Vector-Property Graph: every item and connection can hold ordinary
+    details, such as a name or a year, and can also carry one of those
+    number lists for similarity search. In this post you will install
+    the server, connect from Python, and build a small movie knowledge
+    graph you can query. Embeddings come in the second post, so here the
+    focus is on the graph basics.</p>
     <h2 id="what-astraeadb-actually-is">What AstraeaDB actually is</h2>
     <p>You can picture AstraeaDB as a labeled graph. The items in it are
     called nodes, and the connections between them are called edges. A
@@ -284,12 +285,14 @@
     <h2 id="walking-the-graph">Walking the graph</h2>
     <p>Reading one connection at a time is useful, but the real strength
     of a graph database is following many connections in a row, which is
-    called traversal. The <code>bfs(start, max_depth)</code> method
-    performs a breadth-first search, abbreviated BFS. It explores the
-    graph one level at a time: first every node one step from the start,
-    then every node two steps away, and so on. It returns dictionaries
-    of the form <code>{node_id, depth}</code>, where <code>depth</code>
-    is how many steps a node sits from the start:</p>
+    called <a href="../glossary.html#traversal">traversal</a>. The
+    <code>bfs(start, max_depth)</code> method performs a <a
+    href="../glossary.html#breadth-first-search-bfs">breadth-first
+    search</a>, abbreviated BFS. It explores the graph one level at a
+    time: first every node one step from the start, then every node two
+    steps away, and so on. It returns dictionaries of the form
+    <code>{node_id, depth}</code>, where <code>depth</code> is how many
+    steps a node sits from the start:</p>
     <div class="sourceCode" id="cb10"><pre
     class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>keanu <span class="op">=</span> people[<span class="st">&quot;Keanu Reeves&quot;</span>]</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> hop <span class="kw">in</span> client.bfs(keanu, max_depth<span class="op">=</span><span class="dv">2</span>):</span>
@@ -297,10 +300,11 @@
 <span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(hop[<span class="st">&quot;depth&quot;</span>], props)</span>
 <span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="co"># depth 1: the movies Keanu is in; depth 2: their genres and co-stars</span></span></code></pre></div>
     <p>The <code>dfs(start, max_depth)</code> method does a similar walk
-    using depth-first search, abbreviated DFS. Instead of fanning out
-    level by level, it follows one path as far as it can before backing
-    up to try another, and it returns the node IDs in the order it
-    visited them:</p>
+    using <a href="../glossary.html#depth-first-search-dfs">depth-first
+    search</a>, abbreviated DFS. Instead of fanning out level by level,
+    it follows one path as far as it can before backing up to try
+    another, and it returns the node IDs in the order it visited
+    them:</p>
     <div class="sourceCode" id="cb11"><pre
     class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(client.dfs(keanu, max_depth<span class="op">=</span><span class="dv">2</span>))   <span class="co"># [11, 7, 1, ...]</span></span></code></pre></div>
     <p>When you want the link between two specific nodes, the
@@ -318,12 +322,13 @@
     <h2 id="asking-questions-with-a-query-language">Asking questions
     with a query language</h2>
     <p>For questions you make up as you go, AstraeaDB understands a
-    graph query language, abbreviated GQL. A query language lets you
-    describe the pattern of data you want and have the database find
-    every match, rather than writing step-by-step method calls.
-    AstraeaDB's version reads much like Cypher, a popular query language
-    used by other graph databases. The <code>query()</code> method
-    returns a dictionary with <code>columns</code> and
+    graph query language, abbreviated <a
+    href="../glossary.html#graph-query-language-gql">GQL</a>. A query
+    language lets you describe the pattern of data you want and have the
+    database find every match, rather than writing step-by-step method
+    calls. AstraeaDB's version reads much like Cypher, a popular query
+    language used by other graph databases. The <code>query()</code>
+    method returns a dictionary with <code>columns</code> and
     <code>rows</code>, which fits neatly into a table:</p>
     <div class="sourceCode" id="cb13"><pre
     class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> client.query(</span>

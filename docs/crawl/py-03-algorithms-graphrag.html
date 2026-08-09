@@ -87,10 +87,12 @@
     database is especially good at. The first is a set of graph
     algorithms that run inside the database itself. The second is
     temporal queries, which reconstruct what the graph looked like on an
-    earlier date. The third is GraphRAG, a technique for packaging a
-    small slice of the graph as background for a language model.
-    Everything here runs against a live <code>astraeadb serve</code> on
-    the address <code>127.0.0.1:7687</code>.</p>
+    earlier date. The third is <a
+    href="../glossary.html#graphrag">GraphRAG</a>, a technique for
+    packaging a small slice of the graph as background for a language
+    model. Everything here runs against a live
+    <code>astraeadb serve</code> on the address
+    <code>127.0.0.1:7687</code>.</p>
     <h2 id="rebuilding-the-graph">Rebuilding the graph</h2>
     <p>If you followed post 1, you already have this graph and can skip
     ahead. Otherwise, the block below rebuilds the whole thing at once.
@@ -244,9 +246,10 @@
 <span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># -&gt; Alice had rated it</span></span></code></pre></div>
     <p>Run the same call with <code>ms(2024, 6, 1)</code> and Bob
     appears too. The <code>bfs_at</code> method applies the same time
-    filter to a full traversal, which means following connections
-    outward from a starting node step by step. The code below finds
-    everything reachable from Alice as of early 2021.</p>
+    filter to a full <a href="../glossary.html#traversal">traversal</a>,
+    which means following connections outward from a starting node step
+    by step. The code below finds everything reachable from Alice as of
+    early 2021.</p>
     <div class="sourceCode" id="cb7"><pre
     class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>reachable <span class="op">=</span> client.bfs_at(alice, max_depth<span class="op">=</span><span class="dv">2</span>, timestamp<span class="op">=</span>as_of_2021)</span>
 <span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> entry <span class="kw">in</span> reachable:</span>
@@ -263,9 +266,9 @@
     helper methods. <code>graph_stats</code> gives a high-level count of
     everything in the store, and <code>get_subgraph</code> pulls out the
     raw nodes and edges around a center node so you can inspect them or
-    draw them. A subgraph is simply a small slice of the larger graph: a
-    chosen node together with its nearby neighbors and the connections
-    among them.</p>
+    draw them. A <a href="../glossary.html#subgraph">subgraph</a> is
+    simply a small slice of the larger graph: a chosen node together
+    with its nearby neighbors and the connections among them.</p>
     <div class="sourceCode" id="cb8"><pre
     class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>stats <span class="op">=</span> client.graph_stats()</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;nodes:&quot;</span>, stats[<span class="st">&quot;total_nodes&quot;</span>], <span class="st">&quot;edges:&quot;</span>, stats[<span class="st">&quot;total_edges&quot;</span>])</span>
@@ -275,15 +278,18 @@
     <h2 id="from-graph-to-prompt-graphrag">From graph to prompt:
     GraphRAG</h2>
     <p>GraphRAG builds on an idea called retrieval-augmented generation,
-    usually shortened to RAG. The idea is to answer a question by first
-    fetching relevant information and then handing it to a language
-    model, also known as a large language model or LLM, so the model can
-    base its answer on real data rather than only on its training. In
-    ordinary RAG, the fetched information is a set of text passages. In
-    GraphRAG, it is a subgraph instead, so the model sees how things are
-    related rather than a handful of disconnected snippets. AstraeaDB
-    builds this in two steps, and the first step needs no language model
-    at all.</p>
+    usually shortened to <a
+    href="../glossary.html#retrieval-augmented-generation-rag">RAG</a>.
+    The idea is to answer a question by first fetching relevant
+    information and then handing it to a language model, also known as a
+    large language model or <a
+    href="../glossary.html#large-language-model-llm">LLM</a>, so the
+    model can base its answer on real data rather than only on its
+    training. In ordinary RAG, the fetched information is a set of text
+    passages. In GraphRAG, it is a subgraph instead, so the model sees
+    how things are related rather than a handful of disconnected
+    snippets. AstraeaDB builds this in two steps, and the first step
+    needs no language model at all.</p>
     <p>The <code>extract_subgraph</code> method walks outward from a
     center node and turns the result into plain text, flattening the
     nodes and connections into readable lines. It returns
@@ -333,7 +339,8 @@
 <span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>movie_ids <span class="op">=</span> client.find_by_label(<span class="st">&quot;Movie&quot;</span>)</span>
 <span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> export_nodes_df(client, movie_ids)   <span class="co"># node_id, labels, + flattened properties</span></span>
 <span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(df.sort_values(<span class="st">&quot;year&quot;</span>)[[<span class="st">&quot;title&quot;</span>, <span class="st">&quot;year&quot;</span>]])</span></code></pre></div>
-    <p>You can also build a DataFrame directly from a GQL query, GQL
+    <p>You can also build a DataFrame directly from a <a
+    href="../glossary.html#graph-query-language-gql">GQL</a> query, GQL
     being the graph query language used to ask the database questions.
     The <code>query_dict</code> method always returns a plain
     <code>{columns, rows}</code> dictionary, which loads straight into

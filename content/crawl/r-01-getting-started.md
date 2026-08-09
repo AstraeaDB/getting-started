@@ -172,10 +172,10 @@ client$find_by_label("Movie")   # the five Movie IDs
 
 ## First traversals
 
-A neighbor is one step away. A traversal goes further by following a chain of
-edges across the graph. Breadth-first search, available as `bfs`, fans out one
+A neighbor is one step away. A [traversal](../glossary.html#traversal) goes further by following a chain of
+edges across the graph. [Breadth-first search](../glossary.html#breadth-first-search-bfs), available as `bfs`, fans out one
 level at a time and reports each node it can reach along with that node's depth,
-meaning how many steps away it is. Depth-first search, available as `dfs`,
+meaning how many steps away it is. [Depth-first search](../glossary.html#depth-first-search-dfs), available as `dfs`,
 instead follows each branch as far as it goes before backing up, and it returns
 node IDs. Starting from Keanu with a depth limit of 2, breadth-first search
 reaches his movies at depth 1 and their genres at depth 2.
@@ -204,7 +204,7 @@ such as distances or costs.
 
 The traversal functions cover the most common questions, but sometimes you would
 rather describe the answer you want and let the database work out the steps. For
-that, AstraeaDB understands a graph query language, called GQL for short, whose
+that, AstraeaDB understands a graph query language, called [GQL](../glossary.html#graph-query-language-gql) for short, whose
 style is similar to Cypher (a widely used language for querying graph databases).
 You send a query with `client$query()`, and it returns a result made up of
 columns and rows:

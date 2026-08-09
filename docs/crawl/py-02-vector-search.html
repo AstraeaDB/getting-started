@@ -82,9 +82,12 @@
     connections, so ours recorded who acted in what and which genre a
     film belongs to. Those facts are exact, but they cannot tell you
     that two movies simply feel alike. In this post we attach a short
-    list of numbers, called an embedding, to each movie, then use
-    AstraeaDB's vector and hybrid search to answer the question every
-    recommender is really asking: what else feels like this one?</p>
+    list of numbers, called an <a
+    href="../glossary.html#embedding">embedding</a>, to each movie, then
+    use AstraeaDB's vector and <a
+    href="../glossary.html#hybrid-search">hybrid search</a> to answer
+    the question every recommender is really asking: what else feels
+    like this one?</p>
     <h2 id="why-vectors-live-next-to-the-graph">Why vectors live next to
     the graph</h2>
     <p>A graph handles exact facts well: Keanu Reeves acted in <em>The
@@ -96,8 +99,9 @@
     point in an imaginary space where items sitting close together are
     alike. Picture it like placing towns on a map, where neighbors tend
     to share a climate. AstraeaDB stores these vectors on the nodes and
-    builds a fast search structure over them, an HNSW index
-    (Hierarchical Navigable Small World), right beside the graph.
+    builds a fast search structure over them, an <a
+    href="../glossary.html#hierarchical-navigable-small-world-hnsw">HNSW</a>
+    index (Hierarchical Navigable Small World), right beside the graph.
     Because both live in one database, a single system can answer "who
     directed this?" and "which movies are closest in meaning to this
     one?"</p>
@@ -205,16 +209,16 @@
     <h2
     id="hybrid_search-blend-graph-connections-with-vector-similarity"><code>hybrid_search</code>:
     blend graph connections with vector similarity</h2>
-    <p>Plain vector search ignores everything the graph already knows. A
-    good recommender should respect connections as well. If you are
-    browsing an actor's page, movies near that actor in the graph are
-    usually more relevant than a random film that happens to have a
-    similar embedding. Hybrid search does exactly this, and "hybrid"
-    just means it mixes two kinds of information. It starts from an
-    anchor node, the node you want results to stay near, explores
-    outward up to <code>max_hops</code> steps away (one hop being one
-    connection you follow), and ranks the candidates by combining two
-    signals:</p>
+    <p>Plain <a href="../glossary.html#vector-search">vector search</a>
+    ignores everything the graph already knows. A good recommender
+    should respect connections as well. If you are browsing an actor's
+    page, movies near that actor in the graph are usually more relevant
+    than a random film that happens to have a similar embedding. Hybrid
+    search does exactly this, and "hybrid" just means it mixes two kinds
+    of information. It starts from an anchor node, the node you want
+    results to stay near, explores outward up to <code>max_hops</code>
+    steps away (one hop being one connection you follow), and ranks the
+    candidates by combining two signals:</p>
     <ul>
     <li>Graph proximity measures how close a candidate is to the anchor
     by counting connections.</li>
@@ -298,9 +302,10 @@
     linked. We will query the graph as it looked on a past date using
     time-travel traversals, which ask questions about an earlier state
     of the data. We will finish by feeding a small piece of the graph
-    into GraphRAG, short for graph retrieval-augmented generation, which
-    hands relevant graph facts to a language model so it can answer
-    questions in plain English.</p>
+    into <a href="../glossary.html#graphrag">GraphRAG</a>, short for
+    graph retrieval-augmented generation, which hands relevant graph
+    facts to a language model so it can answer questions in plain
+    English.</p>
     <p>When you are finished with this lesson, close the connection you
     opened at the start:</p>
     <div class="sourceCode" id="cb7"><pre

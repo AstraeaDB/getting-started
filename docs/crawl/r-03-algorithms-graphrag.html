@@ -81,20 +81,23 @@
     plain language, all from R.</em></p>
     <p>In <a href="./r-01-getting-started.html">Getting Started with
     AstraeaDB in R</a> we built a small movie knowledge graph, a network
-    of nodes joined by labeled links, and explored it with breadth-first
-    search (BFS, which fans out level by level from a starting node) and
-    shortest paths. In <a href="./r-02-vector-search.html">Vector and
-    Hybrid Search with AstraeaDB in R</a> we added embeddings, which are
-    numeric fingerprints of each item, and turned the graph into a
+    of nodes joined by labeled links, and explored it with <a
+    href="../glossary.html#breadth-first-search-bfs">breadth-first
+    search</a> (BFS, which fans out level by level from a starting node)
+    and shortest paths. In <a href="./r-02-vector-search.html">Vector
+    and Hybrid Search with AstraeaDB in R</a> we added embeddings, which
+    are numeric fingerprints of each item, and turned the graph into a
     recommender. This third and final post puts a graph database to
     fuller use. We will rank nodes by influence, group them into
     communities, query the graph as it existed on a past date, and close
-    with GraphRAG. GraphRAG hands a small connected slice of the graph
-    (a subgraph) to a large language model (LLM), the kind of system
-    behind chat assistants, so it can answer questions using your own
-    data. There are no new dependencies to install, and everything runs
-    against a local copy of the database started with
-    <code>astraeadb serve</code>.</p>
+    with <a href="../glossary.html#graphrag">GraphRAG</a>. GraphRAG
+    hands a small connected slice of the graph (a <a
+    href="../glossary.html#subgraph">subgraph</a>) to a large language
+    model (<a href="../glossary.html#large-language-model-llm">LLM</a>),
+    the kind of system behind chat assistants, so it can answer
+    questions using your own data. There are no new dependencies to
+    install, and everything runs against a local copy of the database
+    started with <code>astraeadb serve</code>.</p>
     <h2 id="where-we-left-off">Where we left off</h2>
     <p>If you worked through the first post, you already have this
     graph. If not, the block below rebuilds it from scratch. AstraeaDB
@@ -210,7 +213,8 @@
     <h2 id="finding-the-bridges-with-betweenness-centrality">Finding the
     bridges with betweenness centrality</h2>
     <p>Influence can mean more than one thing. Betweenness centrality
-    measures how often a node sits on the shortest path between two
+    measures how often a node sits on the <a
+    href="../glossary.html#shortest-path">shortest path</a> between two
     other nodes. Centrality here simply means a numeric score for how
     central, or well-placed, a node is within the network. A node with
     high betweenness acts as a bridge: a person who worked across two
@@ -295,15 +299,17 @@
     <h2 id="graphrag-from-subgraph-to-answer">GraphRAG: from subgraph to
     answer</h2>
     <p>GraphRAG is a form of retrieval-augmented generation, usually
-    shortened to RAG. In ordinary RAG, a program first retrieves some
-    relevant documents and then asks a language model to write an answer
-    using them, so the answer is grounded in real source material rather
-    than the model's memory. GraphRAG follows the same recipe, except
-    the retrieved material is a subgraph rather than loose chunks of
-    text. AstraeaDB splits the work into two steps, and the first needs
-    no language model at all. The <code>extract_subgraph()</code> method
-    turns a neighborhood into plain, readable text that you can inspect,
-    log, or store for reuse.</p>
+    shortened to <a
+    href="../glossary.html#retrieval-augmented-generation-rag">RAG</a>.
+    In ordinary RAG, a program first retrieves some relevant documents
+    and then asks a language model to write an answer using them, so the
+    answer is grounded in real source material rather than the model's
+    memory. GraphRAG follows the same recipe, except the retrieved
+    material is a subgraph rather than loose chunks of text. AstraeaDB
+    splits the work into two steps, and the first needs no language
+    model at all. The <code>extract_subgraph()</code> method turns a
+    neighborhood into plain, readable text that you can inspect, log, or
+    store for reuse.</p>
     <div class="sourceCode" id="cb9"><pre
     class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>context <span class="ot">&lt;-</span> client<span class="sc">$</span><span class="fu">extract_subgraph</span>(m<span class="sc">$</span>matrix, <span class="at">hops =</span> <span class="dv">2</span><span class="dt">L</span>, <span class="at">max_nodes =</span> <span class="dv">25</span><span class="dt">L</span>,</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>                                   <span class="at">format =</span> <span class="st">&quot;structured&quot;</span>)</span>
@@ -345,12 +351,12 @@
     <p>Across three posts, you have gone from an empty database to a
     capable graph application written entirely in R. The first post
     covered the fundamentals: connecting, modeling nodes and edges, and
-    traversing them. The second added embeddings for vector and hybrid
-    search, turning the graph into a recommender. This post added the
-    analysis and reasoning layer: PageRank and Louvain for structure,
-    betweenness centrality for the bridge nodes, time-travel queries for
-    point-in-time answers, and GraphRAG to turn all of it into
-    plain-language responses.</p>
+    traversing them. The second added embeddings for vector and <a
+    href="../glossary.html#hybrid-search">hybrid search</a>, turning the
+    graph into a recommender. This post added the analysis and reasoning
+    layer: PageRank and Louvain for structure, betweenness centrality
+    for the bridge nodes, time-travel queries for point-in-time answers,
+    and GraphRAG to turn all of it into plain-language responses.</p>
     <p>The common thread is that AstraeaDB keeps graph structure, vector
     similarity, temporal history, and language-model grounding in a
     single store, all reachable through a few <code>client$...</code>
@@ -360,10 +366,11 @@
     still apply. From here, you might generate real embeddings with a
     dedicated model, connect a language-model provider so that
     <code>graph_rag()</code> works, and explore the <code>query()</code>
-    interface, which accepts GQL (Graph Query Language, an emerging
-    standard for querying graphs) for anything the R6 methods do not
-    cover. Everything shown here has an equivalent in the parallel
-    Python series.</p>
+    interface, which accepts <a
+    href="../glossary.html#graph-query-language-gql">GQL</a> (Graph
+    Query Language, an emerging standard for querying graphs) for
+    anything the R6 methods do not cover. Everything shown here has an
+    equivalent in the parallel Python series.</p>
 
     <nav class="prevnext" aria-label="Lesson navigation">
             <a class="prev" href="../crawl/r-02-vector-search.html"><span>Previous</span>Vector and Hybrid Search with AstraeaDB in R</a>

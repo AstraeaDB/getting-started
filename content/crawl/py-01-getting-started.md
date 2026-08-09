@@ -4,7 +4,7 @@
 
 *Set up a graph database written in Rust, connect to it from Python, and build your first knowledge graph in one session.*
 
-Many databases force a trade-off. Some are good at storing the relationships between things, while others are good at finding items by meaning rather than by exact keywords. AstraeaDB, written in the Rust programming language, does both at once. It stores your data as a graph, which is a network of items and the connections between them, and it can also attach a list of numbers, called an embedding, to any item so it can find items with a similar meaning. This design is called a Vector-Property Graph: every item and connection can hold ordinary details, such as a name or a year, and can also carry one of those number lists for similarity search. In this post you will install the server, connect from Python, and build a small movie knowledge graph you can query. Embeddings come in the second post, so here the focus is on the graph basics.
+Many databases force a trade-off. Some are good at storing the relationships between things, while others are good at finding items by meaning rather than by exact keywords. AstraeaDB, written in the Rust programming language, does both at once. It stores your data as a graph, which is a network of items and the connections between them, and it can also attach a list of numbers, called an [embedding](../glossary.html#embedding), to any item so it can find items with a similar meaning. This design is called a Vector-Property Graph: every item and connection can hold ordinary details, such as a name or a year, and can also carry one of those number lists for similarity search. In this post you will install the server, connect from Python, and build a small movie knowledge graph you can query. Embeddings come in the second post, so here the focus is on the graph basics.
 
 ## What AstraeaDB actually is
 
@@ -142,7 +142,7 @@ print(client.find_by_label("Movie"))   # [7, 8, 9, 10]
 
 ## Walking the graph
 
-Reading one connection at a time is useful, but the real strength of a graph database is following many connections in a row, which is called traversal. The `bfs(start, max_depth)` method performs a breadth-first search, abbreviated BFS. It explores the graph one level at a time: first every node one step from the start, then every node two steps away, and so on. It returns dictionaries of the form `{node_id, depth}`, where `depth` is how many steps a node sits from the start:
+Reading one connection at a time is useful, but the real strength of a graph database is following many connections in a row, which is called [traversal](../glossary.html#traversal). The `bfs(start, max_depth)` method performs a [breadth-first search](../glossary.html#breadth-first-search-bfs), abbreviated BFS. It explores the graph one level at a time: first every node one step from the start, then every node two steps away, and so on. It returns dictionaries of the form `{node_id, depth}`, where `depth` is how many steps a node sits from the start:
 
 ```python
 keanu = people["Keanu Reeves"]
@@ -152,7 +152,7 @@ for hop in client.bfs(keanu, max_depth=2):
 # depth 1: the movies Keanu is in; depth 2: their genres and co-stars
 ```
 
-The `dfs(start, max_depth)` method does a similar walk using depth-first search, abbreviated DFS. Instead of fanning out level by level, it follows one path as far as it can before backing up to try another, and it returns the node IDs in the order it visited them:
+The `dfs(start, max_depth)` method does a similar walk using [depth-first search](../glossary.html#depth-first-search-dfs), abbreviated DFS. Instead of fanning out level by level, it follows one path as far as it can before backing up to try another, and it returns the node IDs in the order it visited them:
 
 ```python
 print(client.dfs(keanu, max_depth=2))   # [11, 7, 1, ...]
@@ -169,7 +169,7 @@ The `path` value is a list of node IDs, and `length` is the number of steps. Her
 
 ## Asking questions with a query language
 
-For questions you make up as you go, AstraeaDB understands a graph query language, abbreviated GQL. A query language lets you describe the pattern of data you want and have the database find every match, rather than writing step-by-step method calls. AstraeaDB's version reads much like Cypher, a popular query language used by other graph databases. The `query()` method returns a dictionary with `columns` and `rows`, which fits neatly into a table:
+For questions you make up as you go, AstraeaDB understands a graph query language, abbreviated [GQL](../glossary.html#graph-query-language-gql). A query language lets you describe the pattern of data you want and have the database find every match, rather than writing step-by-step method calls. AstraeaDB's version reads much like Cypher, a popular query language used by other graph databases. The `query()` method returns a dictionary with `columns` and `rows`, which fits neatly into a table:
 
 ```python
 result = client.query(

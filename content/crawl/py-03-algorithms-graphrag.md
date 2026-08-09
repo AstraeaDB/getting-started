@@ -4,7 +4,7 @@
 
 *You can rank the most connected nodes, discover hidden communities, rewind the graph to a past date, and feed a small slice of it to a language model, all from Python.*
 
-In [*Getting Started with AstraeaDB in Python*](./py-01-getting-started.md) we built a small movie knowledge graph, a set of records (nodes) joined by relationships (edges). In [*Vector and Hybrid Search with AstraeaDB in Python*](./py-02-vector-search.md) we turned it into a recommender using embeddings. This final post covers three features that a graph database is especially good at. The first is a set of graph algorithms that run inside the database itself. The second is temporal queries, which reconstruct what the graph looked like on an earlier date. The third is GraphRAG, a technique for packaging a small slice of the graph as background for a language model. Everything here runs against a live `astraeadb serve` on the address `127.0.0.1:7687`.
+In [*Getting Started with AstraeaDB in Python*](./py-01-getting-started.md) we built a small movie knowledge graph, a set of records (nodes) joined by relationships (edges). In [*Vector and Hybrid Search with AstraeaDB in Python*](./py-02-vector-search.md) we turned it into a recommender using embeddings. This final post covers three features that a graph database is especially good at. The first is a set of graph algorithms that run inside the database itself. The second is temporal queries, which reconstruct what the graph looked like on an earlier date. The third is [GraphRAG](../glossary.html#graphrag), a technique for packaging a small slice of the graph as background for a language model. Everything here runs against a live `astraeadb serve` on the address `127.0.0.1:7687`.
 
 ## Rebuilding the graph
 
@@ -125,7 +125,7 @@ for r in raters:
 # -> Alice had rated it
 ```
 
-Run the same call with `ms(2024, 6, 1)` and Bob appears too. The `bfs_at` method applies the same time filter to a full traversal, which means following connections outward from a starting node step by step. The code below finds everything reachable from Alice as of early 2021.
+Run the same call with `ms(2024, 6, 1)` and Bob appears too. The `bfs_at` method applies the same time filter to a full [traversal](../glossary.html#traversal), which means following connections outward from a starting node step by step. The code below finds everything reachable from Alice as of early 2021.
 
 ```python
 reachable = client.bfs_at(alice, max_depth=2, timestamp=as_of_2021)
@@ -137,7 +137,7 @@ As of that date, Alice reaches *The Matrix* and its genres but not *John Wick*, 
 
 ## Zooming in: subgraphs and stats
 
-Before we hand any context to a language model, here are two helper methods. `graph_stats` gives a high-level count of everything in the store, and `get_subgraph` pulls out the raw nodes and edges around a center node so you can inspect them or draw them. A subgraph is simply a small slice of the larger graph: a chosen node together with its nearby neighbors and the connections among them.
+Before we hand any context to a language model, here are two helper methods. `graph_stats` gives a high-level count of everything in the store, and `get_subgraph` pulls out the raw nodes and edges around a center node so you can inspect them or draw them. A [subgraph](../glossary.html#subgraph) is simply a small slice of the larger graph: a chosen node together with its nearby neighbors and the connections among them.
 
 ```python
 stats = client.graph_stats()
@@ -149,7 +149,7 @@ print("subgraph:", len(sub["nodes"]), "nodes,", len(sub["edges"]), "edges")
 
 ## From graph to prompt: GraphRAG
 
-GraphRAG builds on an idea called retrieval-augmented generation, usually shortened to RAG. The idea is to answer a question by first fetching relevant information and then handing it to a language model, also known as a large language model or LLM, so the model can base its answer on real data rather than only on its training. In ordinary RAG, the fetched information is a set of text passages. In GraphRAG, it is a subgraph instead, so the model sees how things are related rather than a handful of disconnected snippets. AstraeaDB builds this in two steps, and the first step needs no language model at all.
+GraphRAG builds on an idea called retrieval-augmented generation, usually shortened to [RAG](../glossary.html#retrieval-augmented-generation-rag). The idea is to answer a question by first fetching relevant information and then handing it to a language model, also known as a large language model or [LLM](../glossary.html#large-language-model-llm), so the model can base its answer on real data rather than only on its training. In ordinary RAG, the fetched information is a set of text passages. In GraphRAG, it is a subgraph instead, so the model sees how things are related rather than a handful of disconnected snippets. AstraeaDB builds this in two steps, and the first step needs no language model at all.
 
 The `extract_subgraph` method walks outward from a center node and turns the result into plain text, flattening the nodes and connections into readable lines. It returns `{nodes_count, edges_count, estimated_tokens, text}`. That text is the exact context that would be sent to a model, so you can print it and inspect it at no cost.
 
@@ -194,7 +194,7 @@ df = export_nodes_df(client, movie_ids)   # node_id, labels, + flattened propert
 print(df.sort_values("year")[["title", "year"]])
 ```
 
-You can also build a DataFrame directly from a GQL query, GQL being the graph query language used to ask the database questions. The `query_dict` method always returns a plain `{columns, rows}` dictionary, which loads straight into pandas.
+You can also build a DataFrame directly from a [GQL](../glossary.html#graph-query-language-gql) query, GQL being the graph query language used to ask the database questions. The `query_dict` method always returns a plain `{columns, rows}` dictionary, which loads straight into pandas.
 
 ```python
 import pandas as pd

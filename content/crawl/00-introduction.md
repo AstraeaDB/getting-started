@@ -11,7 +11,7 @@ us store that connection-rich data in tables, then spend our careers fighting
 the database to get the connections back out. This post is a gentle
 introduction to graph databases, and to **AstraeaDB**, a database that pairs the
 classic graph way of storing connections with a newer technique for finding
-items by their meaning, called vector search. There is no R or Python code here
+items by their meaning, called [vector search](../glossary.html#vector-search). There is no R or Python code here
 yet, only the ideas, with the hands-on tutorials to follow.
 
 ## Tables are great, until you need relationships
@@ -52,7 +52,7 @@ That is the entire data model. Here is a tiny movie example described in words.
 
 Because each edge is a real, stored object, following it from one node to the
 next is fast. This step-by-step following is called traversing the graph, or a
-traversal, and finding a node's immediate neighbors is a direct lookup, not a
+[traversal](../glossary.html#traversal), and finding a node's immediate neighbors is a direct lookup, not a
 table join. That one difference makes a whole class of questions easy to ask:
 
 - **Recommendations** become a short walk across edges: "people who bought this
@@ -66,7 +66,7 @@ table join. That one difference makes a whole class of questions easy to ask:
 - **Dependency maps** show which services break if this one goes down.
 
 Many graph databases let you ask questions in a language designed for graphs.
-One well-known example is Cypher, and a related standard is GQL, short for Graph
+One well-known example is Cypher, and a related standard is [GQL](../glossary.html#graph-query-language-gql), short for Graph
 Query Language. Such languages let you describe the pattern you are looking for
 almost as if you were drawing it:
 
@@ -83,13 +83,13 @@ exactly the point.
 Something important has changed in recent years. Modern artificial intelligence
 can turn a piece of content into a list of numbers that captures its meaning.
 Such a list is called a vector, and the vector produced for a specific item is
-called its embedding. You can picture each embedding as a point in space, where
+called its [embedding](../glossary.html#embedding). You can picture each embedding as a point in space, where
 items with similar meaning sit close together and unrelated items sit far apart.
 Once a movie's plot or a paragraph of text has been turned into an embedding,
 you can find similar items by looking for the stored embeddings closest to it.
 That ability powers semantic search, that is, search based on meaning rather
 than exact keywords. It also powers a technique called retrieval-augmented
-generation, or RAG, which fetches relevant information first and then asks an AI
+generation, or [RAG](../glossary.html#retrieval-augmented-generation-rag), which fetches relevant information first and then asks an AI
 language model to write its answer using that information.
 
 Until recently, using embeddings meant running a separate specialized system
@@ -113,14 +113,14 @@ database handles well alone:
   particular actor in the graph and similar in mood to a film you like.
 - You can gather a small, relevant piece of the graph around a topic, hand it to
   an AI language model, and get an answer grounded in your own data. Combining
-  graph retrieval with a language model this way is called **GraphRAG**.
+  graph retrieval with a language model this way is called **[GraphRAG](../glossary.html#graphrag)**.
 
 ## Meet AstraeaDB
 
 **AstraeaDB** is a graph database written in the Rust programming language and
 designed with these AI uses in mind. At its heart is the vector-property graph
 described above: nodes with labels, edges with types, properties on both, and an
-embedding on each node. Those embeddings are organized by an index called HNSW,
+embedding on each node. Those embeddings are organized by an index called [HNSW](../glossary.html#hierarchical-navigable-small-world-hnsw),
 short for Hierarchical Navigable Small World, a well-known method for finding
 the closest embeddings quickly without checking every single one. Because the
 connections and the embeddings share one store, following relationships and
