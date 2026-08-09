@@ -25,12 +25,12 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
       | sh -s -- -y --no-modify-path --profile minimal --default-toolchain ${RUST_VERSION}
 ENV PATH=/root/.cargo/bin:$PATH
 
-# The install line the lessons print. ASTRAEADB_REF pins the revision so a
-# verification run is reproducible; --mode install passes the current HEAD.
-ARG ASTRAEADB_GIT=https://github.com/AstraeaDB/AstraeaDB-Official.git
-ARG ASTRAEADB_REF=main
-RUN cargo install --git ${ASTRAEADB_GIT} --rev ${ASTRAEADB_REF} astraea-cli \
-    || cargo install --git ${ASTRAEADB_GIT} --branch ${ASTRAEADB_REF} astraea-cli
+# The install line the lessons print, verbatim. Since issue #28 landed, every
+# AstraeaDB crate is on crates.io, so this is a published-crate install rather
+# than a from-git build of the whole workspace. The package is astraea-cli and
+# the binary it installs is astraeadb.
+ARG ASTRAEADB_VERSION=0.3.1
+RUN cargo install astraea-cli --version ${ASTRAEADB_VERSION} --locked
 
 # Fail the build now rather than at lesson-run time if the binary is missing.
 RUN astraeadb --version

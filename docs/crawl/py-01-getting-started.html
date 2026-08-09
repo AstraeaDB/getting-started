@@ -119,8 +119,12 @@
     you need Rust's build tools, which you can get from <a
     href="https://rustup.rs">rustup.rs</a> if you do not already have
     them.</p>
-    <p>Building the server relies on Protocol Buffers, a data format
-    from Google, so on a fresh Linux machine you first need a few system
+    <p>AstraeaDB is written in Rust, so you install it with
+    <code>cargo</code>, which is Rust's package and build tool. If you
+    do not already have Rust, get it from <a
+    href="https://rustup.rs">rustup.rs</a>.</p>
+    <p>Building it also relies on Protocol Buffers, a data format from
+    Google, so on a fresh Linux machine you first need a few system
     packages. On Debian or Ubuntu, one command installs all of them:</p>
     <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would reinstall the same packages every time" -->
 
@@ -128,16 +132,16 @@
     class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt-get install <span class="at">-y</span> protobuf-compiler libprotobuf-dev pkg-config libssl-dev build-essential</span></code></pre></div>
     <p>On macOS with <a href="https://brew.sh">Homebrew</a>, the
     equivalent is <code>brew install protobuf</code>. With those in
-    place, you can install the command-line program using
-    <code>cargo</code>, which is Rust's package and build tool:</p>
-    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds" -->
+    place, install the server:</p>
+    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would reinstall the same package every time" -->
 
     <div class="sourceCode" id="cb2"><pre
-    class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Installs the `astraeadb` binary (compiles from source; takes a few minutes)</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> install <span class="at">--git</span> https://github.com/AstraeaDB/AstraeaDB-Official.git astraea-cli</span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Start the server (JSON/TCP on 127.0.0.1:7687, data persisted to disk)</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="ex">astraeadb</span> serve</span></code></pre></div>
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Installs the `astraeadb` command. The package is named astraea-cli, and</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co"># the program it installs is called astraeadb.</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> install astraea-cli</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Start the server (JSON/TCP on 127.0.0.1:7687, data persisted to disk)</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="ex">astraeadb</span> serve</span></code></pre></div>
     <p>Leave that terminal running, because it is now your database.</p>
     <p>Open a second terminal window for your Python work. A few other
     commands are worth knowing:</p>
