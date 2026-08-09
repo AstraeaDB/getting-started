@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Searching a Graph by Meaning, Not by Keyword &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-tier="walk" data-track="py" data-lesson="walk-02-semantic-search">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  <li data-track="py" class=""><a href="walk/01-embeddings.html">What an Embedding Is, and How to Make One</a></li>
+  <li data-track="py" class="current"><a href="walk/02-semantic-search.html">Searching a Graph by Meaning, Not by Keyword</a></li>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Searching a Graph by Meaning, Not by Keyword</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#tell-the-server-how-wide-your-vectors-are"
+      id="toc-tell-the-server-how-wide-your-vectors-are">Tell the server
+      how wide your vectors are</a></li>
+      <li><a href="#choosing-what-to-embed"
+      id="toc-choosing-what-to-embed">Choosing what to embed</a></li>
+      <li><a href="#searching-the-whole-store"
+      id="toc-searching-the-whole-store">Searching the whole
+      store</a></li>
+      <li><a href="#blending-meaning-with-structure"
+      id="toc-blending-meaning-with-structure">Blending meaning with
+      structure</a></li>
+      <li><a href="#whats-next" id="toc-whats-next">What's next</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Give every node a real embedding, then blend how close things
+    are in the graph with how close they are in meaning.</em></p>
+    <p>In the last post you made embeddings by hand and measured the
+    distance between two of them. Now you will put them where they
+    belong, next to your data, and let the database do the comparing.
+    Along the way you will meet the decision that matters more than any
+    other in this tier, which is not which model you use but which text
+    you choose to feed it.</p>
+    <h2 id="tell-the-server-how-wide-your-vectors-are">Tell the server
+    how wide your vectors are</h2>
+    <p>A store fixes its embedding width the first time you insert one,
+    so the server has to agree with your model before you start. Put a
+    <code>[vector]</code> section in the configuration file you pass to
+    <code>astraeadb serve</code>:</p>
+    <!-- verify: skip reason="the verification container is started from verify/server.toml with this exact section already applied, so writing a second config here would have no effect" -->
+
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode toml"><code class="sourceCode toml"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="kw">[vector]</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="dt">dimension</span> <span class="op">=</span> <span class="dv">768</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="dt">metric</span> <span class="op">=</span> <span class="st">&quot;cosine&quot;</span></span></code></pre></div>
+    <p>If you leave that section out entirely the server quietly
+    defaults to 128 dimensions, and your first 768-number insert fails
+    with a dimension mismatch. Setting it explicitly is one line and
+    saves a confusing afternoon.</p>
+    <h2 id="choosing-what-to-embed">Choosing what to embed</h2>
+    <p>Here is the part that decides whether any of this works.</p>
+    <p>An embedding represents whatever text you hand it. If you embed a
+    person's name, you get a position that means "this arrangement of
+    letters", which is close to other similar-looking names and to
+    nothing else useful. Ask for actors similar to Keanu Reeves and you
+    will get back people whose names sound alike. That is almost never
+    what anyone wants.</p>
+    <p>The fix is to embed a short sentence that describes the thing,
+    built from the properties you already have. Not the name, but what
+    the name refers to:</p>
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib.request</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>OLLAMA_URL <span class="op">=</span> os.environ.get(<span class="st">&quot;OLLAMA_URL&quot;</span>, <span class="st">&quot;http://localhost:11434&quot;</span>)</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> embed(texts):</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    payload <span class="op">=</span> json.dumps({<span class="st">&quot;model&quot;</span>: <span class="st">&quot;embeddinggemma&quot;</span>, <span class="st">&quot;input&quot;</span>: texts}).encode()</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    req <span class="op">=</span> urllib.request.Request(</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;</span><span class="sc">{</span>OLLAMA_URL<span class="sc">}</span><span class="ss">/api/embed&quot;</span>,</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>        data<span class="op">=</span>payload,</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>        headers<span class="op">=</span>{<span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span>},</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> urllib.request.urlopen(req, timeout<span class="op">=</span><span class="dv">60</span>) <span class="im">as</span> resp:</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> json.load(resp)[<span class="st">&quot;embeddings&quot;</span>]</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a>MOVIES <span class="op">=</span> [</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;The Matrix&quot;</span>, <span class="dv">1999</span>, <span class="st">&quot;A hacker discovers reality is a simulation and joins a rebellion against the machines.&quot;</span>),</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="dv">2003</span>, <span class="st">&quot;Neo fights on to free humankind as the machine army closes in on the last human city.&quot;</span>),</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;John Wick&quot;</span>, <span class="dv">2014</span>, <span class="st">&quot;A retired hitman returns to the criminal underworld to avenge his dog.&quot;</span>),</span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Arrival&quot;</span>, <span class="dv">2016</span>, <span class="st">&quot;A linguist is recruited to communicate with aliens whose language reshapes how she experiences time.&quot;</span>),</span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;The Notebook&quot;</span>, <span class="dv">2004</span>, <span class="st">&quot;A young couple fall in love one summer and are separated by class and war.&quot;</span>),</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a><span class="co"># For a movie the plot is already a description, so embed that.</span></span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>movie_text <span class="op">=</span> [plot <span class="cf">for</span> _, _, plot <span class="kw">in</span> MOVIES]</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-32"><a href="#cb2-32" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>)</span>
+<span id="cb2-33"><a href="#cb2-33" aria-hidden="true" tabindex="-1"></a>client.<span class="ex">connect</span>()</span>
+<span id="cb2-34"><a href="#cb2-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-35"><a href="#cb2-35" aria-hidden="true" tabindex="-1"></a>movies <span class="op">=</span> {}</span>
+<span id="cb2-36"><a href="#cb2-36" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (title, year, plot), vec <span class="kw">in</span> <span class="bu">zip</span>(MOVIES, embed(movie_text)):</span>
+<span id="cb2-37"><a href="#cb2-37" aria-hidden="true" tabindex="-1"></a>    movies[title] <span class="op">=</span> client.create_node(</span>
+<span id="cb2-38"><a href="#cb2-38" aria-hidden="true" tabindex="-1"></a>        [<span class="st">&quot;Movie&quot;</span>], {<span class="st">&quot;title&quot;</span>: title, <span class="st">&quot;year&quot;</span>: year, <span class="st">&quot;plot&quot;</span>: plot}, embedding<span class="op">=</span>vec)</span>
+<span id="cb2-39"><a href="#cb2-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-40"><a href="#cb2-40" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;stored&quot;</span>, <span class="bu">len</span>(movies), <span class="st">&quot;movies&quot;</span>)</span></code></pre></div>
+    <p>A <code>Movie</code> was easy, because a plot is already a
+    description. A <code>Person</code> is the interesting case. There is
+    no descriptive text on the node, so you compose one from the graph
+    around it:</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>PEOPLE <span class="op">=</span> {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Keanu Reeves&quot;</span>: <span class="st">&quot;An actor known for science fiction and action films about identity and violence.&quot;</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Amy Adams&quot;</span>: <span class="st">&quot;An actor known for thoughtful science fiction and character-driven drama.&quot;</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Ryan Gosling&quot;</span>: <span class="st">&quot;An actor known for romantic drama and quiet, brooding leading roles.&quot;</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>people <span class="op">=</span> {}</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (name, blurb), vec <span class="kw">in</span> <span class="bu">zip</span>(PEOPLE.items(), embed(<span class="bu">list</span>(PEOPLE.values()))):</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    people[name] <span class="op">=</span> client.create_node(</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        [<span class="st">&quot;Person&quot;</span>], {<span class="st">&quot;name&quot;</span>: name, <span class="st">&quot;blurb&quot;</span>: blurb}, embedding<span class="op">=</span>vec)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> actor, film <span class="kw">in</span> [(<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;The Matrix&quot;</span>), (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;The Matrix Reloaded&quot;</span>),</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>                    (<span class="st">&quot;Keanu Reeves&quot;</span>, <span class="st">&quot;John Wick&quot;</span>), (<span class="st">&quot;Amy Adams&quot;</span>, <span class="st">&quot;Arrival&quot;</span>),</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>                    (<span class="st">&quot;Ryan Gosling&quot;</span>, <span class="st">&quot;The Notebook&quot;</span>)]:</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    client.create_edge(people[actor], movies[film], <span class="st">&quot;ACTED_IN&quot;</span>)</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="co"># Genres give the graph a second layer, which matters for the last section.</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>GENRES <span class="op">=</span> [<span class="st">&quot;Science Fiction&quot;</span>, <span class="st">&quot;Action&quot;</span>, <span class="st">&quot;Romance&quot;</span>]</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>genres <span class="op">=</span> {}</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, vec <span class="kw">in</span> <span class="bu">zip</span>(GENRES, embed([<span class="ss">f&quot;Films in the </span><span class="sc">{</span>g<span class="sc">}</span><span class="ss"> genre.&quot;</span> <span class="cf">for</span> g <span class="kw">in</span> GENRES])):</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>    genres[name] <span class="op">=</span> client.create_node([<span class="st">&quot;Genre&quot;</span>], {<span class="st">&quot;name&quot;</span>: name}, embedding<span class="op">=</span>vec)</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> film, genre <span class="kw">in</span> [(<span class="st">&quot;The Matrix&quot;</span>, <span class="st">&quot;Science Fiction&quot;</span>), (<span class="st">&quot;The Matrix&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>                    (<span class="st">&quot;The Matrix Reloaded&quot;</span>, <span class="st">&quot;Science Fiction&quot;</span>), (<span class="st">&quot;John Wick&quot;</span>, <span class="st">&quot;Action&quot;</span>),</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>                    (<span class="st">&quot;Arrival&quot;</span>, <span class="st">&quot;Science Fiction&quot;</span>), (<span class="st">&quot;The Notebook&quot;</span>, <span class="st">&quot;Romance&quot;</span>)]:</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>    client.create_edge(movies[film], genres[genre], <span class="st">&quot;IN_GENRE&quot;</span>)</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;stored&quot;</span>, <span class="bu">len</span>(people), <span class="st">&quot;people and&quot;</span>, <span class="bu">len</span>(genres), <span class="st">&quot;genres&quot;</span>)</span></code></pre></div>
+    <p>Writing those descriptions by hand does not scale, and in a real
+    system you would generate them, which is exactly what the next post
+    does with a book. The point to carry forward is that the sentence
+    you embed is a design decision, and a bad one cannot be rescued by a
+    better model.</p>
+    <h2 id="searching-the-whole-store">Searching the whole store</h2>
+    <p><a href="../glossary.html#vector-search">Vector search</a>
+    compares your query against every embedding in the store and returns
+    the closest, wherever they sit in the graph:</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span> embed([<span class="st">&quot;a film about language and how it shapes thought&quot;</span>])[<span class="dv">0</span>]</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> hit <span class="kw">in</span> client.vector_search(query, k<span class="op">=</span><span class="dv">3</span>):</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    node <span class="op">=</span> client.get_node(hit[<span class="st">&quot;node_id&quot;</span>])</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    label <span class="op">=</span> node[<span class="st">&quot;properties&quot;</span>].get(<span class="st">&quot;title&quot;</span>) <span class="kw">or</span> node[<span class="st">&quot;properties&quot;</span>].get(<span class="st">&quot;name&quot;</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&#39;</span><span class="sc">{</span>hit[<span class="st">&quot;distance&quot;</span>]<span class="sc">:.3f}</span><span class="ss">  </span><span class="sc">{</span>label<span class="sc">}</span><span class="ss">&#39;</span>)</span></code></pre></div>
+    <p><code>Arrival</code> should come first, and nothing in that query
+    appears in its plot text. No keyword matched. The word "linguist" is
+    not "language", and "reshapes how she experiences time" is not
+    "shapes thought". The embedding found it because the meanings are
+    close.</p>
+    <p>Note the field name. Results carry a <code>distance</code>, and
+    <strong>lower is better</strong>. It is easy to read a number as a
+    score where bigger wins, and get your ranking backwards.</p>
+    <h2 id="blending-meaning-with-structure">Blending meaning with
+    structure</h2>
+    <p>Vector search ignores your graph completely, which is a waste
+    when the connections are the reason you chose a graph database. <a
+    href="../glossary.html#hybrid-search">Hybrid search</a> fixes that
+    by starting from an anchor node and scoring nearby nodes on both
+    counts at once:</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>anchor <span class="op">=</span> people[<span class="st">&quot;Keanu Reeves&quot;</span>]</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span> embed([<span class="st">&quot;a thoughtful science fiction film about language&quot;</span>])[<span class="dv">0</span>]</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> alpha <span class="kw">in</span> (<span class="fl">0.0</span>, <span class="fl">0.5</span>, <span class="fl">1.0</span>):</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    hits <span class="op">=</span> client.hybrid_search(anchor, query, max_hops<span class="op">=</span><span class="dv">3</span>, k<span class="op">=</span><span class="dv">5</span>, alpha<span class="op">=</span>alpha)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    names <span class="op">=</span> []</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> h <span class="kw">in</span> hits:</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        props <span class="op">=</span> client.get_node(h[<span class="st">&quot;node_id&quot;</span>])[<span class="st">&quot;properties&quot;</span>]</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        names.append(props.get(<span class="st">&quot;title&quot;</span>) <span class="kw">or</span> props.get(<span class="st">&quot;name&quot;</span>))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;alpha=</span><span class="sc">{</span>alpha<span class="sc">}</span><span class="ss">: </span><span class="sc">{</span>names<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>Watch <code>John Wick</code> move down the list. At
+    <code>alpha = 0</code> it sits with the other two films Keanu acted
+    in, because all three are one hop away and nothing but hops counts.
+    As alpha rises it falls behind them, and at <code>alpha = 1</code>
+    it is last, because a film about avenging a dog has little to do
+    with language. The graph never changed. Only the weighting did.</p>
+    <p>The scoring rule is worth knowing exactly, because it explains
+    everything you will see:</p>
+    <pre><code>score = alpha * vector_distance + (1 - alpha) * graph_distance</code></pre>
+    <p>Both parts are distances, so a lower score wins.
+    <code>alpha = 0</code> ignores meaning entirely and ranks purely by
+    how few hops away something is. <code>alpha = 1</code> ignores the
+    graph and ranks purely by meaning. Anything between blends the
+    two.</p>
+    <p>Now look at what is missing from every one of those lists.
+    <code>Arrival</code> is the best answer in the store to a query
+    about language, and vector search put it first a moment ago. Hybrid
+    search never returns it at any alpha, because hybrid search only
+    considers nodes it can <strong>reach from the anchor within
+    <code>max_hops</code></strong>, and following edges in the direction
+    they point there is no route from Keanu Reeves to
+    <code>Arrival</code>. Raising alpha cannot help, because the node
+    was never a candidate.</p>
+    <p>That is the trade. Vector search sees everything and knows
+    nothing about your graph. Hybrid search respects your graph and
+    therefore cannot see past it. When a hybrid result looks wrong,
+    check reachability before you touch alpha.</p>
+    <p>Two smaller details. The anchor is excluded from its own results.
+    And a node with <strong>no embedding</strong> is given the worst
+    possible vector distance of 1.0, so if you embed only some of your
+    node types, the unembedded ones sink as you raise alpha rather than
+    being skipped.</p>
+    <p>There is no correct alpha. Start at 0.5, look at the results, and
+    move toward 1 when you want meaning to dominate or toward 0 when you
+    want closeness in the graph to dominate.</p>
+    <div class="sourceCode" id="cb7"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>client.close()</span></code></pre></div>
+    <details>
+    <summary>The same idea in R</summary>
+
+    <p>The R client has the same three calls with the same arguments:
+    <code>client$vector_search(query, k)</code>,
+    <code>client$hybrid_search(anchor, query, max_hops, k, alpha)</code>,
+    and an <code>embedding</code> argument on
+    <code>client$create_node()</code>. You produce the vectors by
+    calling Ollama with <code>httr2</code>, as in the previous post. The
+    scoring rule and the <code>max_hops</code> bound are properties of
+    the server, so they behave identically.</p>
+    </details>
+
+    <h2 id="whats-next">What's next</h2>
+    <p>You can now store real embeddings, search by meaning across a
+    whole store, and blend that with the shape of your graph.</p>
+    <p>So far you have written the descriptive text yourself. In the
+    next post, <strong><a href="./03-text-to-graph.html">Turning a Book
+    Into a Knowledge Graph</a></strong>, you will take a full novel and
+    build the graph automatically: pulling out characters, places, and
+    events, linking them, and keeping a trail back to the passage each
+    fact came from.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../walk/01-embeddings.html"><span>Previous</span>What an Embedding Is, and How to Make One</a>
+                </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 61eef42 on 2026-08-09</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>
