@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-09T15:25:23+00:00",
+  "generated": "2026-08-09T17:31:43+00:00",
   "runs": [
     {
       "lesson": "crawl-08-ui",
@@ -21,7 +21,7 @@
         {
           "block": 1,
           "lang": "bash",
-          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds"
+          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would reinstall the same package every time"
         },
         {
           "block": 2,
@@ -34,8 +34,8 @@
           "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB every time"
         }
       ],
-      "rev": "4a319f9",
-      "date": "2026-08-08",
+      "rev": "61eef42",
+      "date": "2026-08-09",
       "image": "astraea-verify-py"
     },
     {
@@ -52,8 +52,8 @@
       "green": true,
       "blocks": 12,
       "skipped": [],
-      "rev": "4a319f9",
-      "date": "2026-08-08",
+      "rev": "61eef42",
+      "date": "2026-08-09",
       "image": "astraea-verify-py"
     },
     {
@@ -69,7 +69,7 @@
         {
           "block": 1,
           "lang": "bash",
-          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would recompile AstraeaDB and start a second server on a port the harness already holds"
+          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would reinstall the same package every time"
         },
         {
           "block": 2,
@@ -77,8 +77,8 @@
           "reason": "proven by the container image build, which runs this exact line from scratch in --mode install; re-running it per lesson would reinstall the package every time"
         }
       ],
-      "rev": "4a319f9",
-      "date": "2026-08-08",
+      "rev": "61eef42",
+      "date": "2026-08-09",
       "image": "astraea-verify-r"
     },
     {
@@ -86,8 +86,8 @@
       "green": true,
       "blocks": 9,
       "skipped": [],
-      "rev": "4a319f9",
-      "date": "2026-08-08",
+      "rev": "61eef42",
+      "date": "2026-08-09",
       "image": "astraea-verify-r"
     },
     {

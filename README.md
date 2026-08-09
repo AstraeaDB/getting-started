@@ -37,8 +37,20 @@ just verify-all
 Verification runs each lesson's code blocks inside a fresh container with its
 own AstraeaDB server, so a lesson cannot pass by depending on state another
 lesson left behind. `just images install` rebuilds from scratch, running the
-exact `apt-get` and `cargo install` lines the lessons print — building the image
-*is* the test of the install instructions.
+exact `apt-get` and `cargo install` lines the lessons print, so building the
+image *is* the test of the install instructions.
+
+**Build one image at a time.** The Apple container builder defaults to 2 CPUs
+and 2 GB, and two concurrent Rust builds will exhaust that and die with an
+unhelpful signal (exit 133 or -5) rather than an out-of-memory message. If you
+need more headroom:
+
+```bash
+container builder stop && container builder start --cpus 6 --memory 12g
+```
+
+Note the unit suffix on `--memory`. A bare number is parsed as zero bytes and
+the builder refuses to start.
 
 ## Layout
 
