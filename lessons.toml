@@ -151,15 +151,16 @@ source = "blogs/ui-explore-your-graph.md"
 
 # ----------------------------------------------------------------- Walk (7)
 
-# [[lesson]]
-# id = "walk-01-embeddings"
-# title = "What an Embedding Is, and How to Make One"
-# tier = "walk"
-# track = "py"
-# order = 10
-# file = "walk/01-embeddings.md"
-# verify = "required"
-# source = "astraeadb-embeddings-demo (private), tools/embeddings/embed.py"
+[[lesson]]
+id = "walk-01-embeddings"
+title = "What an Embedding Is, and How to Make One"
+tier = "walk"
+track = "py"
+order = 10
+file = "walk/01-embeddings.md"
+needs_ollama = true
+verify = "required"
+source = "absorbed (astraeadb-embeddings-demo is private, see KG Note 2224); tools/embeddings/embed.py"
 
 # [[lesson]]
 # id = "walk-02-semantic-search"

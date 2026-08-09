@@ -52,6 +52,24 @@ container builder stop && container builder start --cpus 6 --memory 12g
 Note the unit suffix on `--memory`. A bare number is parsed as zero bytes and
 the builder refuses to start.
 
+### Lessons that need Ollama
+
+Walk lessons embed text, and a container cannot reach an Ollama bound to
+`127.0.0.1`. The harness will not rebind yours, because an unauthenticated model
+server should not be exposed on someone's behalf. Run a second instance on the
+container bridge instead, which leaves `127.0.0.1:11434` working for your host
+tools:
+
+```bash
+OLLAMA_HOST=192.168.64.1:11435 ollama serve &
+VERIFY_OLLAMA_URL=http://192.168.64.1:11435 just verify walk-01-embeddings
+```
+
+Both instances share `~/.ollama`, so no model is downloaded twice. Without
+`VERIFY_OLLAMA_URL` the harness looks at `http://192.168.64.1:11434` and, if
+nothing answers, fails with these instructions rather than with a confusing
+error from inside the lesson.
+
 ## Layout
 
 ```

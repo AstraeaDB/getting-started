@@ -20,6 +20,7 @@ it rather than killing the whole file.
 import argparse
 import base64
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -63,7 +64,12 @@ MARK = "@@ASTRAEA"
 # exposing an unauthenticated model server is the operator's call, not the test
 # harness's.
 CONTAINER_GATEWAY = "192.168.64.1"
-OLLAMA_CONTAINER_URL = f"http://{CONTAINER_GATEWAY}:11434"
+# Override with VERIFY_OLLAMA_URL. That lets an operator front the containers
+# with a second Ollama bound to the bridge, on its own port, rather than
+# rebinding the one already serving 127.0.0.1 to host tools.
+OLLAMA_CONTAINER_URL = os.environ.get(
+    "VERIFY_OLLAMA_URL", f"http://{CONTAINER_GATEWAY}:11434"
+)
 
 
 def die(msg):

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-09T17:31:43+00:00",
+  "generated": "2026-08-09T19:28:46+00:00",
   "runs": [
     {
       "lesson": "crawl-08-ui",
@@ -98,6 +98,26 @@
       "rev": "61eef42",
       "date": "2026-08-09",
       "image": "astraea-verify-r"
+    },
+    {
+      "lesson": "walk-01-embeddings",
+      "green": true,
+      "blocks": 4,
+      "skipped": [
+        {
+          "block": 0,
+          "lang": "bash",
+          "reason": "the verification images talk to an Ollama already running on the host, so pulling a model inside the container would download several hundred megabytes on every run"
+        },
+        {
+          "block": 1,
+          "lang": "bash",
+          "reason": "the verification images talk to an Ollama already running on the host, so this would report the host's models rather than the container's"
+        }
+      ],
+      "rev": "61eef42",
+      "date": "2026-08-09",
+      "image": "astraea-verify-py"
     }
   ]
 }
