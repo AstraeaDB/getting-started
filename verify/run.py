@@ -56,6 +56,15 @@ STDERR_BAD = ("error", "panic", "traceback", "error in ")
 
 MARK = "@@ASTRAEA"
 
+# Q8: lessons read OLLAMA_URL from the environment, defaulting to
+# http://localhost:11434, so the published code is exactly the code that runs.
+# A container cannot reach a host Ollama bound to 127.0.0.1, so the harness
+# injects the bridge address instead. The host side is NOT changed automatically:
+# exposing an unauthenticated model server is the operator's call, not the test
+# harness's.
+CONTAINER_GATEWAY = "192.168.64.1"
+OLLAMA_CONTAINER_URL = f"http://{CONTAINER_GATEWAY}:11434"
+
 
 def die(msg):
     print(f"verify: error: {msg}", file=sys.stderr)
@@ -218,6 +227,38 @@ def parse_output(text):
     return ({k: "".join(v).strip("\n") for k, v in segs.items()}, exits, server_up)
 
 
+def ollama_unreachable(image):
+    """Return a reason string if the container cannot reach Ollama, else None.
+
+    Ollama binds 127.0.0.1 by default, which a container cannot reach. Rather
+    than rebinding the host's model server behind the operator's back, say
+    plainly what is wrong and how to fix it.
+    """
+    # Must be an HTTP request against Ollama's own API, not a bare TCP connect.
+    # A connect to the bridge gateway succeeds even with nothing listening
+    # behind it, so /dev/tcp reports success and the guard never fires.
+    probe = (
+        f"curl -sf -m 5 {OLLAMA_CONTAINER_URL}/api/tags "
+        f"| grep -q '\"models\"' && echo REACHABLE || echo UNREACHABLE"
+    )
+    out = subprocess.run(["container", "run", "--rm", image, "bash", "-c", probe],
+                         capture_output=True, text=True, timeout=120)
+    # Compare the whole token: "REACHABLE" is a substring of "UNREACHABLE", so a
+    # containment test here silently reports success for the failure case.
+    verdict = out.stdout.split()[-1] if out.stdout.split() else ""
+    if verdict == "REACHABLE":
+        return None
+    return (
+        f"this lesson needs Ollama, and the container cannot reach it at "
+        f"{OLLAMA_CONTAINER_URL}. Ollama binds 127.0.0.1 by default. To expose it "
+        f"to the container bridge for the duration of a verification run:\n"
+        f"      OLLAMA_HOST={CONTAINER_GATEWAY}:11434 ollama serve\n"
+        f"    That binds only the container bridge rather than 0.0.0.0, so the "
+        f"model server is not offered to the wider network. Note it also stops "
+        f"127.0.0.1:11434 working for host tools while it runs."
+    )
+
+
 def run_lesson(lesson, manifest, keep_going=False, timeout=900):
     lid = lesson["id"]
     # A self-test fixture carries an absolute path; a real lesson is relative
@@ -269,6 +310,13 @@ def run_lesson(lesson, manifest, keep_going=False, timeout=900):
     cname = f"verify-{lid}"
     subprocess.run(["container", "rm", "-f", cname], capture_output=True)
     argv = ["container", "run", "--rm", "-i", "--name", cname]
+
+    if lesson.get("needs_ollama"):
+        why = ollama_unreachable(image)
+        if why:
+            return {"lesson": lid, "green": False, "skipped": skipped,
+                    "failure": why}
+        argv += ["-e", f"OLLAMA_URL={OLLAMA_CONTAINER_URL}"]
     sample = ROOT / "samples" / lid
     if sample.is_dir():
         argv += ["--mount", f"type=bind,source={sample},target=/work/samples,readonly"]

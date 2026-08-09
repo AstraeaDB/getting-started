@@ -993,6 +993,15 @@ the canonical sources and the site is the only HTML output.
 **Q8 RESOLVED 2026-08-09: read `OLLAMA_URL` from the environment, defaulting to
 `http://localhost:11434`.**
 
+*Implemented 2026-08-09.* `verify/run.py` injects
+`OLLAMA_URL=http://192.168.64.1:11434` for any lesson whose `lessons.toml` entry
+sets `needs_ollama = true`, and runs a preflight first. The harness does **not**
+rebind the host's Ollama: exposing an unauthenticated model server is the
+operator's decision, not a test harness's. When the container cannot reach it,
+the run fails with the exact command to fix it, recommending
+`OLLAMA_HOST=192.168.64.1:11434` over `0.0.0.0` so only the container bridge is
+exposed rather than the whole network.
+
 Neither option this question originally posed. Lesson code reads the URL from
 the environment with `http://localhost:11434` as its default, so **the published
 code is exactly the code that runs**: a reader gets the default, and the harness
