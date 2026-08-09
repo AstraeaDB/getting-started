@@ -733,6 +733,21 @@ Each follows the checklist in section 6 and produces a `Note` node plus a
   `echo`, is defined inside a test in `tools/mod.rs`.**
   *after:* T4. **[parallel]**
 
+### Phase 2.5: prerequisite, added 2026-08-09
+
+- **T28-BLOCK [dev-core] Land AstraeaDB issue #28 before writing lesson prose.**
+  Decided 2026-08-09: the lessons are written against `cargo install astraeadb`
+  rather than the `--git` form, so #28 is now on the critical path rather than a
+  nice-to-have. The work is adding `description`, `license.workspace` and
+  `repository.workspace` to nine crates and `publish = false` to
+  `astraea-encrypt-demo`, then publishing in dependency order. See
+  `astraeadb-issues.md` #28.
+  *Accept:* `cargo install astraeadb` works from a clean container; the Crawl
+  `_shared/install-server.md` fragment is rewritten to use it; the verification
+  images drop their `cargo install --git` step and rebuild much faster.
+  *Blocks:* all Walk and Run prose, because every lesson opens with an install
+  line and nobody should write it twice.
+
 ### Phase 3: Walk. Each lesson depends on its audit.
 
 - **T15 [documentarian] Write `walk-01-embeddings`.** *after:* T11.
@@ -857,6 +872,19 @@ then cli, flight, mcp, gnn, cluster, gpu), and `astraea-encrypt-demo` should get
 `cargo install astraeadb`. If #28 has not landed when a lesson is written, use
 the `--git` form and leave a `TODO(#28)` marker so the sweep is mechanical.
 
+**Q3 RESOLVED 2026-08-09: both stay private. Absorb both, link neither.**
+
+`astraeadb-embeddings-demo` could not be audited at all (T11, KG Note 2224):
+404 unauthenticated with no local clone. Absorb the material; `crawl-*-02`
+already proves the mechanics and what remains is narrative.
+
+`cyber-graph-demo` **stays private, and its pipeline code is absorbed inline**
+into `run-02` through `run-04`. This is the most expensive of the three options
+considered and it leaves the ingestion and subset-extraction code living in two
+places with nothing keeping them in step. Mitigation: the absorbed code goes
+into `samples/<lesson-id>/` as real files the harness executes, not as prose in
+the page, so it cannot silently rot without a verification run going red.
+
 **Q3. Two source repositories are private. What happens to them?**
 `cyber-graph-demo` and `astraeadb-embeddings-demo` are private. Three of the
 five Run lessons and two of the seven Walk lessons derive from them.
@@ -907,6 +935,14 @@ synthetic graph of the same shape instead.
 
 *ANSWER* Explain how to get the data for the user. You may verify the code works on the data already existing locally today (the gnn-elliptinc data should be here: /Users/jimharris/Documents/gnn-elliptic-demo)
 
+**Q5 RESOLVED 2026-08-09: Python-primary, with short "in R" sidebars.**
+
+Walk and Run are written in Python. Where the R client has an equivalent
+method, the lesson carries a short collapsible "in R" note rather than a whole
+parallel lesson. `run-01-fraud-elliptic` stays Rust, because `astraea-gnn` has
+no wire protocol and cannot be driven from any client. The landing page must say
+this plainly, so an R reader is not surprised at the end of Crawl.
+
 **Q5. Are Walk and Run Python-only, or do they need R parallel tracks too?**
 CONCEPT.md specifies parallel Python and R tracks for Crawl and is silent about
 the other two tiers. All four Walk and cyber source demos are Python, and
@@ -953,6 +989,18 @@ All five were deleted in commit `e0a1332`, along with a stray `DESIGN.html`.
 Medium is not a publication target. **T7 is dropped**, there is no `just medium`
 recipe, and section 8 needs no dual-output path. The paired `.md` files remain
 the canonical sources and the site is the only HTML output.
+
+**Q8 RESOLVED 2026-08-09: read `OLLAMA_URL` from the environment, defaulting to
+`http://localhost:11434`.**
+
+Neither option this question originally posed. Lesson code reads the URL from
+the environment with `http://localhost:11434` as its default, so **the published
+code is exactly the code that runs**: a reader gets the default, and the harness
+injects `http://192.168.64.1:11434` after starting the host's Ollama with
+`OLLAMA_HOST=0.0.0.0`. The divergence moves out of the source and into an
+environment variable. `data_lake_demo` and `astraea-graphrag-demo` already work
+this way, so the lessons match their sources. Installing Ollama into the image
+was rejected because it means a multi-gigabyte model pull per image build.
 
 **Q8. Ollama during verification: expose the host, or install it in the image?**
 The host's `ollama` binds `127.0.0.1:11434`, so containers on `192.168.64.0/24`
