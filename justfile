@@ -10,10 +10,10 @@ astraeadb := env_var_or_default("ASTRAEADB", "/Users/jimharris/Documents/astraea
 default:
     @just --list
 
-# Regenerate samples/<lesson-id>/ from the lessons they came from. `just build`
-# checks these are current and fails if they are not, so run this after editing
-# a Rust lesson's code blocks or its dependency block.
+# Regenerate samples/<id>/ from its lesson. Run after editing a Rust lesson.
 sync-samples:
+    # `just build` checks these are current and fails if they are not, so a
+    # lesson edit that is not synced cannot reach the published site.
     {{python}} site/sync_samples.py
 
 # Render content/ into docs/. This is what GitHub Pages serves.
