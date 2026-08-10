@@ -19,7 +19,10 @@
   </div>
 </header>
 
-<main id="main">
+<div class="layout">
+  {{sidebar}}
+
+  <main id="main">
   <section class="hero">
     <h1>{{sitetitle}}</h1>
     {{intro}}
@@ -41,7 +44,8 @@
   <section class="verifystrip">
     <p>{{strip}} <a href="status.html">See the full verification status.</a></p>
   </section>
-</main>
+  </main>
+</div>
 
 <footer class="sitefoot">
   <p>

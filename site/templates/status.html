@@ -14,7 +14,10 @@
   <a class="brand" href="index.html">{{sitetitle}}</a>
 </header>
 
-<main id="main">
+<div class="layout">
+  {{sidebar}}
+
+  <main id="main">
   <h1>Verification status</h1>
 
   <p>Every lesson marked <strong>green</strong> had all of its code blocks
@@ -37,7 +40,8 @@
   </table>
 
   <p class="muted">Generated {{generated}}.</p>
-</main>
+  </main>
+</div>
 
 <footer class="sitefoot">
   <p><a href="index.html">Back to the lessons</a></p>

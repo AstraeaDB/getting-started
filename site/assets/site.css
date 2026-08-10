@@ -112,7 +112,11 @@ main {
   max-width: var(--measure);
   padding: 1.5rem 1.25rem 4rem;
 }
-.landing main, .statuspage main { max-width: 62rem; margin: 0 auto; }
+/* The landing and status pages now sit inside the same flex .layout as a
+   lesson, so they must not also center themselves with auto margins. They
+   get a wider measure because tier cards and a status table are wider than
+   prose. */
+.landing main, .statuspage main { max-width: 62rem; }
 
 h1 { font-size: 1.9rem; line-height: 1.25; margin: .2rem 0 1rem; }
 h2 { font-size: 1.35rem; margin: 2.2rem 0 .6rem; }

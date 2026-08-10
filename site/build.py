@@ -478,6 +478,7 @@ def render_index(manifest, lessons, report, strict):
         TEMPLATES / "index.html",
         {
             "sitetitle": html.escape(site.get("title", "")),
+            "sidebar": build_sidebar(manifest, lessons, None),
             "intro": intro,
             "cards": "\n".join(cards),
             "strip": strip,
@@ -521,6 +522,7 @@ def render_status(manifest, lessons, report):
         TEMPLATES / "status.html",
         {
             "sitetitle": html.escape(manifest.get("site", {}).get("title", "")),
+            "sidebar": build_sidebar(manifest, lessons, None),
             "rows": "\n".join(rows),
             "generated": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         },
