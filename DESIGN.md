@@ -900,6 +900,40 @@ reduction in the Run tier.
 
 *ANSWER* Keep them private, but borrow liberally from them. It is not necessary to reproduce all of the functionality, but demonstrate the advanced features. Keep a directory of scripts the user might need, but explain that going into detail on each of them is beyond the scope of the document, and they should review the code (which should be heavily commented) to understand it further.
 
+**Q4 FULLY RESOLVED 2026-08-10. LANL ships; Elliptic does not.**
+
+The Elliptic Bitcoin dataset is distributed under **CC BY-NC-ND 4.0**, confirmed
+from its Kaggle listing. Two clauses bite:
+
+- **NoDerivatives.** A sampled subset is plausibly "Adapted Material" under
+  CC 4.0, and ND prohibits *distributing* adapted material. Sampling is exactly
+  the thing this project wanted to do.
+- **NonCommercial.** This is documentation for a commercial database. A free
+  site promoting a paid product is a defensible reading of commercial use.
+
+Either alone would make shipping derived data risky. Together they settle it.
+**`run-01` ships no Elliptic data, not even a sample.** This is a
+non-lawyer's reading; get advice if you want certainty, but the fallback below
+costs little, so it is not worth the risk.
+
+What `run-01` does instead:
+
+1. **Tells the reader how to fetch it themselves** with the Kaggle CLI.
+   Instructing someone to download from the original source is not
+   redistribution, and it puts the licence obligation where it belongs.
+   Attribution is given regardless, since BY applies to any use.
+2. **Verifies against a synthetic graph of the same shape**: the same 165
+   features, a comparable labelled-to-unlabelled ratio, and the same temporal
+   structure, at a few thousand nodes rather than 203,769. The code under test
+   is identical; only the numbers differ.
+3. **Marks the full-dataset run `verify: skip`** with the licence as the stated
+   reason, so `/status.html` shows plainly which part is machine-checked.
+
+LANL remains **CC0, public domain** (T13 audit, KG Note 2221), so `run-02`
+through `run-04` ship a sampled subset with no such constraint. The contrast is
+worth noting in the lessons themselves: two public research datasets, two very
+different answers about what you may pass on.
+
 **Q4. How do we handle the two large external datasets? PARTLY RESOLVED
 2026-08-08 by the Phase 2 audits: LANL is settled, Elliptic is not.**
 
