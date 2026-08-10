@@ -264,15 +264,16 @@ needs_ollama = true
 verify = "required"
 source = "cyber-graph-demo @ f213607 Act 2, absorbed inline per Q3; real LANL red-team labels with synthetic benign background (data/lanl/make_auth.py)"
 
-# [[lesson]]
-# id = "run-04-cyber-report"
-# title = "Explaining an Investigation: GraphRAG for Audit-Grade Reports"
-# tier = "run"
-# track = "py"
-# order = 40
-# file = "run/04-cyber-report.md"
-# verify = "required"
-# source = "cyber-graph-demo (private) Act 3"
+[[lesson]]
+id = "run-04-cyber-report"
+title = "Explaining an Investigation: GraphRAG for Audit-Grade Reports"
+tier = "run"
+track = "py"
+order = 40
+file = "run/04-cyber-report.md"
+needs_ollama = true
+verify = "required"
+source = "cyber-graph-demo @ f213607 Act 3, absorbed inline per Q3"
 
 [[lesson]]
 id = "run-05-ai-assisted-dev"

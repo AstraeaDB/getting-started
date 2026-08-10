@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explaining an Investigation: GraphRAG for Audit-Grade Reports &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-tier="run" data-track="py" data-lesson="run-04-cyber-report">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  <li data-track="py" class=""><a href="walk/01-embeddings.html">What an Embedding Is, and How to Make One</a></li>
+  <li data-track="py" class=""><a href="walk/02-semantic-search.html">Searching a Graph by Meaning, Not by Keyword</a></li>
+  <li data-track="py" class=""><a href="walk/03-text-to-graph.html">Turning a Book Into a Knowledge Graph</a></li>
+  <li data-track="py" class=""><a href="walk/04-graphrag.html">GraphRAG End to End: Retrieve, Extract, Linearize, Answer</a></li>
+  <li data-track="py" class=""><a href="walk/05-data-lake.html">A Metadata Graph Over a Messy Data Lake</a></li>
+  <li data-track="py" class=""><a href="walk/06-eunomia.html">Eunomia: A Semantic Cache in Front of Your Graph</a></li>
+  <li data-track="py" class=""><a href="walk/07-a-llama.html">a-llama: A Local LLM Server That Remembers</a></li>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  <li data-track="py" class=""><a href="run/02-cyber-build.html">Building a Network Graph From Security Telemetry</a></li>
+  <li data-track="py" class=""><a href="run/03-cyber-hunt.html">Hunting Lateral Movement With Embeddings and Time Travel</a></li>
+  <li data-track="py" class="current"><a href="run/04-cyber-report.html">Explaining an Investigation: GraphRAG for Audit-Grade Reports</a></li>
+  <li data-track="py" class=""><a href="run/05-ai-assisted-dev.html">Giving Your Coding Assistant a Memory</a></li>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Explaining an Investigation: GraphRAG for Audit-Grade Reports</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#the-obvious-approach-and-why-it-fails"
+      id="toc-the-obvious-approach-and-why-it-fails">The obvious
+      approach, and why it fails</a></li>
+      <li><a href="#the-approach-that-works-do-not-let-it-cite"
+      id="toc-the-approach-that-works-do-not-let-it-cite">The approach
+      that works: do not let it cite</a></li>
+      <li><a href="#letting-the-model-write"
+      id="toc-letting-the-model-write">Letting the model write</a></li>
+      <li><a href="#the-check-that-is-still-worth-running"
+      id="toc-the-check-that-is-still-worth-running">The check that is
+      still worth running</a></li>
+      <li><a href="#what-audit-grade-actually-means-here"
+      id="toc-what-audit-grade-actually-means-here">What audit-grade
+      actually means here</a></li>
+      <li><a href="#whats-next" id="toc-whats-next">What's next</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Write the incident up so that every sentence can be traced to
+    something you can re-run.</em></p>
+    <p>You have five compromised accounts, a foothold, a pivot and a
+    timeline. Now somebody wants it in writing, and that written version
+    will be read by people who were not there, possibly months later,
+    possibly by an auditor whose job is to disbelieve it.</p>
+    <p>A language model will write you a fluent paragraph in a second.
+    The problem is not fluency. The problem is that a fluent paragraph
+    is indistinguishable from an accurate one, and the difference
+    matters more here than anywhere else in this site.</p>
+    <h2 id="the-obvious-approach-and-why-it-fails">The obvious approach,
+    and why it fails</h2>
+    <p>The natural idea is to give the model the subgraph and ask it to
+    cite its sources: produce findings, and for each one, name the nodes
+    it rests on. Then check the citations.</p>
+    <p>It is worth actually trying, because the way it fails is
+    instructive. Given the incident subgraph and asked for findings with
+    citations, a small local model produced claims resting on
+    <code>192.168.1.100</code>, <code>10.0.0.5</code> and
+    <code>172.16.0.20</code>. There are no IP addresses anywhere in this
+    graph. It had invented plausible-looking infrastructure. Another
+    attempt cited a node called <code>Unknown</code>, which is a
+    placeholder leaking into the output, and a larger model emitted the
+    literal string <code>&lt;node&gt;</code> from the instructions.</p>
+    <p>Asked a question the data cannot answer, "what was stolen and
+    where was it sent", it asserted exfiltration to
+    <code>external_server</code>, and cited relationships called
+    <code>EXFILTRATED</code> and <code>RECEIVED</code> that do not exist
+    in the schema.</p>
+    <p>A citation check catches all of that, and you should build one.
+    But notice what it does not catch. Early on, before checking
+    relationships and not only names, the claim <em>"data was stolen
+    from C17693 and sent to C17155"</em> passed, because both machines
+    are real nodes. The nouns were genuine and the sentence was
+    invented. <strong>Verifying that cited entities exist is necessary
+    and nowhere near sufficient</strong>, because a hallucination that
+    reuses real names looks exactly like a fact.</p>
+    <p>You can keep hardening the checker, and you should, but you are
+    then in a race with a system whose whole talent is producing
+    plausible text.</p>
+    <h2 id="the-approach-that-works-do-not-let-it-cite">The approach
+    that works: do not let it cite</h2>
+    <p>Turn the problem around. Instead of letting the model choose what
+    to assert and then auditing it, <strong>query the graph yourself,
+    and give the model only the answers</strong>. Its job stops being
+    research and becomes rewriting.</p>
+    <p>Every fact then traces to a query you wrote, which is the thing
+    an auditor actually wants: not a citation the model produced, but a
+    command they can run again.</p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> csv</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> re</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib.request</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>auth <span class="op">=</span> <span class="bu">list</span>(csv.reader(<span class="bu">open</span>(<span class="st">&quot;data/lanl/auth.csv&quot;</span>)))</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>redteam <span class="op">=</span> <span class="bu">list</span>(csv.reader(<span class="bu">open</span>(<span class="st">&quot;data/lanl/redteam.csv&quot;</span>)))</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>attack_start <span class="op">=</span> <span class="bu">min</span>(<span class="bu">int</span>(row[<span class="dv">0</span>]) <span class="cf">for</span> row <span class="kw">in</span> redteam)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>client.<span class="ex">connect</span>()</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>nodes <span class="op">=</span> {}</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> node(label, name):</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (label, name) <span class="kw">not</span> <span class="kw">in</span> nodes:</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>        nodes[(label, name)] <span class="op">=</span> client.create_node([label], {<span class="st">&quot;name&quot;</span>: name})</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> nodes[(label, name)]</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> time, user, source, dest <span class="kw">in</span> auth:</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    client.create_edge(node(<span class="st">&quot;User&quot;</span>, user), node(<span class="st">&quot;Computer&quot;</span>, source),</span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>                       <span class="st">&quot;AUTH_FROM&quot;</span>, valid_from<span class="op">=</span><span class="bu">int</span>(time))</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    client.create_edge(node(<span class="st">&quot;User&quot;</span>, user), node(<span class="st">&quot;Computer&quot;</span>, dest),</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>                       <span class="st">&quot;AUTH_TO&quot;</span>, valid_from<span class="op">=</span><span class="bu">int</span>(time))</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> names_of(hops):</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">sorted</span>({client.get_node(h[<span class="st">&quot;node_id&quot;</span>])[<span class="st">&quot;properties&quot;</span>][<span class="st">&quot;name&quot;</span>] <span class="cf">for</span> h <span class="kw">in</span> hops})</span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>FOOTHOLD <span class="op">=</span> <span class="st">&quot;C17693&quot;</span></span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>facts <span class="op">=</span> []</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>accounts <span class="op">=</span> names_of(client.neighbors(</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    node(<span class="st">&quot;Computer&quot;</span>, FOOTHOLD), direction<span class="op">=</span><span class="st">&quot;incoming&quot;</span>, edge_type<span class="op">=</span><span class="st">&quot;AUTH_FROM&quot;</span>))</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>facts.append(<span class="ss">f&quot;</span><span class="sc">{</span><span class="bu">len</span>(accounts)<span class="sc">}</span><span class="ss"> accounts authenticated from </span><span class="sc">{</span>FOOTHOLD<span class="sc">}</span><span class="ss">: &quot;</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>             <span class="ss">f&quot;</span><span class="sc">{</span><span class="st">&#39;, &#39;</span><span class="sc">.</span>join(accounts)<span class="sc">}</span><span class="ss">.&quot;</span>)</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> account <span class="kw">in</span> accounts:</span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>    before <span class="op">=</span> names_of(client.neighbors_at(</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>        node(<span class="st">&quot;User&quot;</span>, account), <span class="st">&quot;outgoing&quot;</span>, attack_start <span class="op">-</span> <span class="dv">1</span>, <span class="st">&quot;AUTH_FROM&quot;</span>))</span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>    facts.append(<span class="ss">f&quot;Before t=</span><span class="sc">{</span>attack_start<span class="sc">}</span><span class="ss">, </span><span class="sc">{</span>account<span class="sc">}</span><span class="ss"> authenticated only from &quot;</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>                 <span class="ss">f&quot;</span><span class="sc">{</span><span class="st">&#39;, &#39;</span><span class="sc">.</span>join(before) <span class="kw">or</span> <span class="st">&#39;nowhere&#39;</span><span class="sc">}</span><span class="ss">.&quot;</span>)</span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> fact <span class="kw">in</span> facts:</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">&quot;-&quot;</span>, fact)</span></code></pre></div>
+    <p>Each of those lines is the output of one query. Nothing was
+    summarised, inferred or chosen by a model. If an auditor disputes
+    the second bullet, you re-run <code>neighbors_at</code> for that
+    account and the argument is over.</p>
+    <h2 id="letting-the-model-write">Letting the model write</h2>
+    <p>Now the model gets a task it is genuinely good at, which is
+    turning a list into readable English:</p>
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>OLLAMA_URL <span class="op">=</span> os.environ.get(<span class="st">&quot;OLLAMA_URL&quot;</span>, <span class="st">&quot;http://localhost:11434&quot;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>CHAT_MODEL <span class="op">=</span> os.environ.get(<span class="st">&quot;CHAT_MODEL&quot;</span>, <span class="st">&quot;gemma3:4b&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> (</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Write a short incident summary of at most 5 sentences for a security report.</span><span class="ch">\n</span><span class="st">&quot;</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Use ONLY these facts. Do not add machines, accounts, IP addresses, times or</span><span class="ch">\n</span><span class="st">&quot;</span></span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;conclusions that are not stated. Do not speculate about motive or data loss.</span><span class="ch">\n\n</span><span class="st">&quot;</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Facts:</span><span class="ch">\n</span><span class="st">&quot;</span> <span class="op">+</span> <span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>.join(<span class="ss">f&quot;- </span><span class="sc">{</span>f<span class="sc">}</span><span class="ss">&quot;</span> <span class="cf">for</span> f <span class="kw">in</span> facts)</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>request <span class="op">=</span> urllib.request.Request(</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="ss">f&quot;</span><span class="sc">{</span>OLLAMA_URL<span class="sc">}</span><span class="ss">/api/generate&quot;</span>,</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    data<span class="op">=</span>json.dumps({<span class="st">&quot;model&quot;</span>: CHAT_MODEL, <span class="st">&quot;prompt&quot;</span>: prompt, <span class="st">&quot;stream&quot;</span>: <span class="va">False</span>}).encode(),</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    headers<span class="op">=</span>{<span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span>},</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> urllib.request.urlopen(request, timeout<span class="op">=</span><span class="dv">300</span>) <span class="im">as</span> resp:</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    report <span class="op">=</span> json.load(resp)[<span class="st">&quot;response&quot;</span>].strip()</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(report)</span></code></pre></div>
+    <p>Two instructions are doing the work. Naming the categories it
+    must not invent, machines and accounts and addresses and times, is
+    more effective than a general plea for accuracy. And forbidding
+    speculation about motive matters because that is exactly where an
+    incident report goes wrong: the facts support "this account appeared
+    somewhere new" and not "an attacker exfiltrated data", and a model
+    asked to write about a security incident will reach for the
+    second.</p>
+    <h2 id="the-check-that-is-still-worth-running">The check that is
+    still worth running</h2>
+    <p>Constraining the input makes invention much less likely. It does
+    not make it impossible, so verify anyway. Because you know every
+    name that legitimately exists, anything else in the text is an
+    addition:</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>allowed <span class="op">=</span> {name <span class="cf">for</span> _, name <span class="kw">in</span> nodes}</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>cited <span class="op">=</span> <span class="bu">set</span>(re.findall(<span class="vs">r&quot;</span><span class="dv">\b</span>(?:<span class="vs">C</span><span class="dv">\d</span><span class="op">+</span><span class="cf">|</span><span class="vs">U</span><span class="dv">\d</span><span class="op">+</span><span class="vs">@DOM1</span>)<span class="dv">\b</span><span class="vs">&quot;</span>, report))</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>invented <span class="op">=</span> <span class="bu">sorted</span>(cited <span class="op">-</span> allowed)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span><span class="bu">len</span>(cited)<span class="sc">}</span><span class="ss"> identifiers in the report; invented: </span><span class="sc">{</span>invented <span class="kw">or</span> <span class="st">&#39;none&#39;</span><span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>This should report none. That is not proof the report is correct,
+    and it is worth being precise about what it does prove: no
+    identifier appears that is not in the graph. A sentence can still
+    misdescribe a real relationship between real machines. What the
+    check gives you is the guarantee that the report is about your
+    network and nothing else, which is the failure the earlier attempt
+    produced repeatedly.</p>
+    <p>For the residual risk, the answer is not more automation. It is
+    that the fact list is short, written by queries, and can be read by
+    a person in under a minute.</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>client.close()</span></code></pre></div>
+    <h2 id="what-audit-grade-actually-means-here">What audit-grade
+    actually means here</h2>
+    <p>Three properties, none of which require trusting the model.</p>
+    <p>Every sentence derives from a fact in a list you can read. Every
+    fact in that list is the output of a query you can re-run against
+    the graph. And the identifiers in the prose are checked against the
+    graph mechanically, so the report cannot quietly acquire a machine
+    that does not exist.</p>
+    <p>The model contributed the English. That is the correct division
+    of labour, and it is worth defending against the temptation to let
+    it do more, because the moment it decides what is worth saying you
+    are back to auditing prose instead of re-running queries.</p>
+    <h2 id="whats-next">What's next</h2>
+    <p>This tier has one lesson left, and it is the most computational.
+    In <strong><a href="./01-fraud-elliptic.html">Finding Fraud:
+    Classifying Bitcoin Transactions with an In-Database
+    GNN</a></strong> the graph stops being something you query and
+    becomes something you train a model on, inside the database.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../run/03-cyber-hunt.html"><span>Previous</span>Hunting Lateral Movement With Embeddings and Time Travel</a>
+                  <a class="next" href="../run/05-ai-assisted-dev.html"><span>Next</span>Giving Your Coding Assistant a Memory</a>
+          </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 61eef42 on 2026-08-10</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>
