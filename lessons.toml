@@ -231,17 +231,21 @@ source = "AstraeaDB/a-llama @ 0.1.0 on crates.io"
 #
 # # ------------------------------------------------------------------ Run (5)
 
-# [[lesson]]
-# id = "run-01-fraud-elliptic"
-# title = "Finding Fraud: Classifying Bitcoin Transactions with an In-Database GNN"
-# tier = "run"
-# track = "rust"
-# order = 10
-# file = "run/01-fraud-elliptic.md"
-# # Rust because astraea-gnn has no wire protocol: the 33-variant Request enum
-# # has no GNN command, so this cannot be driven from any client (DESIGN.md 5.1).
-# verify = "required"
-# source = "GNN-test-and-improve"
+[[lesson]]
+id = "run-01-fraud-elliptic"
+title = "Finding Fraud: Classifying Bitcoin Transactions with an In-Database GNN"
+tier = "run"
+track = "rust"
+order = 10
+file = "run/01-fraud-elliptic.md"
+# Rust because astraea-gnn has no wire protocol: the 33-variant Request enum
+# has no GNN command, so this cannot be driven from any client (DESIGN.md 5.1).
+# 165 dimensions is the Elliptic feature count (T12 audit, KG Note 2222); the
+# graph here is in-process, so the server dim is unused, but it is recorded
+# because it is the number the lesson teaches.
+vector_dim = 165
+verify = "required"
+source = "GNN-test-and-improve @ f6f313e (audited, KG Note 2222); synthetic graph, no Elliptic data shipped per Q4"
 
 [[lesson]]
 id = "run-02-cyber-build"

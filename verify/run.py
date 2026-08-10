@@ -146,12 +146,20 @@ def rust_driver(blocks):
     Reported as a single unit. A compile error belongs to the program rather
     than to one block, and pretending otherwise would point at the wrong line.
     """
-    idx = blocks[0].index
-    return "\n".join([
-        f'echo "{MARK} START {idx}"',
+    first = blocks[0].index
+    lines = [
+        f'echo "{MARK} START {first}"',
         "cd /work/rustlesson && cargo run --release --quiet 2>&1",
-        f'echo "{MARK} EXIT {idx} $?"',
-    ]) + "\n"
+        "RUST_RC=$?",
+        f'echo "{MARK} EXIT {first} $RUST_RC"',
+    ]
+    # The remaining blocks are part of the same program, so they share its
+    # fate. Give each an explicit marker rather than leaving them looking as
+    # though they never ran.
+    for b in blocks[1:]:
+        lines += [f'echo "{MARK} START {b.index}"',
+                  f'echo "{MARK} EXIT {b.index} $RUST_RC"']
+    return "\n".join(lines) + "\n"
 
 
 def rust_project_files(blocks):
@@ -170,6 +178,7 @@ astraea-vector = "0.3.1"
 astraea-gnn = "0.3.1"
 astraea-algorithms = "0.3.1"
 rand = "0.8"
+serde_json = "1"
 """
     return {"/work/rustlesson/Cargo.toml": cargo,
             "/work/rustlesson/src/main.rs": main}

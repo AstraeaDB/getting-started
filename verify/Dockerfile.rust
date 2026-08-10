@@ -8,12 +8,19 @@ FROM astraea-verify-base
 # dependency tree. astraea-gnn and astraea-algorithms became installable this
 # way only once AstraeaDB issue #28 landed; before that this image had to build
 # them from a git checkout.
+# A SHARED target directory, kept in the image. Warming only the registry
+# cache warms downloads, not compilation: deleting the scratch project throws
+# away target/ and every later build recompiles the whole dependency tree from
+# source, which took over twenty-five minutes. Pointing CARGO_TARGET_DIR at a
+# persistent path lets a lesson's build reuse those artifacts.
+ENV CARGO_TARGET_DIR=/opt/cargo-target
+
 # astraea-graph is added on its own because --features cannot be scoped to one
 # crate when `cargo add` is given several at once.
 RUN cargo new /tmp/warm && cd /tmp/warm \
  && cargo add astraea-graph@0.3.1 --features test-utils \
  && cargo add astraea-core@0.3.1 astraea-vector@0.3.1 astraea-gnn@0.3.1 \
-      astraea-algorithms@0.3.1 rand@0.8 \
+      astraea-algorithms@0.3.1 rand@0.8 serde_json@1 \
  && cargo build --release \
- && cd / && rm -rf /tmp/warm
+ && rm -rf /tmp/warm
 WORKDIR /work

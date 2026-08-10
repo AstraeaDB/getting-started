@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-10T13:15:50+00:00",
+  "generated": "2026-08-10T14:01:57+00:00",
   "runs": [
     {
       "lesson": "crawl-08-ui",
@@ -98,6 +98,15 @@
       "rev": "61eef42",
       "date": "2026-08-09",
       "image": "astraea-verify-r"
+    },
+    {
+      "lesson": "run-01-fraud-elliptic",
+      "green": true,
+      "blocks": 4,
+      "skipped": [],
+      "rev": "61eef42",
+      "date": "2026-08-10",
+      "image": "astraea-verify-rust"
     },
     {
       "lesson": "run-02-cyber-build",
