@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-10T02:24:20+00:00",
+  "generated": "2026-08-10T02:36:17+00:00",
   "runs": [
     {
       "lesson": "crawl-08-ui",
@@ -157,6 +157,26 @@
       "green": true,
       "blocks": 7,
       "skipped": [],
+      "rev": "61eef42",
+      "date": "2026-08-10",
+      "image": "astraea-verify-py"
+    },
+    {
+      "lesson": "walk-06-eunomia",
+      "green": true,
+      "blocks": 3,
+      "skipped": [
+        {
+          "block": 0,
+          "lang": "bash",
+          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install"
+        },
+        {
+          "block": 1,
+          "lang": "bash",
+          "reason": "run.py starts the gateway before the lesson body so the later blocks have something to talk to; starting a second one here would fail on the port"
+        }
+      ],
       "rev": "61eef42",
       "date": "2026-08-10",
       "image": "astraea-verify-py"

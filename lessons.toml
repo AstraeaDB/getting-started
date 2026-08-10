@@ -206,15 +206,17 @@ needs_ollama = true
 verify = "required"
 source = "data_lake_demo @ 58c1f1d (audited, KG Note 2223); schema vocabulary from its schema.md"
 
-# [[lesson]]
-# id = "walk-06-eunomia"
-# title = "Eunomia: A Semantic Cache in Front of Your Graph"
-# tier = "walk"
-# track = "py"
-# order = 60
-# file = "walk/06-eunomia.md"
-# verify = "required"
-# source = "AstraeaDB/eunomia, data_lake_demo/EUNOMIA_INTEGRATION.md"
+[[lesson]]
+id = "walk-06-eunomia"
+title = "Eunomia: A Semantic Cache in Front of Your Graph"
+tier = "walk"
+track = "py"
+order = 60
+file = "walk/06-eunomia.md"
+needs_ollama = true
+needs_eunomia = true
+verify = "required"
+source = "AstraeaDB/eunomia @ 0.1.0 on crates.io"
 
 # [[lesson]]
 # id = "walk-07-a-llama"

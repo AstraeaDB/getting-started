@@ -22,4 +22,12 @@ RUN pip install --no-cache-dir --break-system-packages pandas
 # files can answer a question, DuckDB answers it.
 RUN pip install --no-cache-dir --break-system-packages duckdb
 
+# walk-06 introduces Eunomia, the semantic cache. Installing it here means
+# the lesson's store-and-recall example is genuinely executed rather than
+# described. Published at 0.1.0 alongside the astraea crates.
+# The package is eunomia-server; the binary it installs is `eunomia`, the
+# same package/binary split as astraea-cli/astraeadb.
+RUN cargo install eunomia-server --version 0.1.0 --locked \
+ && eunomia --help > /dev/null
+
 RUN python3 -c "import astraeadb; print('astraeadb python client', astraeadb.__version__ if hasattr(astraeadb,'__version__') else 'ok')"

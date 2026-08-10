@@ -181,6 +181,17 @@ def build_container_script(lesson, groups, extra_files):
         'fi',
         f'echo "{MARK} SERVERUP"',
     ]
+    # walk-06 talks to Eunomia, the semantic cache. Start its REST gateway the
+    # same way the AstraeaDB server is started: inside the container, on the
+    # address the lesson text names, so the snippet under test is the real one.
+    if lesson.get("needs_eunomia"):
+        s += [
+            "eunomia rest >/tmp/eunomia.log 2>&1 &",
+            'for i in $(seq 1 60); do',
+            '  if (exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null; then exec 3>&-; break; fi',
+            '  sleep 0.5',
+            'done',
+        ]
     for path, content in extra_files.items():
         fb64 = base64.b64encode(content.encode()).decode()
         s.append(f'echo {fb64} | base64 -d > {path}')

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eunomia: A Semantic Cache in Front of Your Graph &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-tier="walk" data-track="py" data-lesson="walk-06-eunomia">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  <li data-track="py" class=""><a href="walk/01-embeddings.html">What an Embedding Is, and How to Make One</a></li>
+  <li data-track="py" class=""><a href="walk/02-semantic-search.html">Searching a Graph by Meaning, Not by Keyword</a></li>
+  <li data-track="py" class=""><a href="walk/03-text-to-graph.html">Turning a Book Into a Knowledge Graph</a></li>
+  <li data-track="py" class=""><a href="walk/04-graphrag.html">GraphRAG End to End: Retrieve, Extract, Linearize, Answer</a></li>
+  <li data-track="py" class=""><a href="walk/05-data-lake.html">A Metadata Graph Over a Messy Data Lake</a></li>
+  <li data-track="py" class="current"><a href="walk/06-eunomia.html">Eunomia: A Semantic Cache in Front of Your Graph</a></li>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Eunomia: A Semantic Cache in Front of Your Graph</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#the-job-it-does" id="toc-the-job-it-does">The job it
+      does</a></li>
+      <li><a href="#installing-and-starting-it"
+      id="toc-installing-and-starting-it">Installing and starting
+      it</a></li>
+      <li><a href="#storing-a-memory" id="toc-storing-a-memory">Storing
+      a memory</a></li>
+      <li><a href="#recalling-it-by-meaning"
+      id="toc-recalling-it-by-meaning">Recalling it by meaning</a></li>
+      <li><a href="#forgetting-on-purpose"
+      id="toc-forgetting-on-purpose">Forgetting, on purpose</a></li>
+      <li><a href="#promoting-a-memory-into-the-graph"
+      id="toc-promoting-a-memory-into-the-graph">Promoting a memory into
+      the graph</a></li>
+      <li><a href="#where-to-read-more"
+      id="toc-where-to-read-more">Where to read more</a></li>
+      <li><a href="#whats-next" id="toc-whats-next">What's next</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Give an agent a scratchpad it can search by meaning, so it
+    stops forgetting what you told it.</em></p>
+    <p>This post and the next are shorter than the rest of this tier.
+    Each introduces a project built on AstraeaDB, shows one worked
+    example, and points you at where to read more.</p>
+    <p><a href="https://github.com/AstraeaDB/eunomia">Eunomia</a> is a
+    small server that holds things an agent needs to remember for a
+    while, and lets it find them again by meaning rather than by key. It
+    is written in Rust, it keeps everything in memory by default, and it
+    exists because a graph database is the wrong shape for one
+    particular job.</p>
+    <h2 id="the-job-it-does">The job it does</h2>
+    <p>An agent working through a long task learns things as it goes. A
+    user says early on that they want answers in metric units. Forty
+    exchanges later, that instruction has fallen out of the context
+    window, and the agent starts quoting inches.</p>
+    <p>You could write every such fact into AstraeaDB. It would work,
+    and it would be the wrong instrument. Those facts are not permanent,
+    they are not related to each other in ways worth traversing, and
+    they are written and read constantly during a session and then never
+    again. Putting them in a graph means paying for durability and
+    structure you will not use.</p>
+    <p>Eunomia is the other half of that pair. AstraeaDB holds what is
+    true; Eunomia holds what is currently relevant. The dividing line is
+    roughly whether you would care if it vanished when the process
+    stopped.</p>
+    <h2 id="installing-and-starting-it">Installing and starting it</h2>
+    <p>It is published on crates.io alongside the AstraeaDB crates:</p>
+    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install" -->
+
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The package is eunomia-server; the program it installs is called `eunomia`.</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> install eunomia-server</span></code></pre></div>
+    <p>That package-and-binary mismatch is the same one you met
+    installing <code>astraea-cli</code> and getting
+    <code>astraeadb</code>. It is worth a moment's attention, because
+    typing the name you expect will not work.</p>
+    <p>Start the REST gateway:</p>
+    <!-- verify: skip reason="run.py starts the gateway before the lesson body so the later blocks have something to talk to; starting a second one here would fail on the port" -->
+
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">eunomia</span> rest</span></code></pre></div>
+    <p>With no configuration file, it starts with a sensible demo setup:
+    one namespace called <code>default</code>, an embedding width of 768
+    to match the rest of this site, an API key of <code>dev-key</code>,
+    and a listener on <code>127.0.0.1:8080</code>. A real deployment
+    gets a TOML file with its own namespaces and keys; the defaults
+    exist so you can try it in one command.</p>
+    <h2 id="storing-a-memory">Storing a memory</h2>
+    <p>A memory has an identifier, a JSON value of whatever shape you
+    like, and an embedding of the text you would search for later. The
+    embedding is the interesting part, because it is what makes recall
+    work when the question is worded differently:</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib.request</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>OLLAMA_URL <span class="op">=</span> os.environ.get(<span class="st">&quot;OLLAMA_URL&quot;</span>, <span class="st">&quot;http://localhost:11434&quot;</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>EUNOMIA <span class="op">=</span> os.environ.get(<span class="st">&quot;EUNOMIA_URL&quot;</span>, <span class="st">&quot;http://127.0.0.1:8080&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> embed(texts):</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    body <span class="op">=</span> json.dumps({<span class="st">&quot;model&quot;</span>: <span class="st">&quot;embeddinggemma&quot;</span>, <span class="st">&quot;input&quot;</span>: texts}).encode()</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    req <span class="op">=</span> urllib.request.Request(<span class="ss">f&quot;</span><span class="sc">{</span>OLLAMA_URL<span class="sc">}</span><span class="ss">/api/embed&quot;</span>, data<span class="op">=</span>body,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>                                 headers<span class="op">=</span>{<span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span>})</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> urllib.request.urlopen(req, timeout<span class="op">=</span><span class="dv">60</span>) <span class="im">as</span> resp:</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> json.load(resp)[<span class="st">&quot;embeddings&quot;</span>]</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> eunomia(path, body):</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    req <span class="op">=</span> urllib.request.Request(</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;</span><span class="sc">{</span>EUNOMIA<span class="sc">}{</span>path<span class="sc">}</span><span class="ss">&quot;</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>        data<span class="op">=</span>json.dumps(body).encode(),</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>        headers<span class="op">=</span>{<span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span>, <span class="st">&quot;x-api-key&quot;</span>: <span class="st">&quot;dev-key&quot;</span>},</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> urllib.request.urlopen(req, timeout<span class="op">=</span><span class="dv">30</span>) <span class="im">as</span> resp:</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>        raw <span class="op">=</span> resp.read().decode()</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> json.loads(raw) <span class="cf">if</span> raw <span class="cf">else</span> <span class="va">None</span></span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>MEMORIES <span class="op">=</span> {</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;pref-units&quot;</span>: <span class="st">&quot;The user prefers metric units.&quot;</span>,</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;pref-tone&quot;</span>: <span class="st">&quot;The user wants concise answers without preamble.&quot;</span>,</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (mid, text), vec <span class="kw">in</span> <span class="bu">zip</span>(MEMORIES.items(), embed(<span class="bu">list</span>(MEMORIES.values()))):</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    eunomia(<span class="st">&quot;/v1/memory&quot;</span>, {<span class="st">&quot;id&quot;</span>: mid, <span class="st">&quot;embedding&quot;</span>: vec, <span class="st">&quot;value&quot;</span>: {<span class="st">&quot;note&quot;</span>: text}})</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;stored&quot;</span>, <span class="bu">len</span>(MEMORIES), <span class="st">&quot;memories&quot;</span>)</span></code></pre></div>
+    <h2 id="recalling-it-by-meaning">Recalling it by meaning</h2>
+    <p>Now ask questions that share no words with what you stored:</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>QUESTIONS <span class="op">=</span> [</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;what measurement system should I use?&quot;</span>,</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;how long should my replies be?&quot;</span>,</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;what is the capital of Peru?&quot;</span>,</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> question <span class="kw">in</span> QUESTIONS:</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    hits <span class="op">=</span> eunomia(<span class="st">&quot;/v1/recall&quot;</span>, {<span class="st">&quot;embedding&quot;</span>: embed([question])[<span class="dv">0</span>], <span class="st">&quot;k&quot;</span>: <span class="dv">2</span>})</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    ranked <span class="op">=</span> [(h[<span class="st">&quot;entry&quot;</span>][<span class="st">&quot;key&quot;</span>][<span class="st">&quot;id&quot;</span>], <span class="bu">round</span>(h[<span class="st">&quot;score&quot;</span>], <span class="dv">3</span>)) <span class="cf">for</span> h <span class="kw">in</span> hits]</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span>question<span class="sc">:38}</span><span class="ss"> </span><span class="sc">{</span>ranked<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>Three things to read in that output.</p>
+    <p>The right memory comes first each time, and no question shares a
+    significant word with the memory it matches. "Measurement system"
+    finds the metric preference; "how long should my replies be" finds
+    the one about concise answers.</p>
+    <p>The scores separate cleanly. The correct memory scores well above
+    the other, and the question about Peru, which matches nothing you
+    stored, scores low against both. That gap is what you would
+    threshold on in a real agent: below some value, treat it as no
+    memory rather than as a weak one.</p>
+    <p>And note the direction. Eunomia returns a
+    <strong><code>score</code>, where higher is better</strong>.
+    AstraeaDB's vector search returns a <strong><code>distance</code>,
+    where lower is better</strong>. The two conventions are opposite,
+    and moving between them is an easy way to sort your results
+    backwards.</p>
+    <h2 id="forgetting-on-purpose">Forgetting, on purpose</h2>
+    <p>A cache that never forgets is a database with extra steps. Two
+    mechanisms handle that. A memory can carry <code>ttl_secs</code>,
+    after which a background sweeper removes it, and it can carry
+    <code>tags</code>, which recall can filter on so a session's
+    memories do not leak into another's.</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>eunomia(<span class="st">&quot;/v1/memory&quot;</span>, {</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;id&quot;</span>: <span class="st">&quot;scratch-1&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;embedding&quot;</span>: embed([<span class="st">&quot;The current file being edited is report.md.&quot;</span>])[<span class="dv">0</span>],</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;value&quot;</span>: {<span class="st">&quot;note&quot;</span>: <span class="st">&quot;editing report.md&quot;</span>},</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;ttl_secs&quot;</span>: <span class="dv">300</span>,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;tags&quot;</span>: [<span class="st">&quot;session-42&quot;</span>],</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>})</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;stored a memory that expires in five minutes&quot;</span>)</span></code></pre></div>
+    <h2 id="promoting-a-memory-into-the-graph">Promoting a memory into
+    the graph</h2>
+    <p>Sometimes a scratchpad note turns out to matter. Eunomia has an
+    endpoint for exactly that,
+    <code>POST /v1/memory/{id}/promote</code>, which hands the memory to
+    AstraeaDB for permanent storage when the server is built with the
+    AstraeaDB bridge enabled. The example above runs in standalone mode,
+    where there is no graph to promote into, so the call is not shown
+    running here.</p>
+    <p>The pattern is worth knowing even so, because it is the answer to
+    "which of these two should I use". You do not choose once. Things
+    start in working memory, and the few that earn it are promoted to
+    the graph.</p>
+    <h2 id="where-to-read-more">Where to read more</h2>
+    <p>The <a href="https://github.com/AstraeaDB/eunomia">Eunomia
+    repository</a> documents the full surface: the gRPC and Model
+    Context Protocol gateways as well as REST, namespace configuration,
+    hybrid search that combines semantic proximity with tag filters, and
+    the AstraeaDB tiering options. The Model Context Protocol gateway is
+    the one to look at if you are building an agent, because it lets the
+    agent manage its own memory as a tool call rather than through code
+    you write.</p>
+    <h2 id="whats-next">What's next</h2>
+    <p>In the last post of this tier, <strong><a
+    href="./07-a-llama.html">a-llama: A Local LLM Server That
+    Remembers</a></strong>, you will meet a project that puts the two
+    halves together: a language model server with AstraeaDB and Eunomia
+    compiled into it, so the memory is not a service it calls but part
+    of what it is.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../walk/05-data-lake.html"><span>Previous</span>A Metadata Graph Over a Messy Data Lake</a>
+                </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 61eef42 on 2026-08-10</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>
