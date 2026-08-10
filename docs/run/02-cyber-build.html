@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Building a Network Graph From Security Telemetry &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-tier="run" data-track="py" data-lesson="run-02-cyber-build">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  <li data-track="py" class=""><a href="walk/01-embeddings.html">What an Embedding Is, and How to Make One</a></li>
+  <li data-track="py" class=""><a href="walk/02-semantic-search.html">Searching a Graph by Meaning, Not by Keyword</a></li>
+  <li data-track="py" class=""><a href="walk/03-text-to-graph.html">Turning a Book Into a Knowledge Graph</a></li>
+  <li data-track="py" class=""><a href="walk/04-graphrag.html">GraphRAG End to End: Retrieve, Extract, Linearize, Answer</a></li>
+  <li data-track="py" class=""><a href="walk/05-data-lake.html">A Metadata Graph Over a Messy Data Lake</a></li>
+  <li data-track="py" class=""><a href="walk/06-eunomia.html">Eunomia: A Semantic Cache in Front of Your Graph</a></li>
+  <li data-track="py" class=""><a href="walk/07-a-llama.html">a-llama: A Local LLM Server That Remembers</a></li>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  <li data-track="py" class="current"><a href="run/02-cyber-build.html">Building a Network Graph From Security Telemetry</a></li>
+  <li data-track="py" class=""><a href="run/05-ai-assisted-dev.html">Giving Your Coding Assistant a Memory</a></li>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Building a Network Graph From Security Telemetry</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#the-data" id="toc-the-data">The data</a></li>
+      <li><a href="#building-the-graph"
+      id="toc-building-the-graph">Building the graph</a></li>
+      <li><a href="#what-shape-is-this-network"
+      id="toc-what-shape-is-this-network">What shape is this
+      network?</a></li>
+      <li><a href="#centrality-and-the-mistake-it-invites"
+      id="toc-centrality-and-the-mistake-it-invites">Centrality, and the
+      mistake it invites</a></li>
+      <li><a href="#checking-that-against-the-ground-truth"
+      id="toc-checking-that-against-the-ground-truth">Checking that
+      against the ground truth</a></li>
+      <li><a href="#communities"
+      id="toc-communities">Communities</a></li>
+      <li><a href="#what-you-have" id="toc-what-you-have">What you
+      have</a></li>
+      <li><a href="#whats-next" id="toc-whats-next">What's next</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Turn a flat log of network events into a graph, then find out
+    what the graph is actually good at telling you.</em></p>
+    <p>Security telemetry arrives as lines in a file. One line per
+    event, each one small and complete and telling you nothing about the
+    others. The questions people actually ask are about relationships:
+    which machines talk to each other, which account is behaving unlike
+    its peers, what did this host do just before it did that.</p>
+    <p>Those are graph questions asked of a table. This post builds the
+    graph.</p>
+    <h2 id="the-data">The data</h2>
+    <p>The lessons in this tier use a slice of the Los Alamos National
+    Laboratory dataset of real network events, captured from their
+    internal network over 58 days. It is released under CC0, a public
+    domain dedication, which is why a sample of it ships in this
+    repository under <code>data/lanl/</code>.</p>
+    <p>Two files, and the second is the interesting one:</p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> csv</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> collections</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>dns <span class="op">=</span> <span class="bu">list</span>(csv.reader(<span class="bu">open</span>(<span class="st">&quot;data/lanl/dns.csv&quot;</span>)))</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>redteam <span class="op">=</span> <span class="bu">list</span>(csv.reader(<span class="bu">open</span>(<span class="st">&quot;data/lanl/redteam.csv&quot;</span>)))</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span><span class="bu">len</span>(dns)<span class="sc">}</span><span class="ss"> DNS lookups, </span><span class="sc">{</span><span class="bu">len</span>(redteam)<span class="sc">}</span><span class="ss"> known red-team events&quot;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;dns row:    &quot;</span>, dns[<span class="dv">0</span>], <span class="st">&quot;  (time, source, resolved)&quot;</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;redteam row:&quot;</span>, redteam[<span class="dv">0</span>], <span class="st">&quot;  (time, user, source, destination)&quot;</span>)</span></code></pre></div>
+    <p><code>dns.csv</code> is ordinary activity: one row each time a
+    machine looked up another machine's name. <code>redteam.csv</code>
+    is <strong>ground truth</strong>. Those 25 events are
+    authentications the dataset's authors have labelled as a red team
+    acting like an intruder. Having them means this tier can say whether
+    a hunt found the right thing, instead of producing a plausible story
+    nobody can check.</p>
+    <h2 id="building-the-graph">Building the graph</h2>
+    <p>The graph is deliberately simple: machines are nodes, a lookup is
+    an edge. The one refinement is collapsing repeats into a weight,
+    because the same pair resolving four hundred times is one
+    relationship, not four hundred:</p>
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>client.<span class="ex">connect</span>()</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>pairs <span class="op">=</span> collections.Counter((src, dst) <span class="cf">for</span> _, src, dst <span class="kw">in</span> dns)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>computers <span class="op">=</span> {}</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> computer(name):</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> name <span class="kw">not</span> <span class="kw">in</span> computers:</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>        computers[name] <span class="op">=</span> client.create_node([<span class="st">&quot;Computer&quot;</span>], {<span class="st">&quot;name&quot;</span>: name})</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> computers[name]</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (src, dst), count <span class="kw">in</span> pairs.items():</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    client.create_edge(computer(src), computer(dst), <span class="st">&quot;RESOLVED&quot;</span>, {<span class="st">&quot;count&quot;</span>: count})</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span><span class="bu">len</span>(computers)<span class="sc">}</span><span class="ss"> computers, </span><span class="sc">{</span><span class="bu">len</span>(pairs)<span class="sc">}</span><span class="ss"> distinct resolutions&quot;</span>)</span></code></pre></div>
+    <p>Around a thousand machines and three thousand relationships, from
+    eight thousand raw events, in well under a second. Note there are no
+    embeddings here at all. This post is about structure, and structure
+    does not need them.</p>
+    <h2 id="what-shape-is-this-network">What shape is this network?</h2>
+    <p>Before asking clever questions, ask dull ones.
+    <code>graph_stats</code> and connected components tell you whether
+    you are looking at one network or several:</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>stats <span class="op">=</span> client.graph_stats()</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;nodes:&quot;</span>, stats[<span class="st">&quot;total_nodes&quot;</span>], <span class="st">&quot;edges:&quot;</span>, stats[<span class="st">&quot;total_edges&quot;</span>])</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>components <span class="op">=</span> client.run_connected_components()</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>sizes <span class="op">=</span> <span class="bu">sorted</span>((<span class="bu">len</span>(c) <span class="cf">for</span> c <span class="kw">in</span> components[<span class="st">&quot;components&quot;</span>]), reverse<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&#39;</span><span class="sc">{</span>components[<span class="st">&quot;count&quot;</span>]<span class="sc">}</span><span class="ss"> connected components, largest </span><span class="sc">{</span>sizes[<span class="dv">0</span>]<span class="sc">}</span><span class="ss">, then </span><span class="sc">{</span>sizes[<span class="dv">1</span>:<span class="dv">6</span>]<span class="sc">}</span><span class="ss">&#39;</span>)</span></code></pre></div>
+    <p>You should find one enormous component and a tail of tiny ones.
+    That is the normal shape of a corporate network seen through DNS:
+    nearly everything reaches the same shared infrastructure, plus a
+    scattering of pairs that only ever talk to each other. The small
+    components are worth a glance in real work, because a machine that
+    talks to nothing else is either unimportant or interesting.</p>
+    <h2 id="centrality-and-the-mistake-it-invites">Centrality, and the
+    mistake it invites</h2>
+    <p>Now the part everyone wants: run PageRank, find the important
+    machines.</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>scores <span class="op">=</span> client.run_pagerank()</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>top <span class="op">=</span> <span class="bu">sorted</span>(scores.items(), key<span class="op">=</span><span class="kw">lambda</span> kv: <span class="op">-</span>kv[<span class="dv">1</span>])[:<span class="dv">5</span>]</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> node_id, score <span class="kw">in</span> top:</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    name <span class="op">=</span> client.get_node(<span class="bu">int</span>(node_id))[<span class="st">&quot;properties&quot;</span>][<span class="st">&quot;name&quot;</span>]</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    incoming <span class="op">=</span> <span class="bu">len</span>(client.neighbors(<span class="bu">int</span>(node_id), direction<span class="op">=</span><span class="st">&quot;incoming&quot;</span>))</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    outgoing <span class="op">=</span> <span class="bu">len</span>(client.neighbors(<span class="bu">int</span>(node_id), direction<span class="op">=</span><span class="st">&quot;outgoing&quot;</span>))</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span>name<span class="sc">:8}</span><span class="ss"> </span><span class="sc">{</span>score<span class="sc">:.5f}</span><span class="ss">  in=</span><span class="sc">{</span>incoming<span class="sc">:4}</span><span class="ss"> out=</span><span class="sc">{</span>outgoing<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>Look at the <code>out</code> column. Every one of the top-ranked
+    machines has substantial incoming edges and <strong>zero
+    outgoing</strong>. They are never the machine doing a lookup, always
+    the machine being looked up. They are servers.</p>
+    <p>That is what centrality measures here, and it is worth being
+    blunt about it: <strong>PageRank has found your infrastructure, not
+    your intruder.</strong> It is genuinely useful, because knowing
+    which five machines everything depends on matters for resilience and
+    for prioritising patching. It is simply not a way to find an
+    attacker.</p>
+    <h2 id="checking-that-against-the-ground-truth">Checking that
+    against the ground truth</h2>
+    <p>We can do better than assert it, because we have the labels:</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>compromised <span class="op">=</span> {row[<span class="dv">2</span>] <span class="cf">for</span> row <span class="kw">in</span> redteam} <span class="op">|</span> {row[<span class="dv">3</span>] <span class="cf">for</span> row <span class="kw">in</span> redteam}</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;machines named in the red-team events, and their DNS activity:&quot;</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name <span class="kw">in</span> <span class="bu">sorted</span>(compromised):</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> name <span class="kw">not</span> <span class="kw">in</span> computers:</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>        <span class="cf">continue</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    nid <span class="op">=</span> computers[name]</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>    incoming <span class="op">=</span> <span class="bu">len</span>(client.neighbors(nid, direction<span class="op">=</span><span class="st">&quot;incoming&quot;</span>))</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    outgoing <span class="op">=</span> <span class="bu">len</span>(client.neighbors(nid, direction<span class="op">=</span><span class="st">&quot;outgoing&quot;</span>))</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;  </span><span class="sc">{</span>name<span class="sc">:8}</span><span class="ss"> in=</span><span class="sc">{</span>incoming<span class="sc">:4}</span><span class="ss"> out=</span><span class="sc">{</span>outgoing<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>Most of the machines involved in the intrusion have a degree in
+    the low single figures. They are among the quietest nodes in the
+    graph. One of them is an exception with a large incoming count, and
+    it is an exception for a boring reason: it is a server, which is why
+    an intruder wanted it, and its high rank comes from everyone else's
+    ordinary use of it rather than from anything the intruder did.</p>
+    <p>So the ground truth agrees. Ranking machines by importance
+    surfaces the machines everyone uses. An intruder using a stolen
+    credential looks, structurally, like a quiet machine doing very
+    little.</p>
+    <p>This is the honest result, and it sets up the rest of the tier.
+    Structure tells you what your network <strong>is</strong>. Finding
+    someone who should not be there needs behaviour and time, which is
+    the next post.</p>
+    <h2 id="communities">Communities</h2>
+    <p>One more structural view worth knowing. Louvain community
+    detection groups machines that talk to each other far more than to
+    everything else:</p>
+    <div class="sourceCode" id="cb6"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>louvain <span class="op">=</span> client.run_louvain()</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>sizes <span class="op">=</span> collections.Counter(louvain[<span class="st">&quot;communities&quot;</span>].values())</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&#39;</span><span class="sc">{</span>louvain[<span class="st">&quot;num_communities&quot;</span>]<span class="sc">}</span><span class="ss"> communities; &#39;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>      <span class="ss">f&#39;largest five: </span><span class="sc">{</span>[n <span class="cf">for</span> _, n <span class="kw">in</span> sizes.most_common(<span class="dv">5</span>)]<span class="sc">}</span><span class="ss">&#39;</span>)</span></code></pre></div>
+    <p>In a corporate network these tend to line up with something real:
+    a department, a subnet, a cluster of machines running the same
+    service. They are useful as a baseline, because "this machine
+    started talking to a community it has never touched" is a much
+    sharper signal than "this machine sent some traffic".</p>
+    <div class="sourceCode" id="cb7"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>client.close()</span></code></pre></div>
+    <h2 id="what-you-have">What you have</h2>
+    <p>A graph of a real network, built from raw events, with ground
+    truth attached so claims can be checked. You have also seen the
+    first real lesson of investigative graph work, which is that the
+    obvious measure answers a different question than the one you
+    asked.</p>
+    <h2 id="whats-next">What's next</h2>
+    <p>In <strong><a href="./03-cyber-hunt.html">Hunting Lateral
+    Movement With Embeddings and Time Travel</a></strong>, you will stop
+    looking at structure and start looking at behaviour: describing what
+    each machine normally does, finding the ones that stop matching
+    their own description, and using time-travel queries to see the
+    graph as it was at the moment of the intrusion rather than as it is
+    now.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../walk/07-a-llama.html"><span>Previous</span>a-llama: A Local LLM Server That Remembers</a>
+                  <a class="next" href="../run/05-ai-assisted-dev.html"><span>Next</span>Giving Your Coding Assistant a Memory</a>
+          </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 61eef42 on 2026-08-10</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

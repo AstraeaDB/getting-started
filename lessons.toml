@@ -243,15 +243,15 @@ source = "AstraeaDB/a-llama @ 0.1.0 on crates.io"
 # verify = "required"
 # source = "GNN-test-and-improve"
 
-# [[lesson]]
-# id = "run-02-cyber-build"
-# title = "Building a Network Graph From Security Telemetry"
-# tier = "run"
-# track = "py"
-# order = 20
-# file = "run/02-cyber-build.md"
-# verify = "required"
-# source = "cyber-graph-demo (private) Act 1"
+[[lesson]]
+id = "run-02-cyber-build"
+title = "Building a Network Graph From Security Telemetry"
+tier = "run"
+track = "py"
+order = 20
+file = "run/02-cyber-build.md"
+verify = "required"
+source = "cyber-graph-demo @ f213607 Act 1, absorbed inline per Q3; LANL data (CC0) sampled into data/lanl/"
 
 # [[lesson]]
 # id = "run-03-cyber-hunt"
