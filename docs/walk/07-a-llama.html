@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>a-llama: A Local LLM Server That Remembers &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-tier="walk" data-track="py" data-lesson="walk-07-a-llama">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  <li data-track="py" class=""><a href="walk/01-embeddings.html">What an Embedding Is, and How to Make One</a></li>
+  <li data-track="py" class=""><a href="walk/02-semantic-search.html">Searching a Graph by Meaning, Not by Keyword</a></li>
+  <li data-track="py" class=""><a href="walk/03-text-to-graph.html">Turning a Book Into a Knowledge Graph</a></li>
+  <li data-track="py" class=""><a href="walk/04-graphrag.html">GraphRAG End to End: Retrieve, Extract, Linearize, Answer</a></li>
+  <li data-track="py" class=""><a href="walk/05-data-lake.html">A Metadata Graph Over a Messy Data Lake</a></li>
+  <li data-track="py" class=""><a href="walk/06-eunomia.html">Eunomia: A Semantic Cache in Front of Your Graph</a></li>
+  <li data-track="py" class="current"><a href="walk/07-a-llama.html">a-llama: A Local LLM Server That Remembers</a></li>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>a-llama: A Local LLM Server That Remembers</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#what-it-is" id="toc-what-it-is">What it is</a></li>
+      <li><a href="#installing-it" id="toc-installing-it">Installing
+      it</a></li>
+      <li><a href="#pointing-your-existing-code-at-it"
+      id="toc-pointing-your-existing-code-at-it">Pointing your existing
+      code at it</a></li>
+      <li><a href="#a-word-about-what-you-just-ran"
+      id="toc-a-word-about-what-you-just-ran">A word about what you just
+      ran</a></li>
+      <li><a href="#what-is-actually-stored"
+      id="toc-what-is-actually-stored">What is actually stored</a></li>
+      <li><a href="#when-this-shape-is-the-right-one"
+      id="toc-when-this-shape-is-the-right-one">When this shape is the
+      right one</a></li>
+      <li><a href="#where-to-read-more"
+      id="toc-where-to-read-more">Where to read more</a></li>
+      <li><a href="#whats-next" id="toc-whats-next">What's next</a></li>
+      </ul>
+    </details>
+    
+    <p><em>One binary that speaks Ollama's API, with a graph database
+    and a semantic cache inside it rather than beside it.</em></p>
+    <p>This closes the Walk tier. Every post in it has assembled the
+    same parts by hand: a model for embeddings, a graph for structure, a
+    cache for what is currently relevant, and code to move data between
+    them. <a href="https://github.com/AstraeaDB/a-llama">a-llama</a> is
+    what happens when somebody puts those parts in one process.</p>
+    <h2 id="what-it-is">What it is</h2>
+    <p>a-llama is a local language model server that speaks the same
+    HTTP API as Ollama, with AstraeaDB and Eunomia compiled into the
+    binary. Not connected to over a network. Compiled in. There is no
+    graph server to start, no cache to configure, and no ports to
+    allocate for them.</p>
+    <p>The reason to do that is continual learning. An ordinary model
+    server is stateless: it answers, and forgets. a-llama keeps what
+    passes through it, in the embedded graph and cache, and feeds
+    relevant pieces back into later prompts using the GraphRAG loop from
+    earlier in this tier. The claim is not that the model improves,
+    because the weights never change. The claim is that the system
+    around the model accumulates, so the same question asked next week
+    can be answered with what it learned this week.</p>
+    <p>That is the same division of labour as the previous post, moved
+    inside a single process. The graph holds what is true, the cache
+    holds what is currently relevant, and now neither is something you
+    deploy.</p>
+    <h2 id="installing-it">Installing it</h2>
+    <!-- verify: skip reason="proven by the container image build, which runs this exact line from scratch in --mode install" -->
+
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> install a-llama</span></code></pre></div>
+    <p>The package and the binary are both called <code>a-llama</code>,
+    which after <code>astraea-cli</code> giving you
+    <code>astraeadb</code> and <code>eunomia-server</code> giving you
+    <code>eunomia</code> is a small mercy.</p>
+    <p>Start it:</p>
+    <!-- verify: skip reason="run.py starts the daemon before the lesson body so the later blocks have something to talk to; a second one would fail on the port" -->
+
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">a-llama</span></span></code></pre></div>
+    <p>It listens on <code>127.0.0.1:11434</code>. That is Ollama's
+    port, chosen deliberately, and it is the whole point of the next
+    section. Override it with <code>A_LLAMA_ADDR</code> if you have
+    Ollama running and want both.</p>
+    <h2 id="pointing-your-existing-code-at-it">Pointing your existing
+    code at it</h2>
+    <p>Every Python example in this tier read its model address from an
+    environment variable:</p>
+    <!-- verify: skip reason="a one-line quotation of code from the earlier posts, shown to make a point about the environment variable; it is not a runnable snippet on its own" -->
+
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>OLLAMA_URL <span class="op">=</span> os.environ.get(<span class="st">&quot;OLLAMA_URL&quot;</span>, <span class="st">&quot;http://localhost:11434&quot;</span>)</span></code></pre></div>
+    <p>That was not an accident. Because a-llama serves the same routes
+    on the same port, the code you have already written works against it
+    with nothing changed but that value:</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib.request</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>A_LLAMA <span class="op">=</span> os.environ.get(<span class="st">&quot;A_LLAMA_URL&quot;</span>, <span class="st">&quot;http://127.0.0.1:11434&quot;</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get(path):</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> urllib.request.urlopen(<span class="ss">f&quot;</span><span class="sc">{</span>A_LLAMA<span class="sc">}{</span>path<span class="sc">}</span><span class="ss">&quot;</span>, timeout<span class="op">=</span><span class="dv">30</span>) <span class="im">as</span> resp:</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> json.load(resp)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;version:&quot;</span>, get(<span class="st">&quot;/api/version&quot;</span>))</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;models: &quot;</span>, [m[<span class="st">&quot;name&quot;</span>] <span class="cf">for</span> m <span class="kw">in</span> get(<span class="st">&quot;/api/tags&quot;</span>).get(<span class="st">&quot;models&quot;</span>, [])])</span></code></pre></div>
+    <p>Those are the same two endpoints an Ollama client calls to
+    discover what it is talking to, answered by a completely different
+    program. The routes a-llama serves are <code>/api/generate</code>,
+    <code>/api/chat</code>, <code>/api/embed</code>,
+    <code>/api/embeddings</code>, <code>/api/tags</code>, and
+    <code>/api/version</code>, which is the set an Ollama-compatible
+    client expects.</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> post(path, body):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    req <span class="op">=</span> urllib.request.Request(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;</span><span class="sc">{</span>A_LLAMA<span class="sc">}{</span>path<span class="sc">}</span><span class="ss">&quot;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        data<span class="op">=</span>json.dumps(body).encode(),</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>        headers<span class="op">=</span>{<span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span>},</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> urllib.request.urlopen(req, timeout<span class="op">=</span><span class="dv">120</span>) <span class="im">as</span> resp:</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> json.load(resp)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>reply <span class="op">=</span> post(<span class="st">&quot;/api/generate&quot;</span>, {<span class="st">&quot;prompt&quot;</span>: <span class="st">&quot;What is a knowledge graph?&quot;</span>, <span class="st">&quot;stream&quot;</span>: <span class="va">False</span>})</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;response:&quot;</span>, <span class="bu">str</span>(reply.get(<span class="st">&quot;response&quot;</span>))[:<span class="dv">120</span>])</span></code></pre></div>
+    <h2 id="a-word-about-what-you-just-ran">A word about what you just
+    ran</h2>
+    <p>The default build ships a deterministic stand-in engine rather
+    than a real model, which is why the install above needed no
+    multi-gigabyte download and why the answer you got is not a
+    thoughtful one. That is a sensible default for a project whose
+    interesting part is the memory rather than the inference, and it is
+    what makes this lesson runnable at all.</p>
+    <p>For real answers you build with the inference backend turned
+    on:</p>
+    <!-- verify: skip reason="a real GGUF backend pulls a multi-gigabyte model, which is not something a verification run should download" -->
+
+    <div class="sourceCode" id="cb6"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">cargo</span> install a-llama <span class="at">--features</span> mistralrs-engine</span></code></pre></div>
+    <p>That compiles in a real engine and loads a GGUF model file, at
+    which point the same endpoints you just called return real
+    completions, and the memory layer you did not have to configure
+    starts accumulating something worth keeping.</p>
+    <h2 id="what-is-actually-stored">What is actually stored</h2>
+    <p>Two things, matching the two components.</p>
+    <p>Interactions go into the embedded Eunomia cache, keyed by an
+    embedding of the prompt, so a semantically similar question later
+    can be recognised as one already answered. Facts extracted from
+    those interactions go into the embedded AstraeaDB graph, where they
+    are retrieved with the same <code>graph_rag</code> machinery you
+    used in walk-04.</p>
+    <p>One implementation detail is worth knowing if you go reading the
+    source. The embedded graph uses an exact, brute-force vector index
+    rather than an approximate one, which gives perfect recall at the
+    cost of scanning everything. That choice was made when AstraeaDB's
+    HNSW index had a recall problem at scale, which has since been
+    fixed, so it is a decision the project may revisit rather than a
+    permanent statement about which index is better.</p>
+    <h2 id="when-this-shape-is-the-right-one">When this shape is the
+    right one</h2>
+    <p>Embedding a database into an application is unusual, and it is
+    worth being clear about when it helps.</p>
+    <p>It suits a single-process tool that should work without setup: a
+    desktop assistant, a command-line utility, something a colleague can
+    install and run without being told to start three services first.
+    The whole dependency graph is one <code>cargo install</code>.</p>
+    <p>It suits work that must stay on one machine, because nothing
+    crosses a network boundary at any point. There is no port to
+    firewall and no credential to rotate.</p>
+    <p>It stops suiting you the moment two processes need the same
+    memory. Embedded storage belongs to the process that opened it, so a
+    second a-llama does not see the first one's graph. That is when you
+    go back to the arrangement from earlier in this tier, with AstraeaDB
+    and Eunomia as services that several clients share. The techniques
+    do not change; only where the storage lives does.</p>
+    <h2 id="where-to-read-more">Where to read more</h2>
+    <p>The <a href="https://github.com/AstraeaDB/a-llama">a-llama
+    repository</a> covers the parts this introduction skips: how
+    extraction decides what is worth keeping, how the augmentation loop
+    assembles a prompt from retrieved context, the <code>durable</code>
+    feature that moves the embedded graph from memory onto disk, and the
+    state of the real inference backend.</p>
+    <h2 id="whats-next">What's next</h2>
+    <p>That is the Walk tier. You can make embeddings, search a graph by
+    meaning, build a graph out of prose, answer questions from it with
+    the evidence attached, describe a data lake so it can answer
+    questions about itself, and you have met the two projects that
+    package these ideas up.</p>
+    <p>The Run tier takes the same techniques to work where the stakes
+    are higher: finding fraud in a network of Bitcoin transactions,
+    hunting an intruder across security telemetry, and giving a coding
+    assistant a memory of your codebase.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../walk/06-eunomia.html"><span>Previous</span>Eunomia: A Semantic Cache in Front of Your Graph</a>
+                </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 61eef42 on 2026-08-10</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

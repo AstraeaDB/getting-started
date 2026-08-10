@@ -218,15 +218,16 @@ needs_eunomia = true
 verify = "required"
 source = "AstraeaDB/eunomia @ 0.1.0 on crates.io"
 
-# [[lesson]]
-# id = "walk-07-a-llama"
-# title = "a-llama: A Local LLM Server That Remembers"
-# tier = "walk"
-# track = "py"
-# order = 70
-# file = "walk/07-a-llama.md"
-# verify = "required"
-# source = "AstraeaDB/a-llama"
+[[lesson]]
+id = "walk-07-a-llama"
+title = "a-llama: A Local LLM Server That Remembers"
+tier = "walk"
+track = "py"
+order = 70
+file = "walk/07-a-llama.md"
+needs_a_llama = true
+verify = "required"
+source = "AstraeaDB/a-llama @ 0.1.0 on crates.io"
 #
 # # ------------------------------------------------------------------ Run (5)
 

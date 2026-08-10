@@ -30,4 +30,13 @@ RUN pip install --no-cache-dir --break-system-packages duckdb
 RUN cargo install eunomia-server --version 0.1.0 --locked \
  && eunomia --help > /dev/null
 
+# walk-07 introduces a-llama. The default build ships a deterministic
+# MockEngine and no inference backend, which is exactly what makes the
+# lesson verifiable: the Ollama-compatible surface can be exercised
+# without downloading a multi-gigabyte model.
+# No --help check here: a-llama takes no flags, so `a-llama --help` starts
+# the server and listens forever, which hangs the image build.
+RUN cargo install a-llama --version 0.1.0 --locked \
+ && test -x /root/.cargo/bin/a-llama
+
 RUN python3 -c "import astraeadb; print('astraeadb python client', astraeadb.__version__ if hasattr(astraeadb,'__version__') else 'ok')"

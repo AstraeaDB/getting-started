@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-10T02:36:17+00:00",
+  "generated": "2026-08-10T03:04:45+00:00",
   "runs": [
     {
       "lesson": "crawl-08-ui",
@@ -175,6 +175,36 @@
           "block": 1,
           "lang": "bash",
           "reason": "run.py starts the gateway before the lesson body so the later blocks have something to talk to; starting a second one here would fail on the port"
+        }
+      ],
+      "rev": "61eef42",
+      "date": "2026-08-10",
+      "image": "astraea-verify-py"
+    },
+    {
+      "lesson": "walk-07-a-llama",
+      "green": true,
+      "blocks": 2,
+      "skipped": [
+        {
+          "block": 0,
+          "lang": "bash",
+          "reason": "proven by the container image build, which runs this exact line from scratch in --mode install"
+        },
+        {
+          "block": 1,
+          "lang": "bash",
+          "reason": "run.py starts the daemon before the lesson body so the later blocks have something to talk to; a second one would fail on the port"
+        },
+        {
+          "block": 2,
+          "lang": "python",
+          "reason": "a one-line quotation of code from the earlier posts, shown to make a point about the environment variable; it is not a runnable snippet on its own"
+        },
+        {
+          "block": 5,
+          "lang": "bash",
+          "reason": "a real GGUF backend pulls a multi-gigabyte model, which is not something a verification run should download"
         }
       ],
       "rev": "61eef42",

@@ -184,6 +184,16 @@ def build_container_script(lesson, groups, extra_files):
     # walk-06 talks to Eunomia, the semantic cache. Start its REST gateway the
     # same way the AstraeaDB server is started: inside the container, on the
     # address the lesson text names, so the snippet under test is the real one.
+    if lesson.get("needs_a_llama"):
+        # a-llama binds Ollama's own port by default, which is the point of the
+        # lesson. It takes no flags; A_LLAMA_ADDR is the only knob.
+        s += [
+            "a-llama >/tmp/a-llama.log 2>&1 &",
+            'for i in $(seq 1 60); do',
+            '  if (exec 3<>/dev/tcp/127.0.0.1/11434) 2>/dev/null; then exec 3>&-; break; fi',
+            '  sleep 0.5',
+            'done',
+        ]
     if lesson.get("needs_eunomia"):
         s += [
             "eunomia rest >/tmp/eunomia.log 2>&1 &",
