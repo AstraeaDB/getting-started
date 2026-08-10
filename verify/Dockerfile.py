@@ -17,4 +17,9 @@ RUN pip install --no-cache-dir --break-system-packages astraeadb
 # verification fails on something the reader would not hit.
 RUN pip install --no-cache-dir --break-system-packages pandas
 
+# walk-05 builds a metadata graph over a folder of files and then queries
+# them with DuckDB, which is the lesson's whole point: the graph says which
+# files can answer a question, DuckDB answers it.
+RUN pip install --no-cache-dir --break-system-packages duckdb
+
 RUN python3 -c "import astraeadb; print('astraeadb python client', astraeadb.__version__ if hasattr(astraeadb,'__version__') else 'ok')"

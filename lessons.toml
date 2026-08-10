@@ -195,15 +195,16 @@ needs_ollama = true
 verify = "required"
 source = "astraea-graphrag-demo @ d89d4e5 (fixed upstream, KG Fixture 2227)"
 
-# [[lesson]]
-# id = "walk-05-data-lake"
-# title = "A Metadata Graph Over a Messy Data Lake"
-# tier = "walk"
-# track = "py"
-# order = 50
-# file = "walk/05-data-lake.md"
-# verify = "required"
-# source = "data_lake_demo"
+[[lesson]]
+id = "walk-05-data-lake"
+title = "A Metadata Graph Over a Messy Data Lake"
+tier = "walk"
+track = "py"
+order = 50
+file = "walk/05-data-lake.md"
+needs_ollama = true
+verify = "required"
+source = "data_lake_demo @ 58c1f1d (audited, KG Note 2223); schema vocabulary from its schema.md"
 
 # [[lesson]]
 # id = "walk-06-eunomia"

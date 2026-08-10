@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-10T02:18:14+00:00",
+  "generated": "2026-08-10T02:24:20+00:00",
   "runs": [
     {
       "lesson": "crawl-08-ui",
@@ -145,6 +145,15 @@
     },
     {
       "lesson": "walk-04-graphrag",
+      "green": true,
+      "blocks": 7,
+      "skipped": [],
+      "rev": "61eef42",
+      "date": "2026-08-10",
+      "image": "astraea-verify-py"
+    },
+    {
+      "lesson": "walk-05-data-lake",
       "green": true,
       "blocks": 7,
       "skipped": [],
