@@ -1,12 +1,19 @@
 # Rust lesson image, for run-01-fraud-elliptic. astraea-gnn has no wire
-# protocol, so that lesson has to be Rust (DESIGN.md 5.1).
+# protocol, so that lesson has to be Rust rather than a client call
+# (DESIGN.md 5.1).
 FROM astraea-verify-base
 
-# Warm the registry with the published 0.3.1 crates so a lesson's `cargo build`
-# is not dominated by a cold index fetch.
+# Warm the registry and the build cache with the crates the lesson uses, so a
+# reader's first `cargo run` in the container is not dominated by compiling the
+# dependency tree. astraea-gnn and astraea-algorithms became installable this
+# way only once AstraeaDB issue #28 landed; before that this image had to build
+# them from a git checkout.
+# astraea-graph is added on its own because --features cannot be scoped to one
+# crate when `cargo add` is given several at once.
 RUN cargo new /tmp/warm && cd /tmp/warm \
- && cargo add astraea-core@0.3.1 astraea-graph@0.3.1 astraea-vector@0.3.1 \
-      astraea-storage@0.3.1 astraea-rag@0.3.1 \
+ && cargo add astraea-graph@0.3.1 --features test-utils \
+ && cargo add astraea-core@0.3.1 astraea-vector@0.3.1 astraea-gnn@0.3.1 \
+      astraea-algorithms@0.3.1 rand@0.8 \
  && cargo build --release \
  && cd / && rm -rf /tmp/warm
 WORKDIR /work

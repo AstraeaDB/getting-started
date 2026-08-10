@@ -1,3 +1,4 @@
 .astraea/
 __pycache__/
 verify/bin/
+data/elliptic/*.csv

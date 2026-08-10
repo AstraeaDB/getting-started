@@ -137,6 +137,44 @@ def r_block_files(blocks):
     return {f"/tmp/blk_{b.index}.R": b.code for b in blocks}
 
 
+def rust_driver(blocks):
+    """Rust is compiled, not interpreted, so there is no per-block session to
+    share. The blocks are concatenated in document order into one `main.rs` and
+    built once, which means a lesson's Rust blocks have to read as one program
+    top to bottom: uses first, then items, then `fn main`.
+
+    Reported as a single unit. A compile error belongs to the program rather
+    than to one block, and pretending otherwise would point at the wrong line.
+    """
+    idx = blocks[0].index
+    return "\n".join([
+        f'echo "{MARK} START {idx}"',
+        "cd /work/rustlesson && cargo run --release --quiet 2>&1",
+        f'echo "{MARK} EXIT {idx} $?"',
+    ]) + "\n"
+
+
+def rust_project_files(blocks):
+    """A minimal cargo project. Dependencies are pre-built into the image, so
+    this compiles against a warm cache rather than fetching the world."""
+    main = "\n\n".join(b.code for b in blocks)
+    cargo = """[package]
+name = "rustlesson"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+astraea-core = "0.3.1"
+astraea-graph = { version = "0.3.1", features = ["test-utils"] }
+astraea-vector = "0.3.1"
+astraea-gnn = "0.3.1"
+astraea-algorithms = "0.3.1"
+rand = "0.8"
+"""
+    return {"/work/rustlesson/Cargo.toml": cargo,
+            "/work/rustlesson/src/main.rs": main}
+
+
 # --------------------------------------------------------------- orchestration
 
 
@@ -204,6 +242,7 @@ def build_container_script(lesson, groups, extra_files):
         ]
     for path, content in extra_files.items():
         fb64 = base64.b64encode(content.encode()).decode()
+        s.append(f'mkdir -p "$(dirname {path})"')
         s.append(f'echo {fb64} | base64 -d > {path}')
     for lang, script in groups.items():
         b64 = base64.b64encode(script.encode()).decode()
@@ -216,6 +255,8 @@ def build_container_script(lesson, groups, extra_files):
             s += [f'echo {b64} | base64 -d > /tmp/run.py', "python3 /tmp/run.py 2>&1"]
         elif lang == "r":
             s += [f'echo {b64} | base64 -d > /tmp/run.R', "Rscript /tmp/run.R 2>&1"]
+        elif lang == "rust":
+            s += [f'echo {b64} | base64 -d > /tmp/run_rust.sh', "bash /tmp/run_rust.sh 2>&1"]
     s += [f'echo "{MARK} DONE"', 'kill "$SRV" 2>/dev/null || true']
     return "\n".join(s) + "\n"
 
@@ -317,16 +358,18 @@ def run_lesson(lesson, manifest, keep_going=False, timeout=900):
                 "note": "no runnable blocks"}
 
     groups, extra_files = {}, {}
-    for lang in ("bash", "python", "r"):
+    for lang in ("bash", "python", "r", "rust"):
         got = [b for b in active if b.lang == lang]
         if not got:
             continue
         groups[lang] = {"bash": bash_driver, "python": python_driver,
-                        "r": r_driver}[lang](got)
+                        "r": r_driver, "rust": rust_driver}[lang](got)
         if lang == "r":
             extra_files.update(r_block_files(got))
+        if lang == "rust":
+            extra_files.update(rust_project_files(got))
 
-    unsupported = sorted({b.lang for b in active} - {"bash", "python", "r"})
+    unsupported = sorted({b.lang for b in active} - {"bash", "python", "r", "rust"})
     if unsupported:
         print(f"verify: warning: {lid}: {unsupported} blocks are not executed yet",
               file=sys.stderr)
