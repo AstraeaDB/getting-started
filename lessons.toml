@@ -184,15 +184,16 @@ needs_ollama = true
 verify = "required"
 source = "astraea-graphrag-demo @ d89d4e5 (fixed upstream to 768-dim, KG Fixture 2227)"
 
-# [[lesson]]
-# id = "walk-04-graphrag"
-# title = "GraphRAG End to End: Retrieve, Extract, Linearize, Answer"
-# tier = "walk"
-# track = "py"
-# order = 40
-# file = "walk/04-graphrag.md"
-# verify = "required"
-# source = "astraea-graphrag-demo"
+[[lesson]]
+id = "walk-04-graphrag"
+title = "GraphRAG End to End: Retrieve, Extract, Linearize, Answer"
+tier = "walk"
+track = "py"
+order = 40
+file = "walk/04-graphrag.md"
+needs_ollama = true
+verify = "required"
+source = "astraea-graphrag-demo @ d89d4e5 (fixed upstream, KG Fixture 2227)"
 
 # [[lesson]]
 # id = "walk-05-data-lake"

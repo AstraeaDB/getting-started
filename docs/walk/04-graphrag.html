@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GraphRAG End to End: Retrieve, Extract, Linearize, Answer &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-tier="walk" data-track="py" data-lesson="walk-04-graphrag">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  <li data-track="py" class=""><a href="walk/01-embeddings.html">What an Embedding Is, and How to Make One</a></li>
+  <li data-track="py" class=""><a href="walk/02-semantic-search.html">Searching a Graph by Meaning, Not by Keyword</a></li>
+  <li data-track="py" class=""><a href="walk/03-text-to-graph.html">Turning a Book Into a Knowledge Graph</a></li>
+  <li data-track="py" class="current"><a href="walk/04-graphrag.html">GraphRAG End to End: Retrieve, Extract, Linearize, Answer</a></li>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>GraphRAG End to End: Retrieve, Extract, Linearize, Answer</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#building-a-slightly-larger-graph"
+      id="toc-building-a-slightly-larger-graph">Building a slightly
+      larger graph</a></li>
+      <li><a href="#retrieve-and-look-at-what-you-got"
+      id="toc-retrieve-and-look-at-what-you-got">Retrieve, and look at
+      what you got</a></li>
+      <li><a href="#why-the-retrieval-was-thin"
+      id="toc-why-the-retrieval-was-thin">Why the retrieval was
+      thin</a></li>
+      <li><a href="#look-at-the-context-before-you-trust-the-answer"
+      id="toc-look-at-the-context-before-you-trust-the-answer">Look at
+      the context before you trust the answer</a></li>
+      <li><a href="#answer-with-the-context-and-without-it"
+      id="toc-answer-with-the-context-and-without-it">Answer, with the
+      context and without it</a></li>
+      <li><a href="#a-note-on-graph_rag" id="toc-a-note-on-graph_rag">A
+      note on <code>graph_rag</code></a></li>
+      <li><a href="#whats-next" id="toc-whats-next">What's next</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Find the right corner of the graph, turn it into text, and
+    get an answer where every claim traces back to something you can
+    look at.</em></p>
+    <p>You have a graph built from prose, with a trail from every entity
+    back to the passage it came from. Now you will use it to answer a
+    question. The pipeline has four stages, and it is worth naming them,
+    because each one can be inspected and each one can be the thing that
+    is wrong.</p>
+    <p><strong>Retrieve</strong> a starting node.
+    <strong>Extract</strong> the neighbourhood around it.
+    <strong>Linearize</strong> that neighbourhood into plain text.
+    <strong>Answer</strong> the question using only that text.</p>
+    <h2 id="building-a-slightly-larger-graph">Building a slightly larger
+    graph</h2>
+    <p>Three passages give the graph enough to be interesting. This is
+    the same extraction loop from the previous post, with one addition
+    explained shortly:</p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib.request</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>OLLAMA_URL <span class="op">=</span> os.environ.get(<span class="st">&quot;OLLAMA_URL&quot;</span>, <span class="st">&quot;http://localhost:11434&quot;</span>)</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>CHAT_MODEL <span class="op">=</span> os.environ.get(<span class="st">&quot;CHAT_MODEL&quot;</span>, <span class="st">&quot;gemma3:4b&quot;</span>)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> post(path, body):</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>    req <span class="op">=</span> urllib.request.Request(</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;</span><span class="sc">{</span>OLLAMA_URL<span class="sc">}{</span>path<span class="sc">}</span><span class="ss">&quot;</span>,</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        data<span class="op">=</span>json.dumps(body).encode(),</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        headers<span class="op">=</span>{<span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span>},</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> urllib.request.urlopen(req, timeout<span class="op">=</span><span class="dv">300</span>) <span class="im">as</span> resp:</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> json.load(resp)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> embed(texts):</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> post(<span class="st">&quot;/api/embed&quot;</span>, {<span class="st">&quot;model&quot;</span>: <span class="st">&quot;embeddinggemma&quot;</span>, <span class="st">&quot;input&quot;</span>: texts})[<span class="st">&quot;embeddings&quot;</span>]</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> chat(prompt, fmt<span class="op">=</span><span class="va">None</span>):</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>    body <span class="op">=</span> {<span class="st">&quot;model&quot;</span>: CHAT_MODEL, <span class="st">&quot;prompt&quot;</span>: prompt, <span class="st">&quot;stream&quot;</span>: <span class="va">False</span>}</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> fmt:</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>        body[<span class="st">&quot;format&quot;</span>] <span class="op">=</span> fmt</span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> post(<span class="st">&quot;/api/generate&quot;</span>, body)[<span class="st">&quot;response&quot;</span>]</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>PASSAGES <span class="op">=</span> [</span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;mail coach&quot;</span>, <span class="st">&quot;“There is nothing to apprehend. I belong to Tellson’s Bank. You must know Tellson’s Bank in London. I am going to Paris on business. Jerry, say that my answer was, RECALLED TO LIFE.”&quot;</span>),</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;Dover hotel&quot;</span>, <span class="st">&quot;Mr. Lorry made his formal bow to Miss Manette at the hotel in Dover. “Miss Manette, I am a man of business. I have a business charge to acquit myself of. I will relate to you the story of one of our customers at Tellson’s Bank.”&quot;</span>),</span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    (<span class="st">&quot;wine shop&quot;</span>, <span class="st">&quot;Monsieur Defarge kept a wine shop in the Saint Antoine quarter of Paris. Madame Defarge, his wife, sat in the shop behind the counter, a stout woman with a watchful eye and great composure of manner.&quot;</span>),</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a>PROMPT <span class="op">=</span> <span class="st">&quot;&quot;&quot;Extract named entities. Return ONLY JSON:</span></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a><span class="st">{&quot;characters&quot;:[{&quot;name&quot;:&quot;...&quot;,&quot;description&quot;:&quot;...&quot;}],&quot;locations&quot;:[{&quot;name&quot;:&quot;...&quot;,&quot;description&quot;:&quot;...&quot;}]}</span></span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="st">A character is a person. A location is a place or named organisation.</span></span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a><span class="st">Use only what the passage states. Do not invent anything.</span></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a><span class="st">Passage:</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-46"><a href="#cb1-46" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>)</span>
+<span id="cb1-47"><a href="#cb1-47" aria-hidden="true" tabindex="-1"></a>client.<span class="ex">connect</span>()</span>
+<span id="cb1-48"><a href="#cb1-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-49"><a href="#cb1-49" aria-hidden="true" tabindex="-1"></a>entities <span class="op">=</span> {}</span>
+<span id="cb1-50"><a href="#cb1-50" aria-hidden="true" tabindex="-1"></a>passages <span class="op">=</span> []</span>
+<span id="cb1-51"><a href="#cb1-51" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> label, text <span class="kw">in</span> PASSAGES:</span>
+<span id="cb1-52"><a href="#cb1-52" aria-hidden="true" tabindex="-1"></a>    pid <span class="op">=</span> client.create_node(</span>
+<span id="cb1-53"><a href="#cb1-53" aria-hidden="true" tabindex="-1"></a>        [<span class="st">&quot;Passage&quot;</span>], {<span class="st">&quot;text&quot;</span>: text, <span class="st">&quot;label&quot;</span>: label}, embedding<span class="op">=</span>embed([text])[<span class="dv">0</span>])</span>
+<span id="cb1-54"><a href="#cb1-54" aria-hidden="true" tabindex="-1"></a>    passages.append(pid)</span>
+<span id="cb1-55"><a href="#cb1-55" aria-hidden="true" tabindex="-1"></a>    found <span class="op">=</span> json.loads(chat(PROMPT <span class="op">+</span> text, fmt<span class="op">=</span><span class="st">&quot;json&quot;</span>))</span>
+<span id="cb1-56"><a href="#cb1-56" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> kind, key <span class="kw">in</span> ((<span class="st">&quot;Character&quot;</span>, <span class="st">&quot;characters&quot;</span>), (<span class="st">&quot;Location&quot;</span>, <span class="st">&quot;locations&quot;</span>)):</span>
+<span id="cb1-57"><a href="#cb1-57" aria-hidden="true" tabindex="-1"></a>        items <span class="op">=</span> found.get(key) <span class="kw">or</span> []</span>
+<span id="cb1-58"><a href="#cb1-58" aria-hidden="true" tabindex="-1"></a>        <span class="cf">if</span> <span class="kw">not</span> items:</span>
+<span id="cb1-59"><a href="#cb1-59" aria-hidden="true" tabindex="-1"></a>            <span class="cf">continue</span></span>
+<span id="cb1-60"><a href="#cb1-60" aria-hidden="true" tabindex="-1"></a>        texts <span class="op">=</span> [<span class="ss">f&#39;</span><span class="sc">{</span>i[<span class="st">&quot;name&quot;</span>]<span class="sc">}</span><span class="ss">. </span><span class="sc">{</span>i<span class="sc">.</span>get(<span class="st">&quot;description&quot;</span>, <span class="st">&quot;&quot;</span>)<span class="sc">}</span><span class="ss">&#39;</span>.strip() <span class="cf">for</span> i <span class="kw">in</span> items]</span>
+<span id="cb1-61"><a href="#cb1-61" aria-hidden="true" tabindex="-1"></a>        <span class="cf">for</span> item, vec <span class="kw">in</span> <span class="bu">zip</span>(items, embed(texts)):</span>
+<span id="cb1-62"><a href="#cb1-62" aria-hidden="true" tabindex="-1"></a>            name <span class="op">=</span> item[<span class="st">&quot;name&quot;</span>]</span>
+<span id="cb1-63"><a href="#cb1-63" aria-hidden="true" tabindex="-1"></a>            <span class="cf">if</span> name <span class="kw">not</span> <span class="kw">in</span> entities:           <span class="co"># the same name across passages</span></span>
+<span id="cb1-64"><a href="#cb1-64" aria-hidden="true" tabindex="-1"></a>                entities[name] <span class="op">=</span> client.create_node(   <span class="co"># is one node, not three</span></span>
+<span id="cb1-65"><a href="#cb1-65" aria-hidden="true" tabindex="-1"></a>                    [kind], {<span class="st">&quot;name&quot;</span>: name, <span class="st">&quot;description&quot;</span>: item.get(<span class="st">&quot;description&quot;</span>, <span class="st">&quot;&quot;</span>)},</span>
+<span id="cb1-66"><a href="#cb1-66" aria-hidden="true" tabindex="-1"></a>                    embedding<span class="op">=</span>vec)</span>
+<span id="cb1-67"><a href="#cb1-67" aria-hidden="true" tabindex="-1"></a>            client.create_edge(entities[name], pid, <span class="st">&quot;MENTIONED_IN&quot;</span>)</span>
+<span id="cb1-68"><a href="#cb1-68" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-69"><a href="#cb1-69" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="bu">len</span>(entities), <span class="st">&quot;entities:&quot;</span>, <span class="bu">sorted</span>(entities))</span></code></pre></div>
+    <p>Two things to notice in the output. Names repeated across
+    passages become a single node, which is why Tellson's Bank appears
+    once even though two passages mention it. And the list probably
+    contains an entity called <code>I</code>, extracted from a
+    first-person sentence. That is a genuine extraction mistake, it is
+    the sort of thing a bigger model or a better prompt reduces but
+    never eliminates, and it is exactly what the provenance edges let
+    you find and fix.</p>
+    <h2 id="retrieve-and-look-at-what-you-got">Retrieve, and look at
+    what you got</h2>
+    <p>The first stage picks a starting point. Use <a
+    href="../glossary.html#vector-search">vector search</a>, because the
+    reader's question is text and your nodes carry embeddings:</p>
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>QUESTION <span class="op">=</span> <span class="st">&quot;What is Tellson&#39;s Bank, and which people and places is it connected to?&quot;</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>anchor <span class="op">=</span> client.vector_search(embed([QUESTION])[<span class="dv">0</span>], k<span class="op">=</span><span class="dv">1</span>)[<span class="dv">0</span>][<span class="st">&quot;node_id&quot;</span>]</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;anchor:&quot;</span>, client.get_node(anchor)[<span class="st">&quot;properties&quot;</span>].get(<span class="st">&quot;name&quot;</span>))</span></code></pre></div>
+    <p>The second stage takes the neighbourhood around that anchor and
+    flattens it into text. <code>extract_subgraph</code> does both the
+    extraction and the <a
+    href="../glossary.html#linearization">linearization</a> in one
+    call:</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>sub <span class="op">=</span> client.extract_subgraph(anchor, hops<span class="op">=</span><span class="dv">2</span>, <span class="bu">format</span><span class="op">=</span><span class="st">&quot;structured&quot;</span>)</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sub[<span class="st">&quot;nodes_count&quot;</span>], <span class="st">&quot;nodes,&quot;</span>, sub[<span class="st">&quot;edges_count&quot;</span>], <span class="st">&quot;edges,&quot;</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>      sub[<span class="st">&quot;estimated_tokens&quot;</span>], <span class="st">&quot;estimated tokens&quot;</span>)</span></code></pre></div>
+    <p>Read those numbers before you read anything else. On the graph as
+    built so far you get <strong>3 nodes and 2 edges</strong>, which is
+    Tellson's Bank and the two passages that mention it, and nothing
+    else. The answer to a question about which people it connects to is
+    not in there.</p>
+    <h2 id="why-the-retrieval-was-thin">Why the retrieval was thin</h2>
+    <p>This is worth slowing down for, because it is the most common way
+    a GraphRAG system disappoints.</p>
+    <p>Every edge you created points from an entity to a passage.
+    Traversal follows edges in the direction they point. So from
+    Tellson's Bank you reach its passages in one hop, and then you stop,
+    because no edge leads out of a passage. The other entities in those
+    passages, Mr. Lorry and Jerry and London, are one step away in the
+    text and unreachable in the graph.</p>
+    <p>Provenance needed only one direction. Retrieval needs the other
+    one too. Add it:</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, nid <span class="kw">in</span> entities.items():</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> hop <span class="kw">in</span> client.neighbors(nid, direction<span class="op">=</span><span class="st">&quot;outgoing&quot;</span>, edge_type<span class="op">=</span><span class="st">&quot;MENTIONED_IN&quot;</span>):</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>        client.create_edge(hop[<span class="st">&quot;node_id&quot;</span>], nid, <span class="st">&quot;MENTIONS&quot;</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>sub <span class="op">=</span> client.extract_subgraph(anchor, hops<span class="op">=</span><span class="dv">2</span>, <span class="bu">format</span><span class="op">=</span><span class="st">&quot;structured&quot;</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sub[<span class="st">&quot;nodes_count&quot;</span>], <span class="st">&quot;nodes,&quot;</span>, sub[<span class="st">&quot;edges_count&quot;</span>], <span class="st">&quot;edges,&quot;</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>      sub[<span class="st">&quot;estimated_tokens&quot;</span>], <span class="st">&quot;estimated tokens&quot;</span>)</span></code></pre></div>
+    <p>That should now report roughly <strong>10 nodes and 18
+    edges</strong>, about a thousand tokens. The same anchor, the same
+    hop count, the same question: the only thing that changed is that a
+    passage can now lead somewhere. The shape of your edges decides what
+    retrieval can see.</p>
+    <h2 id="look-at-the-context-before-you-trust-the-answer">Look at the
+    context before you trust the answer</h2>
+    <p>The third stage has already happened, inside
+    <code>extract_subgraph</code>. Its <code>text</code> field is the
+    linearized subgraph, and it is worth printing at least once:</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(sub[<span class="st">&quot;text&quot;</span>][:<span class="dv">600</span>])</span></code></pre></div>
+    <p>You will see nodes with their properties and the edges between
+    them, written out as indented lines. This is exactly what the model
+    is about to be given. Nothing else reaches it. If an answer later
+    looks wrong, this is the first place to look, because the fault is
+    usually here rather than in the model.</p>
+    <h2 id="answer-with-the-context-and-without-it">Answer, with the
+    context and without it</h2>
+    <p>The fourth stage is an ordinary language model call, with two
+    instructions that matter: use only the context, and admit when the
+    context is silent.</p>
+    <div class="sourceCode" id="cb6"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>GROUNDED <span class="op">=</span> (</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;Answer using ONLY the context below. &quot;</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;If the context does not contain the answer, reply exactly: &quot;</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;the context does not say.</span><span class="ch">\n\n</span><span class="st">Context:</span><span class="ch">\n</span><span class="sc">{context}</span><span class="ch">\n\n</span><span class="st">Question: </span><span class="sc">{question}</span><span class="st">&quot;</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;--- with the graph ---&quot;</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(chat(GROUNDED.<span class="bu">format</span>(context<span class="op">=</span>sub[<span class="st">&quot;text&quot;</span>], question<span class="op">=</span>QUESTION)))</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;--- without the graph ---&quot;</span>)</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(chat(GROUNDED.<span class="bu">format</span>(context<span class="op">=</span><span class="st">&quot;(none)&quot;</span>, question<span class="op">=</span>QUESTION)))</span></code></pre></div>
+    <p>With the subgraph, you get an answer naming Tellson's Bank,
+    London, and the people the passages connect it to. Without it, the
+    same model with the same instructions replies that the context does
+    not say.</p>
+    <p>That second result is the one to think about. The model has
+    almost certainly read <em>A Tale of Two Cities</em> during training
+    and could produce a fluent paragraph about Tellson's Bank from
+    memory. The grounding instruction stops it, and that is the point.
+    An ungrounded answer might be right, might be invented, and you
+    cannot tell which. A grounded answer can be checked, because every
+    claim in it came from a node, and every node came from a passage you
+    can read.</p>
+    <h2 id="a-note-on-graph_rag">A note on <code>graph_rag</code></h2>
+    <p>AstraeaDB has a <code>graph_rag</code> method that packages
+    retrieval and linearization together:</p>
+    <div class="sourceCode" id="cb7"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>result <span class="op">=</span> client.graph_rag(question<span class="op">=</span>QUESTION, anchor<span class="op">=</span>anchor, hops<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">&quot;nodes_in_context&quot;</span>], <span class="st">&quot;nodes,&quot;</span>, result[<span class="st">&quot;estimated_tokens&quot;</span>], <span class="st">&quot;tokens&quot;</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(result[<span class="st">&quot;note&quot;</span>])</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>client.close()</span></code></pre></div>
+    <p>It returns the assembled context, the counts, and a
+    <code>note</code>. Writing the final answer needs a language model
+    configured on the server, which this lesson does not assume, so the
+    note tells you to use the context with your own model. That is what
+    the four stages above do by hand, and doing it by hand is worth it
+    once, because each stage is then something you can inspect rather
+    than a single call that either works or does not.</p>
+    <h2 id="whats-next">What's next</h2>
+    <p>You have a complete pipeline: a question in, a grounded answer
+    out, and an inspectable artefact at every stage.</p>
+    <p>In the next post, <strong><a href="./05-data-lake.html">A
+    Metadata Graph Over a Messy Data Lake</a></strong>, the source
+    material stops being prose. You will build a graph that describes
+    files rather than sentences, and use it to work out which of a pile
+    of comma-separated, JSON, and Parquet files can answer a question at
+    all.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../walk/03-text-to-graph.html"><span>Previous</span>Turning a Book Into a Knowledge Graph</a>
+                </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 61eef42 on 2026-08-10</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

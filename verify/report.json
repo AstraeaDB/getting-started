@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-10T01:56:22+00:00",
+  "generated": "2026-08-10T02:18:14+00:00",
   "runs": [
     {
       "lesson": "crawl-08-ui",
@@ -139,6 +139,15 @@
           "reason": "the verification images use an Ollama already running on the host, which has this model; pulling it inside the container would download gigabytes on every run"
         }
       ],
+      "rev": "61eef42",
+      "date": "2026-08-10",
+      "image": "astraea-verify-py"
+    },
+    {
+      "lesson": "walk-04-graphrag",
+      "green": true,
+      "blocks": 7,
+      "skipped": [],
       "rev": "61eef42",
       "date": "2026-08-10",
       "image": "astraea-verify-py"
