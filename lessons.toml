@@ -253,15 +253,16 @@ file = "run/02-cyber-build.md"
 verify = "required"
 source = "cyber-graph-demo @ f213607 Act 1, absorbed inline per Q3; LANL data (CC0) sampled into data/lanl/"
 
-# [[lesson]]
-# id = "run-03-cyber-hunt"
-# title = "Hunting Lateral Movement With Embeddings and Time Travel"
-# tier = "run"
-# track = "py"
-# order = 30
-# file = "run/03-cyber-hunt.md"
-# verify = "required"
-# source = "cyber-graph-demo (private) Act 2"
+[[lesson]]
+id = "run-03-cyber-hunt"
+title = "Hunting Lateral Movement With Embeddings and Time Travel"
+tier = "run"
+track = "py"
+order = 30
+file = "run/03-cyber-hunt.md"
+needs_ollama = true
+verify = "required"
+source = "cyber-graph-demo @ f213607 Act 2, absorbed inline per Q3; real LANL red-team labels with synthetic benign background (data/lanl/make_auth.py)"
 
 # [[lesson]]
 # id = "run-04-cyber-report"

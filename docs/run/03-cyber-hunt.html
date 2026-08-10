@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hunting Lateral Movement With Embeddings and Time Travel &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-tier="run" data-track="py" data-lesson="run-03-cyber-hunt">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  <li data-track="py" class=""><a href="walk/01-embeddings.html">What an Embedding Is, and How to Make One</a></li>
+  <li data-track="py" class=""><a href="walk/02-semantic-search.html">Searching a Graph by Meaning, Not by Keyword</a></li>
+  <li data-track="py" class=""><a href="walk/03-text-to-graph.html">Turning a Book Into a Knowledge Graph</a></li>
+  <li data-track="py" class=""><a href="walk/04-graphrag.html">GraphRAG End to End: Retrieve, Extract, Linearize, Answer</a></li>
+  <li data-track="py" class=""><a href="walk/05-data-lake.html">A Metadata Graph Over a Messy Data Lake</a></li>
+  <li data-track="py" class=""><a href="walk/06-eunomia.html">Eunomia: A Semantic Cache in Front of Your Graph</a></li>
+  <li data-track="py" class=""><a href="walk/07-a-llama.html">a-llama: A Local LLM Server That Remembers</a></li>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  <li data-track="py" class=""><a href="run/02-cyber-build.html">Building a Network Graph From Security Telemetry</a></li>
+  <li data-track="py" class="current"><a href="run/03-cyber-hunt.html">Hunting Lateral Movement With Embeddings and Time Travel</a></li>
+  <li data-track="py" class=""><a href="run/05-ai-assisted-dev.html">Giving Your Coding Assistant a Memory</a></li>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Hunting Lateral Movement With Embeddings and Time Travel</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#about-this-data" id="toc-about-this-data">About this
+      data</a></li>
+      <li><a href="#building-the-authentication-graph"
+      id="toc-building-the-authentication-graph">Building the
+      authentication graph</a></li>
+      <li><a href="#the-simple-query-first"
+      id="toc-the-simple-query-first">The simple query first</a></li>
+      <li><a href="#time-travel-when-did-it-change"
+      id="toc-time-travel-when-did-it-change">Time travel: when did it
+      change?</a></li>
+      <li><a href="#behaviour-for-when-you-have-no-labels"
+      id="toc-behaviour-for-when-you-have-no-labels">Behaviour, for when
+      you have no labels</a></li>
+      <li><a href="#what-this-hunt-did-and-did-not-prove"
+      id="toc-what-this-hunt-did-and-did-not-prove">What this hunt did
+      and did not prove</a></li>
+      <li><a href="#whats-next" id="toc-whats-next">What's next</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Find the account that appeared somewhere it had never been,
+    then reconstruct when it happened.</em></p>
+    <p>The previous post ended on a negative result: ranking machines by
+    importance finds your servers, not your intruder. This post finds
+    the intruder. The change is not a cleverer algorithm. It is looking
+    at behaviour over time rather than at structure.</p>
+    <h2 id="about-this-data">About this data</h2>
+    <p><code>data/lanl/auth.csv</code> needs a plain warning before you
+    read anything into it.</p>
+    <p>The <strong>25 red-team events are real</strong>, taken from the
+    dataset's own ground-truth labels: real accounts, real machines,
+    real timestamps. The <strong>benign events around them are
+    synthetic</strong>, generated by <code>data/lanl/make_auth.py</code>
+    from the real DNS graph, because the genuine LANL authentication
+    file is tens of gigabytes and is not something to ship in a
+    documentation repository.</p>
+    <p>So the intrusion is authentic and the crowd it hides in is
+    manufactured. The script says so at the top and is deterministic, so
+    you can read exactly how the background was made. Real
+    authentication data is messier than this, and a hunt against it is
+    correspondingly harder.</p>
+    <h2 id="building-the-authentication-graph">Building the
+    authentication graph</h2>
+    <p>Two node types and one edge, with the event time recorded on the
+    edge:</p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> csv</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> collections</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>auth <span class="op">=</span> <span class="bu">list</span>(csv.reader(<span class="bu">open</span>(<span class="st">&quot;data/lanl/auth.csv&quot;</span>)))</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>redteam <span class="op">=</span> <span class="bu">list</span>(csv.reader(<span class="bu">open</span>(<span class="st">&quot;data/lanl/redteam.csv&quot;</span>)))</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>attack_start <span class="op">=</span> <span class="bu">min</span>(<span class="bu">int</span>(row[<span class="dv">0</span>]) <span class="cf">for</span> row <span class="kw">in</span> redteam)</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>)</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>client.<span class="ex">connect</span>()</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>nodes <span class="op">=</span> {}</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> node(label, name):</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (label, name) <span class="kw">not</span> <span class="kw">in</span> nodes:</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        nodes[(label, name)] <span class="op">=</span> client.create_node([label], {<span class="st">&quot;name&quot;</span>: name})</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> nodes[(label, name)]</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> time, user, source, dest <span class="kw">in</span> auth:</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>    client.create_edge(</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>        node(<span class="st">&quot;User&quot;</span>, user), node(<span class="st">&quot;Computer&quot;</span>, source), <span class="st">&quot;AUTH_FROM&quot;</span>,</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>        {<span class="st">&quot;dest&quot;</span>: dest},</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>        valid_from<span class="op">=</span><span class="bu">int</span>(time),      <span class="co"># the edge exists from this moment onward</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span><span class="bu">len</span>(auth)<span class="sc">}</span><span class="ss"> events, </span><span class="sc">{</span><span class="bu">len</span>(nodes)<span class="sc">}</span><span class="ss"> nodes, attack begins at t=</span><span class="sc">{</span>attack_start<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p><code>valid_from</code> is the important argument. It records
+    when the relationship came into existence, which turns the graph
+    into something you can ask questions of <em>as it was</em> rather
+    than only as it is.</p>
+    <h2 id="the-simple-query-first">The simple query first</h2>
+    <p>Before reaching for anything sophisticated, ask the obvious
+    question. People sit at their own machines. An account appearing on
+    more than one is worth a look:</p>
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>machines_per_user <span class="op">=</span> collections.defaultdict(<span class="bu">set</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _, user, source, _ <span class="kw">in</span> auth:</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    machines_per_user[user].add(source)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>suspects <span class="op">=</span> {u: <span class="bu">sorted</span>(m) <span class="cf">for</span> u, m <span class="kw">in</span> machines_per_user.items() <span class="cf">if</span> <span class="bu">len</span>(m) <span class="op">&gt;</span> <span class="dv">1</span>}</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span><span class="bu">len</span>(suspects)<span class="sc">}</span><span class="ss"> of </span><span class="sc">{</span><span class="bu">len</span>(machines_per_user)<span class="sc">}</span><span class="ss"> accounts used more than one machine&quot;</span>)</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> user, machines <span class="kw">in</span> <span class="bu">sorted</span>(suspects.items()):</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;   </span><span class="sc">{</span>user<span class="sc">:12}</span><span class="ss"> </span><span class="sc">{</span>machines<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>Five accounts out of roughly twelve hundred. Now check them
+    against the labels:</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>known_bad <span class="op">=</span> {row[<span class="dv">1</span>] <span class="cf">for</span> row <span class="kw">in</span> redteam}</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;every suspect is a known red-team account:&quot;</span>, <span class="bu">set</span>(suspects) <span class="op">&lt;=</span> known_bad)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;red-team accounts we found:&quot;</span>, <span class="bu">len</span>(<span class="bu">set</span>(suspects) <span class="op">&amp;</span> known_bad), <span class="st">&quot;of&quot;</span>, <span class="bu">len</span>(known_bad))</span></code></pre></div>
+    <p>Every one, and all of them. Perfect precision and perfect recall,
+    from counting.</p>
+    <p>That is worth sitting with, because it is the most useful habit
+    in this post. The graph made the question easy to ask, but the
+    answer needed no embeddings, no traversal and no model. <strong>Try
+    the boring query first.</strong> If it works you are finished, and
+    if it does not you have learned something about the shape of the
+    problem before spending anything.</p>
+    <h2 id="time-travel-when-did-it-change">Time travel: when did it
+    change?</h2>
+    <p>Counting told you <em>who</em>. It cannot tell you <em>when</em>,
+    and "when" is what turns a suspicion into an incident report.</p>
+    <p>Because every edge carries a <code>valid_from</code>, you can ask
+    what the graph looked like at any moment. <code>neighbors_at</code>
+    takes a timestamp and answers as of then:</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> machines_at(user, when):</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    hops <span class="op">=</span> client.neighbors_at(nodes[(<span class="st">&quot;User&quot;</span>, user)], <span class="st">&quot;outgoing&quot;</span>, when, <span class="st">&quot;AUTH_FROM&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="bu">sorted</span>({client.get_node(h[<span class="st">&quot;node_id&quot;</span>])[<span class="st">&quot;properties&quot;</span>][<span class="st">&quot;name&quot;</span>] <span class="cf">for</span> h <span class="kw">in</span> hops})</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>user <span class="op">=</span> <span class="st">&quot;U748@DOM1&quot;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span>user<span class="sc">}</span><span class="ss"> just before the intrusion:&quot;</span>, machines_at(user, attack_start <span class="op">-</span> <span class="dv">1</span>))</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span>user<span class="sc">}</span><span class="ss"> after it:                 &quot;</span>, machines_at(user, <span class="dv">244910</span>))</span></code></pre></div>
+    <p>One machine before, three after. That is the whole story of a
+    stolen credential in two lines: the account was working normally
+    somewhere, and then it turned up in two places it had never
+    been.</p>
+    <p>Do it for all five and you have a timeline:</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> user <span class="kw">in</span> <span class="bu">sorted</span>(suspects):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    before <span class="op">=</span> machines_at(user, attack_start <span class="op">-</span> <span class="dv">1</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    after <span class="op">=</span> machines_at(user, <span class="dv">244910</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    arrived <span class="op">=</span> [m <span class="cf">for</span> m <span class="kw">in</span> after <span class="cf">if</span> m <span class="kw">not</span> <span class="kw">in</span> before]</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span>user<span class="sc">:12}</span><span class="ss"> home=</span><span class="sc">{</span>before<span class="sc">}</span><span class="ss">  appeared on=</span><span class="sc">{</span>arrived<span class="sc">}</span><span class="ss">&quot;</span>)</span></code></pre></div>
+    <p>Every account has exactly one home machine before the intrusion,
+    and every one of them turns up on <code>C17693</code>. One also
+    reaches <code>C18025</code>. That is the attacker's foothold and
+    their pivot, recovered from the data rather than assumed.</p>
+    <h2 id="behaviour-for-when-you-have-no-labels">Behaviour, for when
+    you have no labels</h2>
+    <p>The two techniques above worked because this graph is small and
+    the anomaly is stark. Both leaned on knowing what to count.</p>
+    <p>The harder question is the one you face on a real network:
+    <em>which machines behave like this one</em>, when you have no
+    labels and cannot enumerate the rules in advance. That is what
+    embeddings are for. Describe each machine's behaviour in a sentence,
+    embed the sentence, and let similarity do the comparing:</p>
+    <div class="sourceCode" id="cb6"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib.request</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>OLLAMA_URL <span class="op">=</span> os.environ.get(<span class="st">&quot;OLLAMA_URL&quot;</span>, <span class="st">&quot;http://localhost:11434&quot;</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> embed(texts):</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    body <span class="op">=</span> json.dumps({<span class="st">&quot;model&quot;</span>: <span class="st">&quot;embeddinggemma&quot;</span>, <span class="st">&quot;input&quot;</span>: texts}).encode()</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>    req <span class="op">=</span> urllib.request.Request(<span class="ss">f&quot;</span><span class="sc">{</span>OLLAMA_URL<span class="sc">}</span><span class="ss">/api/embed&quot;</span>, data<span class="op">=</span>body,</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a>                                 headers<span class="op">=</span>{<span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span>})</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> urllib.request.urlopen(req, timeout<span class="op">=</span><span class="dv">60</span>) <span class="im">as</span> resp:</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> json.load(resp)[<span class="st">&quot;embeddings&quot;</span>]</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>users_per_machine <span class="op">=</span> collections.defaultdict(<span class="bu">set</span>)</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>dests_per_machine <span class="op">=</span> collections.defaultdict(<span class="bu">set</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _, user, source, dest <span class="kw">in</span> auth:</span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    users_per_machine[source].add(user)</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    dests_per_machine[source].add(dest)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>profiles <span class="op">=</span> {</span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    machine: (<span class="ss">f&quot;A machine used by </span><span class="sc">{</span><span class="bu">len</span>(users)<span class="sc">}</span><span class="ss"> distinct accounts, &quot;</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>              <span class="ss">f&quot;reaching </span><span class="sc">{</span><span class="bu">len</span>(dests_per_machine[machine])<span class="sc">}</span><span class="ss"> destinations.&quot;</span>)</span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> machine, users <span class="kw">in</span> users_per_machine.items()</span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a>names <span class="op">=</span> <span class="bu">sorted</span>(profiles)</span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> name, vec <span class="kw">in</span> <span class="bu">zip</span>(names, embed([profiles[n] <span class="cf">for</span> n <span class="kw">in</span> names])):</span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a>    client.create_edge(node(<span class="st">&quot;Computer&quot;</span>, name),</span>
+<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a>                       node(<span class="st">&quot;Profile&quot;</span>, <span class="ss">f&quot;profile:</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">&quot;</span>), <span class="st">&quot;DESCRIBED_BY&quot;</span>)</span>
+<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a>    client.get_node(node(<span class="st">&quot;Profile&quot;</span>, <span class="ss">f&quot;profile:</span><span class="sc">{</span>name<span class="sc">}</span><span class="ss">&quot;</span>))   <span class="co"># keep the id warm</span></span>
+<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;described&quot;</span>, <span class="bu">len</span>(profiles), <span class="st">&quot;machines&quot;</span>)</span>
+<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;C17693:&quot;</span>, profiles[<span class="st">&quot;C17693&quot;</span>])</span></code></pre></div>
+    <p>The profile for <code>C17693</code> reads differently from every
+    other machine's, because five accounts using one machine is a
+    description that nothing else in the population matches. On a real
+    network you would embed richer profiles, covering which services a
+    machine reaches, at what hours, and how that compares with the
+    machines around it, then look for the ones whose description has
+    drifted from their own past.</p>
+    <p>The point is the shape of the technique rather than this
+    particular sentence: turn behaviour into text, turn text into a
+    position, and let distance find the things you would not have known
+    to grep for.</p>
+    <div class="sourceCode" id="cb7"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>client.close()</span></code></pre></div>
+    <h2 id="what-this-hunt-did-and-did-not-prove">What this hunt did and
+    did not prove</h2>
+    <p>It found five compromised accounts with perfect precision, dated
+    the intrusion, and named the attacker's two machines, all checkable
+    against labels the dataset's authors provided.</p>
+    <p>It did that against a background that was manufactured to be well
+    behaved. The honest reading is that the techniques are sound and the
+    difficulty was removed. On real telemetry the counting query would
+    return hundreds of accounts using more than one machine, most of
+    them administrators, shared workstations and service accounts, and
+    the work would be in separating those from the one that matters. The
+    graph does not remove that work. It makes each attempt cheap enough
+    to try.</p>
+    <h2 id="whats-next">What's next</h2>
+    <p>You have a suspicion, a timeline, and the machines involved. In
+    <strong><a href="./04-cyber-report.html">Explaining an
+    Investigation: GraphRAG for Audit-Grade Reports</a></strong>, you
+    will turn that into something a person can read and an auditor can
+    check, where every sentence traces back to a node in the graph.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../run/02-cyber-build.html"><span>Previous</span>Building a Network Graph From Security Telemetry</a>
+                  <a class="next" href="../run/05-ai-assisted-dev.html"><span>Next</span>Giving Your Coding Assistant a Memory</a>
+          </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 61eef42 on 2026-08-10</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>

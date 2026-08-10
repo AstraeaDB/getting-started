@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-10T12:57:01+00:00",
+  "generated": "2026-08-10T13:07:17+00:00",
   "runs": [
     {
       "lesson": "crawl-08-ui",
@@ -101,6 +101,15 @@
     },
     {
       "lesson": "run-02-cyber-build",
+      "green": true,
+      "blocks": 7,
+      "skipped": [],
+      "rev": "61eef42",
+      "date": "2026-08-10",
+      "image": "astraea-verify-py"
+    },
+    {
+      "lesson": "run-03-cyber-hunt",
       "green": true,
       "blocks": 7,
       "skipped": [],
