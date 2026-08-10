@@ -257,7 +257,7 @@ def visible_to(lesson, track):
     return t in ("both", track) or track is None
 
 
-def build_sidebar(manifest, lessons, current_id):
+def build_sidebar(manifest, lessons, current_id, root=""):
     """One sidebar for everyone. JS hides the other track's entries; with JS
     off both tracks show and every link still resolves (DESIGN.md 3.3)."""
     tiers = {t["name"]: t for t in manifest.get("tier", [])}
@@ -270,7 +270,10 @@ def build_sidebar(manifest, lessons, current_id):
             (x for x in lessons if x["tier"] == tier_name), key=lambda x: (x["order"], x["id"])
         ):
             cls = "current" if L["id"] == current_id else ""
-            href = url_for(L, from_tier=None)
+            # root makes the link relative to the page being rendered. Without
+            # it a lesson at /walk/01.html links to walk/02.html, which the
+            # browser resolves as /walk/walk/02.html.
+            href = root + url_for(L, from_tier=None)
             out.append(
                 f'<li data-track="{L["track"]}" class="{cls}">'
                 f'<a href="{href}">{html.escape(L["title"])}</a></li>'
@@ -282,7 +285,7 @@ def build_sidebar(manifest, lessons, current_id):
         out.append("<ul>")
         for pg in pages:
             cls = "current" if pg["id"] == current_id else ""
-            href = Path(pg["file"]).with_suffix(".html").as_posix()
+            href = root + Path(pg["file"]).with_suffix(".html").as_posix()
             out.append(f'<li data-track="both" class="{cls}">'
                        f'<a href="{href}">{html.escape(pg["title"])}</a></li>')
         out.append("</ul>")
@@ -353,7 +356,7 @@ def render_lesson(pandoc, manifest, lessons, lesson, report, strict):
         "-V", f"repo={site.get('repo', '')}",
         "-V", f"badge={badge}",
         "-V", f"badgeclass={badge_cls}",
-        "-V", f"sidebar={build_sidebar(manifest, lessons, lesson['id'])}",
+        "-V", f"sidebar={build_sidebar(manifest, lessons, lesson['id'], root)}",
         "-o", str(out_path),
     ]
     if sib:
@@ -398,7 +401,7 @@ def render_page(pandoc, manifest, lessons, page):
         "-V", f"repo={site.get('repo', '')}",
         "-V", "badge=Reference page, no code to verify",
         "-V", "badgeclass=unverified",
-        "-V", f"sidebar={build_sidebar(manifest, lessons, page['id'])}",
+        "-V", f"sidebar={build_sidebar(manifest, lessons, page['id'], root)}",
         "-o", str(out_path),
     ]
     proc = subprocess.run(argv, input=body, text=True, capture_output=True)
@@ -538,6 +541,37 @@ def copy_static():
     (DOCS / ".nojekyll").write_text("", encoding="utf-8")
 
 
+HREF_RE = re.compile(r'(?:href|src)="([^"]+)"')
+
+
+def check_links():
+    """Resolve every local link relative to the page it appears in.
+
+    A link can name a file that exists and still be wrong, because the browser
+    resolves it against the page's own directory. A sidebar entry of
+    `walk/02.html` written into `/walk/01.html` becomes `/walk/walk/02.html`.
+    Checking that the target exists is not enough; it has to be checked from
+    where the link lives.
+    """
+    broken = []
+    for page in sorted(DOCS.rglob("*.html")):
+        for m in HREF_RE.finditer(page.read_text(encoding="utf-8")):
+            target = m.group(1)
+            if target.startswith(("http://", "https://", "mailto:", "#", "data:")):
+                continue
+            path = target.split("#", 1)[0].split("?", 1)[0]
+            if not path:
+                continue
+            resolved = (page.parent / path).resolve()
+            if not resolved.exists():
+                broken.append(f"{page.relative_to(DOCS)} -> {target}")
+    if broken:
+        die("links that do not resolve from the page they appear on:\n    "
+            + "\n    ".join(broken[:20])
+            + (f"\n    ... and {len(broken) - 20} more" if len(broken) > 20 else ""))
+    print("build: all local links resolve")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--strict", action="store_true",
@@ -567,6 +601,8 @@ def main():
     render_index(manifest, lessons, report, args.strict)
     render_status(manifest, lessons, report)
     copy_static()
+
+    check_links()
 
     big = [
         p for p in DOCS.rglob("*.html")
