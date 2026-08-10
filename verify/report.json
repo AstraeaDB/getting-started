@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-10T03:04:45+00:00",
+  "generated": "2026-08-10T12:20:46+00:00",
   "runs": [
     {
       "lesson": "crawl-08-ui",
@@ -98,6 +98,15 @@
       "rev": "61eef42",
       "date": "2026-08-09",
       "image": "astraea-verify-r"
+    },
+    {
+      "lesson": "run-05-ai-assisted-dev",
+      "green": true,
+      "blocks": 4,
+      "skipped": [],
+      "rev": "61eef42",
+      "date": "2026-08-10",
+      "image": "astraea-verify-py"
     },
     {
       "lesson": "walk-01-embeddings",

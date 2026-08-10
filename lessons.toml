@@ -273,13 +273,14 @@ source = "AstraeaDB/a-llama @ 0.1.0 on crates.io"
 # verify = "required"
 # source = "cyber-graph-demo (private) Act 3"
 
-# [[lesson]]
-# id = "run-05-ai-assisted-dev"
-# title = "Giving Your Coding Assistant a Memory"
-# tier = "run"
-# track = "py"
-# order = 50
-# file = "run/05-ai-assisted-dev.md"
-# verify = "required"
-# source = "adb-claude-kit"
+[[lesson]]
+id = "run-05-ai-assisted-dev"
+title = "Giving Your Coding Assistant a Memory"
+tier = "run"
+track = "py"
+order = 50
+file = "run/05-ai-assisted-dev.md"
+needs_ollama = true
+verify = "required"
+source = "adb-claude-kit @ 9e6c9bf (audited clean, KG Note 2220)"
 
