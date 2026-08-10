@@ -1,0 +1,13 @@
+# Generated from the dependency block in content/run/01-fraud-elliptic.md by site/sync_samples.py.
+# Edit the lesson, then run `just sync-samples`.
+[package]
+name = "run-01-fraud-elliptic"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+astraea-core = "0.3.1"
+astraea-graph = { version = "0.3.1", features = ["test-utils"] }
+astraea-gnn = "0.3.1"
+rand = "0.8"
+serde_json = "1"

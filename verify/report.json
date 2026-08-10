@@ -1,5 +1,5 @@
 {
-  "generated": "2026-08-10T14:01:57+00:00",
+  "generated": "2026-08-10T20:15:36+00:00",
   "runs": [
     {
       "lesson": "crawl-08-ui",
@@ -103,7 +103,13 @@
       "lesson": "run-01-fraud-elliptic",
       "green": true,
       "blocks": 4,
-      "skipped": [],
+      "skipped": [
+        {
+          "block": 0,
+          "lang": "bash",
+          "reason": "clones this site's own repository; the harness already compiles that project's manifest and these blocks in a clean container"
+        }
+      ],
       "rev": "61eef42",
       "date": "2026-08-10",
       "image": "astraea-verify-rust"

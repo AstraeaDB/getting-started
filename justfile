@@ -10,6 +10,12 @@ astraeadb := env_var_or_default("ASTRAEADB", "/Users/jimharris/Documents/astraea
 default:
     @just --list
 
+# Regenerate samples/<lesson-id>/ from the lessons they came from. `just build`
+# checks these are current and fails if they are not, so run this after editing
+# a Rust lesson's code blocks or its dependency block.
+sync-samples:
+    {{python}} site/sync_samples.py
+
 # Render content/ into docs/. This is what GitHub Pages serves.
 build:
     PANDOC={{pandoc}} {{python}} site/build.py

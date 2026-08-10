@@ -145,7 +145,13 @@ getting-started/
             install-server.md  what-is-an-embedding.md  what-is-graphrag.md
             ollama-setup.md    glossary.md
   samples/                  runnable code per lesson, extracted and kept in sync
-    walk-03-text-to-graph/  run-01-fraud-elliptic/  ...
+    run-01-fraud-elliptic/  Cargo.toml + src/main.rs, GENERATED from the lesson
+                            by site/sync_samples.py; `just build` fails if they
+                            drift. Built so far only for the Rust lesson, which
+                            is the one a reader cannot use without assembling
+                            four fences into a cargo project by hand. Python
+                            and R snippets are pasted into a live session as
+                            the reader goes and need no such artifact.
   data/                     small, redistributable sampled datasets (see Q4)
   site/
     build.py                stdlib-only pandoc driver and index generator

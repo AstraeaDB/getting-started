@@ -2,3 +2,5 @@
 __pycache__/
 verify/bin/
 data/elliptic/*.csv
+# Build output from a reader (or from us) running the downloadable samples.
+samples/*/target/

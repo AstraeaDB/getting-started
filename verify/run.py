@@ -143,30 +143,38 @@ def rust_driver(blocks):
     built once, which means a lesson's Rust blocks have to read as one program
     top to bottom: uses first, then items, then `fn main`.
 
-    Reported as a single unit. A compile error belongs to the program rather
-    than to one block, and pretending otherwise would point at the wrong line.
+    Reported as a single unit, and the whole program's output is attributed to
+    the LAST block: that is the one that closes `fn main`, and it is where a
+    reader looks for what the program printed, so it is where an
+    `expect-output` fence can sit and still read naturally on the page.
+    A compile error therefore also surfaces against the last block, which is
+    imprecise — but cargo's message names the real file and line, and every
+    other choice of block is equally arbitrary.
+
+    Markers for the earlier blocks are emitted after the run, once the exit
+    code is known. Order in the stream does not matter, because parse_output
+    delimits each segment by its own START/EXIT pair.
     """
-    first = blocks[0].index
+    last = blocks[-1].index
     lines = [
-        f'echo "{MARK} START {first}"',
+        f'echo "{MARK} START {last}"',
         "cd /work/rustlesson && cargo run --release --quiet 2>&1",
         "RUST_RC=$?",
-        f'echo "{MARK} EXIT {first} $RUST_RC"',
+        f'echo "{MARK} EXIT {last} $RUST_RC"',
     ]
     # The remaining blocks are part of the same program, so they share its
     # fate. Give each an explicit marker rather than leaving them looking as
     # though they never ran.
-    for b in blocks[1:]:
+    for b in blocks[:-1]:
         lines += [f'echo "{MARK} START {b.index}"',
                   f'echo "{MARK} EXIT {b.index} $RUST_RC"']
     return "\n".join(lines) + "\n"
 
 
-def rust_project_files(blocks):
-    """A minimal cargo project. Dependencies are pre-built into the image, so
-    this compiles against a warm cache rather than fetching the world."""
-    main = "\n\n".join(b.code for b in blocks)
-    cargo = """[package]
+# Every dependency the Rust image pre-builds. Used only by a Rust lesson that
+# has no generated sample project; dependencies are warm in the image, so this
+# compiles against a cache rather than fetching the world.
+FALLBACK_CARGO = """[package]
 name = "rustlesson"
 version = "0.1.0"
 edition = "2021"
@@ -180,6 +188,23 @@ astraea-algorithms = "0.3.1"
 rand = "0.8"
 serde_json = "1"
 """
+
+
+def rust_project_files(lid, blocks):
+    """The cargo project the container builds.
+
+    The manifest is the one from `samples/<lesson-id>/`, which sync_samples.py
+    generates from the dependency block the lesson prints. Using it here is the
+    point: it makes the published dependency list something the verification
+    run compiles, instead of prose beside the code that nobody checks. The
+    sample's `main.rs` is deliberately not read — it is generated from these
+    same blocks, and building the blocks keeps the page itself the thing under
+    test.
+    """
+    main = "\n\n".join(b.code for b in blocks)
+    sample_cargo = ROOT / "samples" / lid / "Cargo.toml"
+    cargo = (sample_cargo.read_text(encoding="utf-8")
+             if sample_cargo.exists() else FALLBACK_CARGO)
     return {"/work/rustlesson/Cargo.toml": cargo,
             "/work/rustlesson/src/main.rs": main}
 
@@ -376,7 +401,7 @@ def run_lesson(lesson, manifest, keep_going=False, timeout=900):
         if lang == "r":
             extra_files.update(r_block_files(got))
         if lang == "rust":
-            extra_files.update(rust_project_files(got))
+            extra_files.update(rust_project_files(lid, got))
 
     unsupported = sorted({b.lang for b in active} - {"bash", "python", "r", "rust"})
     if unsupported:

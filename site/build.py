@@ -594,6 +594,13 @@ def main():
             die(f"unknown lesson id(s): {unknown}")
         targets = [by_id[i] for i in args.only]
 
+    # Before anything is rendered: the downloadable sample projects are
+    # generated from the lessons, and copy_static() publishes them. Shipping a
+    # sample that no longer matches the page it came from is worse than
+    # shipping no sample at all, so this is a build failure, not a warning.
+    from sync_samples import sync as sync_samples
+    sync_samples(manifest, check=True)
+
     DOCS.mkdir(exist_ok=True)
     for L in targets:
         render_lesson(pandoc, manifest, lessons, L, report, args.strict)
