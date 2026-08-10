@@ -173,15 +173,16 @@ needs_ollama = true
 verify = "required"
 source = "absorbed (astraeadb-embeddings-demo is private, see KG Note 2224)"
 
-# [[lesson]]
-# id = "walk-03-text-to-graph"
-# title = "Turning a Book Into a Knowledge Graph"
-# tier = "walk"
-# track = "py"
-# order = 30
-# file = "walk/03-text-to-graph.md"
-# verify = "required"
-# source = "astraea-graphrag-demo"
+[[lesson]]
+id = "walk-03-text-to-graph"
+title = "Turning a Book Into a Knowledge Graph"
+tier = "walk"
+track = "py"
+order = 30
+file = "walk/03-text-to-graph.md"
+needs_ollama = true
+verify = "required"
+source = "astraea-graphrag-demo @ d89d4e5 (fixed upstream to 768-dim, KG Fixture 2227)"
 
 # [[lesson]]
 # id = "walk-04-graphrag"

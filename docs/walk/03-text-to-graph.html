@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Turning a Book Into a Knowledge Graph &middot; Getting Started with AstraeaDB</title>
+<link rel="stylesheet" href="../assets/site.css">
+</head>
+<body data-tier="walk" data-track="py" data-lesson="walk-03-text-to-graph">
+
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar">
+  <a class="brand" href="../index.html">Getting Started with AstraeaDB</a>
+  <div class="switcher" role="group" aria-label="Language track">
+    <button type="button" data-set-track="py">Python</button>
+    <button type="button" data-set-track="r">R</button>
+    <button type="button" data-set-track="both">Both</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav class="sidebar" aria-label="Lessons">
+  <h2 class="tier">Crawl</h2>
+  <ul>
+  <li data-track="both" class=""><a href="crawl/00-introduction.html">Why Graphs, and Why Now: An Introduction to AstraeaDB</a></li>
+  <li data-track="py" class=""><a href="crawl/py-01-getting-started.html">Getting Started with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-01-getting-started.html">Getting Started with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-02-vector-search.html">Vector and Hybrid Search with AstraeaDB in R</a></li>
+  <li data-track="py" class=""><a href="crawl/py-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in Python</a></li>
+  <li data-track="r" class=""><a href="crawl/r-03-algorithms-graphrag.html">Graph Algorithms, Time-Travel, and GraphRAG in R</a></li>
+  <li data-track="both" class=""><a href="crawl/08-ui-explore-your-graph.html">See Your Graph: Visual Exploration with the Astraea UI</a></li>
+  </ul>
+  <h2 class="tier">Walk</h2>
+  <ul>
+  <li data-track="py" class=""><a href="walk/01-embeddings.html">What an Embedding Is, and How to Make One</a></li>
+  <li data-track="py" class=""><a href="walk/02-semantic-search.html">Searching a Graph by Meaning, Not by Keyword</a></li>
+  <li data-track="py" class="current"><a href="walk/03-text-to-graph.html">Turning a Book Into a Knowledge Graph</a></li>
+  </ul>
+  <h2 class="tier">Run</h2>
+  <ul>
+  </ul>
+  <h2 class="tier">Reference</h2>
+  <ul>
+  <li data-track="both" class=""><a href="glossary.html">Glossary</a></li>
+  </ul>
+  </nav>
+
+  <main id="main">
+    <h1>Turning a Book Into a Knowledge Graph</h1>
+
+        <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+      <li><a href="#why-a-graph-rather-than-chunks-of-text"
+      id="toc-why-a-graph-rather-than-chunks-of-text">Why a graph rather
+      than chunks of text</a></li>
+      <li><a href="#the-passage" id="toc-the-passage">The
+      passage</a></li>
+      <li><a href="#asking-a-model-to-extract-entities"
+      id="toc-asking-a-model-to-extract-entities">Asking a model to
+      extract entities</a></li>
+      <li><a href="#storing-the-text-as-a-node-too"
+      id="toc-storing-the-text-as-a-node-too">Storing the text as a node
+      too</a></li>
+      <li><a href="#reading-the-evidence-back"
+      id="toc-reading-the-evidence-back">Reading the evidence
+      back</a></li>
+      <li><a href="#doing-this-to-a-whole-book"
+      id="toc-doing-this-to-a-whole-book">Doing this to a whole
+      book</a></li>
+      <li><a href="#whats-next" id="toc-whats-next">What's next</a></li>
+      </ul>
+    </details>
+    
+    <p><em>Read a passage, pull out the people and places, and store
+    them as nodes that remember which sentence they came from.</em></p>
+    <p>Everything so far assumed the graph already existed. Somebody
+    decided that <code>Movie</code> and <code>Person</code> were the
+    node types, and typed in the data. That does not scale past a
+    demonstration, and it is not how you would handle a book, a pile of
+    contracts, or a year of incident reports. In this post you will
+    build a small graph out of raw prose, and keep a trail from every
+    fact back to the words that produced it.</p>
+    <h2 id="why-a-graph-rather-than-chunks-of-text">Why a graph rather
+    than chunks of text</h2>
+    <p>The ordinary way to make documents searchable is to cut them into
+    chunks, embed each chunk, and search the embeddings. You met the
+    machinery for that in the last two posts and it works well for
+    questions like "what does this text say about X".</p>
+    <p>It works badly for questions that span the document. "Which
+    characters appear in the same place as Jerry" cannot be answered by
+    finding one similar chunk, because the answer is assembled from
+    facts scattered across many. A chunk knows its own text and nothing
+    else. A node knows what it is connected to.</p>
+    <p>So you extract the things the text is about, store them as nodes,
+    and connect them. The text does not go away. It becomes another kind
+    of node, which is what makes the result trustworthy.</p>
+    <h2 id="the-passage">The passage</h2>
+    <p>Use the opening of <em>A Tale of Two Cities</em>, where a rider
+    stops a mail coach on the Dover road. It is short, it is public
+    domain, and it names several things worth extracting:</p>
+    <div class="sourceCode" id="cb1"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>PASSAGE <span class="op">=</span> (</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;“There is nothing to apprehend. I belong to Tellson’s Bank. You must &quot;</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;know Tellson’s Bank in London. I am going to Paris on business. A crown &quot;</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;to drink. I may read this?” He opened it in the light of the coach-lamp &quot;</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;on that side, and read—first to himself and then aloud: “‘Wait at Dover &quot;</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;for Mam’selle.’ It’s not long, you see, guard. Jerry, say that my answer &quot;</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">&quot;was, RECALLED TO LIFE.”&quot;</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div>
+    <h2 id="asking-a-model-to-extract-entities">Asking a model to
+    extract entities</h2>
+    <p>You need a program that reads prose and returns structured data.
+    A <a href="../glossary.html#large-language-model-llm">large language
+    model</a> does this well, and you already have one running locally
+    from the earlier posts. Pull a small chat model alongside your
+    embedding model:</p>
+    <!-- verify: skip reason="the verification images use an Ollama already running on the host, which has this model; pulling it inside the container would download gigabytes on every run" -->
+
+    <div class="sourceCode" id="cb2"><pre
+    class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ollama</span> pull gemma3:4b</span></code></pre></div>
+    <p>Two things make the difference between this working and this
+    being a nuisance.</p>
+    <p>The first is asking for JSON and meaning it. Ollama takes a
+    <code>format</code> argument, and setting it to <code>"json"</code>
+    constrains the model so its reply is a JSON object and nothing else.
+    Without it you get a helpful sentence of preamble, a code fence, and
+    a parsing problem.</p>
+    <p>The second is telling the model not to embellish. A model asked
+    to describe Dickens will happily supply facts from the rest of the
+    novel, or from its training, and you will not be able to tell which.
+    The instruction to use only what the passage states is what keeps
+    the graph honest:</p>
+    <div class="sourceCode" id="cb3"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> json</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> os</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> urllib.request</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>OLLAMA_URL <span class="op">=</span> os.environ.get(<span class="st">&quot;OLLAMA_URL&quot;</span>, <span class="st">&quot;http://localhost:11434&quot;</span>)</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>CHAT_MODEL <span class="op">=</span> os.environ.get(<span class="st">&quot;CHAT_MODEL&quot;</span>, <span class="st">&quot;gemma3:4b&quot;</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>PROMPT <span class="op">=</span> <span class="st">&quot;&quot;&quot;Extract the named entities from this passage.</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="st">Return ONLY a JSON object, no other text, shaped exactly like this:</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="st">{&quot;characters&quot;: [{&quot;name&quot;: &quot;...&quot;, &quot;description&quot;: &quot;...&quot;}],</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="st"> &quot;locations&quot;: [{&quot;name&quot;: &quot;...&quot;, &quot;description&quot;: &quot;...&quot;}]}</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a><span class="st">A character is a person. A location is a place or a named organisation.</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a><span class="st">Use only what the passage states. Do not invent anything.</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a><span class="st">Passage:</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a><span class="st">&quot;&quot;&quot;</span> <span class="op">+</span> PASSAGE</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> embed(texts):</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Same helper as the previous two posts, repeated so this page stands alone.&quot;&quot;&quot;</span></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>    body <span class="op">=</span> json.dumps({<span class="st">&quot;model&quot;</span>: <span class="st">&quot;embeddinggemma&quot;</span>, <span class="st">&quot;input&quot;</span>: texts}).encode()</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>    req <span class="op">=</span> urllib.request.Request(</span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;</span><span class="sc">{</span>OLLAMA_URL<span class="sc">}</span><span class="ss">/api/embed&quot;</span>,</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>        data<span class="op">=</span>body,</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>        headers<span class="op">=</span>{<span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span>},</span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> urllib.request.urlopen(req, timeout<span class="op">=</span><span class="dv">60</span>) <span class="im">as</span> resp:</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> json.load(resp)[<span class="st">&quot;embeddings&quot;</span>]</span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> chat_json(prompt):</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a>    body <span class="op">=</span> json.dumps({</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;model&quot;</span>: CHAT_MODEL,</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;prompt&quot;</span>: prompt,</span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;stream&quot;</span>: <span class="va">False</span>,</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>        <span class="st">&quot;format&quot;</span>: <span class="st">&quot;json&quot;</span>,      <span class="co"># constrain the reply to a JSON object</span></span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    }).encode()</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    req <span class="op">=</span> urllib.request.Request(</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>        <span class="ss">f&quot;</span><span class="sc">{</span>OLLAMA_URL<span class="sc">}</span><span class="ss">/api/generate&quot;</span>,</span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>        data<span class="op">=</span>body,</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>        headers<span class="op">=</span>{<span class="st">&quot;Content-Type&quot;</span>: <span class="st">&quot;application/json&quot;</span>},</span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>    <span class="cf">with</span> urllib.request.urlopen(req, timeout<span class="op">=</span><span class="dv">300</span>) <span class="im">as</span> resp:</span>
+<span id="cb3-46"><a href="#cb3-46" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> json.loads(json.load(resp)[<span class="st">&quot;response&quot;</span>])</span>
+<span id="cb3-47"><a href="#cb3-47" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-48"><a href="#cb3-48" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-49"><a href="#cb3-49" aria-hidden="true" tabindex="-1"></a>extracted <span class="op">=</span> chat_json(PROMPT)</span>
+<span id="cb3-50"><a href="#cb3-50" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;characters:&quot;</span>, [c[<span class="st">&quot;name&quot;</span>] <span class="cf">for</span> c <span class="kw">in</span> extracted.get(<span class="st">&quot;characters&quot;</span>, [])])</span>
+<span id="cb3-51"><a href="#cb3-51" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;locations: &quot;</span>, [l[<span class="st">&quot;name&quot;</span>] <span class="cf">for</span> l <span class="kw">in</span> extracted.get(<span class="st">&quot;locations&quot;</span>, [])])</span></code></pre></div>
+    <p>You should see Jerry as a character, and Tellson's Bank, London,
+    Paris, and Dover as locations. Do not expect the exact same answer
+    every time. A model is not a parser, and a different model or a
+    longer passage will give you a slightly different list. That
+    variability is the reason for the next section.</p>
+    <h2 id="storing-the-text-as-a-node-too">Storing the text as a node
+    too</h2>
+    <p>Here is the habit worth forming. Before you store a single
+    extracted entity, store the passage itself:</p>
+    <div class="sourceCode" id="cb4"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> astraeadb <span class="im">import</span> AstraeaClient</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>client <span class="op">=</span> AstraeaClient(host<span class="op">=</span><span class="st">&quot;127.0.0.1&quot;</span>, port<span class="op">=</span><span class="dv">7687</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>client.<span class="ex">connect</span>()</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>passage_id <span class="op">=</span> client.create_node(</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    [<span class="st">&quot;Passage&quot;</span>],</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    {<span class="st">&quot;text&quot;</span>: PASSAGE, <span class="st">&quot;work&quot;</span>: <span class="st">&quot;A Tale of Two Cities&quot;</span>, <span class="st">&quot;chapter&quot;</span>: <span class="dv">2</span>},</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    embedding<span class="op">=</span>embed([PASSAGE])[<span class="dv">0</span>],</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">&quot;passage stored as node&quot;</span>, passage_id)</span></code></pre></div>
+    <p>The passage node is the evidence. Every entity you extract from
+    it gets an edge pointing back, so any claim the graph makes can be
+    traced to the words behind it:</p>
+    <div class="sourceCode" id="cb5"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> store(kind, items):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="co">&quot;&quot;&quot;Create one node per extracted item, linked back to its source passage.&quot;&quot;&quot;</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> <span class="kw">not</span> items:</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> []</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    texts <span class="op">=</span> [<span class="ss">f&#39;</span><span class="sc">{</span>i[<span class="st">&quot;name&quot;</span>]<span class="sc">}</span><span class="ss">. </span><span class="sc">{</span>i<span class="sc">.</span>get(<span class="st">&quot;description&quot;</span>, <span class="st">&quot;&quot;</span>)<span class="sc">}</span><span class="ss">&#39;</span>.strip() <span class="cf">for</span> i <span class="kw">in</span> items]</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    ids <span class="op">=</span> []</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> item, vec <span class="kw">in</span> <span class="bu">zip</span>(items, embed(texts)):</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        nid <span class="op">=</span> client.create_node(</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>            [kind],</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>            {<span class="st">&quot;name&quot;</span>: item[<span class="st">&quot;name&quot;</span>], <span class="st">&quot;description&quot;</span>: item.get(<span class="st">&quot;description&quot;</span>, <span class="st">&quot;&quot;</span>)},</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>            embedding<span class="op">=</span>vec,</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        client.create_edge(nid, passage_id, <span class="st">&quot;MENTIONED_IN&quot;</span>)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        ids.append(nid)</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> ids</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>characters <span class="op">=</span> store(<span class="st">&quot;Character&quot;</span>, extracted.get(<span class="st">&quot;characters&quot;</span>, []))</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a>locations <span class="op">=</span> store(<span class="st">&quot;Location&quot;</span>, extracted.get(<span class="st">&quot;locations&quot;</span>, []))</span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f&quot;</span><span class="sc">{</span><span class="bu">len</span>(characters)<span class="sc">}</span><span class="ss"> characters and </span><span class="sc">{</span><span class="bu">len</span>(locations)<span class="sc">}</span><span class="ss"> locations, all linked to the passage&quot;</span>)</span></code></pre></div>
+    <p>Notice that each entity is embedded on a composed sentence of its
+    name and description, which is the lesson from the previous post
+    applied to generated data rather than to data you typed.</p>
+    <h2 id="reading-the-evidence-back">Reading the evidence back</h2>
+    <p>Provenance is only worth having if you can follow it. Given any
+    entity, one hop gets you to the text it came from:</p>
+    <div class="sourceCode" id="cb6"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> nid <span class="kw">in</span> characters <span class="op">+</span> locations:</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>    name <span class="op">=</span> client.get_node(nid)[<span class="st">&quot;properties&quot;</span>][<span class="st">&quot;name&quot;</span>]</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> hop <span class="kw">in</span> client.neighbors(nid, direction<span class="op">=</span><span class="st">&quot;outgoing&quot;</span>, edge_type<span class="op">=</span><span class="st">&quot;MENTIONED_IN&quot;</span>):</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>        source <span class="op">=</span> client.get_node(hop[<span class="st">&quot;node_id&quot;</span>])[<span class="st">&quot;properties&quot;</span>]</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        snippet <span class="op">=</span> source[<span class="st">&quot;text&quot;</span>][:<span class="dv">60</span>].replace(<span class="st">&quot;</span><span class="ch">\n</span><span class="st">&quot;</span>, <span class="st">&quot; &quot;</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="ss">f&#39;</span><span class="sc">{</span>name<span class="sc">:20}</span><span class="ss"> &lt;- </span><span class="sc">{</span>source[<span class="st">&quot;work&quot;</span>]<span class="sc">}</span><span class="ss">, chapter </span><span class="sc">{</span>source[<span class="st">&quot;chapter&quot;</span>]<span class="sc">}</span><span class="ss">: &quot;</span><span class="sc">{</span>snippet<span class="sc">}</span><span class="ss">...&quot;&#39;</span>)</span></code></pre></div>
+    <p>That is the property that makes this approach defensible. When a
+    graph tells you Jerry is connected to Dover, you are one hop from
+    the sentence that says so, and you can judge for yourself whether
+    the model read it correctly. A system that cannot show its evidence
+    is asking you to trust an extraction you never saw.</p>
+    <p>It also gives you a repair path. When extraction gets something
+    wrong, and it will, the passage node tells you exactly which text to
+    re-run.</p>
+    <div class="sourceCode" id="cb7"><pre
+    class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>client.close()</span></code></pre></div>
+    <h2 id="doing-this-to-a-whole-book">Doing this to a whole book</h2>
+    <p>One passage is a demonstration. A whole novel is the same three
+    steps in a loop: split the text into passages, extract from each,
+    and store the results with their provenance edges. Two things change
+    at that scale. You have to decide when two mentions of a name are
+    the same entity, so that Jerry in chapter two is the node you
+    already made in chapter one. And you need a second pass to connect
+    entities to each other, rather than only to their passages.</p>
+    <p>The <a
+    href="https://github.com/AstraeaDB/astraea-graphrag-demo">astraea-graphrag-demo</a>
+    repository does exactly that for the full text of <em>A Tale of Two
+    Cities</em>, producing 229 nodes and 317 edges across characters,
+    locations, events, themes, chapters, and passages. It is worth
+    reading once you have made the small version work.</p>
+    <h2 id="whats-next">What's next</h2>
+    <p>You now have a graph built from prose, where every node can point
+    at the text that produced it.</p>
+    <p>In the next post, <strong><a href="./04-graphrag.html">GraphRAG
+    End to End: Retrieve, Extract, Linearize, Answer</a></strong>, you
+    will use that structure to answer questions: finding the relevant
+    corner of the graph, turning it into text a model can read, and
+    getting an answer where every claim traces back to a node you can
+    inspect.</p>
+
+    <nav class="prevnext" aria-label="Lesson navigation">
+            <a class="prev" href="../walk/02-semantic-search.html"><span>Previous</span>Searching a Graph by Meaning, Not by Keyword</a>
+                </nav>
+  </main>
+</div>
+
+<footer class="sitefoot">
+  <p class="badge green">Verified against AstraeaDB 61eef42 on 2026-08-10</p>
+  <p>
+    <a href="../status.html">Verification status</a> &middot;
+    <a href="https://github.com/AstraeaDB/getting-started">Source</a>
+  </p>
+</footer>
+
+<script src="../assets/site.js"></script>
+</body>
+</html>
