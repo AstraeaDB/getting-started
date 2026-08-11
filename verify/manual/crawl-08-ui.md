@@ -6,7 +6,9 @@
 than as green.
 
 **Last run: 2026-08-11**
-**Result: browser run found four broken algorithm overlays; fixed in astraea-ui `da2409a`; re-run of the browser steps still owed**
+**Result: PASS. All 13 browser steps driven by a human. The run found four
+broken algorithm overlays and a stale-bundle failure; both fixed, and every
+step re-checked against expected values afterwards.**
 **Against: astraea-ui `72a93b9`, AstraeaDB `61eef42` (0.3.1), cargo-leptos 0.3.5 and 0.3.7, rustc 1.95.0**
 
 ---
@@ -38,18 +40,18 @@ than as green.
 | Claim | How to check it | Last observed |
 | --- | --- | --- |
 | Query Console runs GQL | a query returns rows or a drawing | 2026-08-11, works |
-| Graph Explorer walks outward | centre + depth 2 draws a second ring | not re-run |
-| "Find by Label" quick action | returns node ids for `Person` | not re-run |
-| Algorithms on Graph Explorer | status line names a node count | fixed, not re-run |
-| Algorithms on Query Console | row appears above the result graph | new, not re-run |
-| PageRank overlay | high scorers are visibly larger | **was broken**, fixed |
-| Degree centrality overlay | node sizes change | **was broken**, fixed |
-| Louvain overlay | groups take distinct colours | **was broken**, fixed |
-| Connected components overlay | status says "one connected component" | **was broken**, fixed |
+| Graph Explorer walks outward | centre + depth 2 draws a second ring | 2026-08-11, works (7 of 12 nodes; finding 7) |
+| "Find by Label" quick action | returns node ids for `Person` | 2026-08-11, works |
+| Algorithms on Graph Explorer | status line names a node count | 2026-08-11, works |
+| Algorithms on Query Console | row appears above the result graph | 2026-08-11, works, and scopes |
+| PageRank overlay | high scorers are visibly larger | fixed, 2026-08-11 verified |
+| Degree centrality overlay | node sizes change | fixed, 2026-08-11 verified |
+| Louvain overlay | groups take distinct colours | fixed, 2026-08-11 verified |
+| Connected components overlay | status says "one connected component" | fixed, 2026-08-11 verified |
 | Shortest path highlight | route between two ids lights up | 2026-08-11, works |
-| Force layout | clusters separate | not re-run |
-| Export as PNG and JSON | files download and the JSON reloads | not re-run |
-| Roles Reader, Writer, Admin | log in and observe available actions | not re-run |
+| Force layout | clusters separate | 2026-08-11, works |
+| Export as PNG and JSON | files download and the JSON reloads | 2026-08-11, works |
+| Roles Reader, Writer, Admin | log in and observe available actions | Admin confirmed 2026-08-11; Reader/Writer not exercised |
 
 ## Part 3: browser steps still to be driven by a human
 
@@ -77,24 +79,24 @@ time; a silent overlay is the failure this section exists to catch.
 Expected results on the twelve-node movie graph, taken from the server on
 2026-08-11 so a plausible-looking overlay can be told from a correct one.
 
-- [ ] **PageRank.** Sizes visibly differ; status names a node count. Largest
+- [x] **PageRank.** Sizes visibly differ; status names a node count. Largest
       first: Action (0.267), Science Fiction (0.125), then The Matrix and
       The Matrix Reloaded (0.100 each). The genres win because every film
       points at them.
-- [ ] **Degree centrality.** Sizes change, and the order is *different* from
+- [x] **Degree centrality.** Sizes change, and the order is *different* from
       PageRank: Keanu Reeves (0.364) is the largest, then a four-way tie at
       0.182. If this looks identical to PageRank, one of the two is not being
       applied.
-- [ ] **Louvain.** Four colours: {Keanu Reeves, Sandra Bullock, Speed},
+- [x] **Louvain.** Four colours: {Keanu Reeves, Sandra Bullock, Speed},
       {Carrie-Anne Moss, Science Fiction, The Matrix Reloaded},
       {Lana Wachowski, Laurence Fishburne, The Matrix},
       {Action, Chad Stahelski, John Wick}.
-- [ ] **Connected components.** One colour **and** a status line reading
+- [X] **Connected components.** One colour **and** a status line reading
       "All 12 nodes are in one connected component". One colour with no such
       message means the overlay silently failed again. Note this ignores edge
       direction, which is why it can report one component while shortest path
       below finds no route between two of its members.
-- [ ] **Scoping.** The sharpest check available, because two nodes swap
+- [x] **Scoping.** The sharpest check available, because two nodes swap
       relationship between the two views.
       - Graph Explorer, centre **575**, depth 2 (see finding 7 — this is the
         most of the graph the Explorer can show, 7 of 12 nodes). Run PageRank.
@@ -104,13 +106,13 @@ Expected results on the twelve-node movie graph, taken from the server on
         bigger than John Wick (0.0227)**, and the genres are gone entirely.
       If Speed and John Wick stay equal in the Query Console, the `nodes` field
       is being dropped and the scoping is not happening.
-- [ ] **Shortest path** (Graph Explorer only). Edges are directed, so pick
+- [X] **Shortest path** (Graph Explorer only). Edges are directed, so pick
       ends the arrows can actually connect: **575 -> 586** (Keanu Reeves to
       Action) lights up Keanu Reeves → The Matrix → Action, 2 hops. Two actors
       never work — 577 -> 578 correctly reports no path, because nothing leads
       back down from a genre to a person. An earlier version of this checklist
       asked for exactly that and would have read as a bug.
-- [ ] **Reset.** Clears sizes and colours and empties the status line.
+- [X] **Reset.** Clears sizes and colours and empties the status line.
 
 ---
 

@@ -4,8 +4,8 @@
     {
       "lesson": "crawl-08-ui",
       "green": false,
-      "checked_on": "2026-08-08",
-      "note": "Toolchain and every named feature verified; browser interaction steps still to be driven by a human. See verify/manual/crawl-08-ui.md.",
+      "checked_on": "2026-08-11",
+      "note": "All 13 browser steps driven by a human and passing, including the seven algorithm checks against expected values read off the server. Found and fixed four broken overlays (astraea-ui da2409a) and a stale-bundle failure (72a93b9). See verify/manual/crawl-08-ui.md.",
       "skipped": []
     },
     {
