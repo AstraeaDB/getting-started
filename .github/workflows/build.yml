@@ -1,0 +1,84 @@
+name: build
+
+# What this can and cannot check, stated plainly so nobody reads a green tick
+# as more than it is.
+#
+# It CAN check everything that does not need a database: that the manifest is
+# valid, that every lesson named in it exists, that shared fragments are
+# language-neutral, that generated sample projects still match the lessons they
+# came from, that every local link resolves from the page it appears on, that
+# no verify directive is malformed, and that the committed docs/ is what the
+# current content renders to.
+#
+# It CANNOT run the lessons. `just verify-all` starts a fresh AstraeaDB inside
+# a container per lesson using Apple's `container` CLI, which does not exist on
+# a GitHub runner, and several Walk lessons additionally need a local Ollama
+# with models pulled. Verification stays a local step, and its results are
+# published to /status.html from verify/report.json.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pandoc and just
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq pandoc
+          curl -fsSL https://just.systems/install.sh | sudo bash -s -- --to /usr/local/bin
+
+      # 3.11 is the floor: site/build.py reads lessons.toml with tomllib.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Report tool versions
+        run: |
+          pandoc --version | head -1
+          just --version
+          python3 --version
+
+      - name: Verify directives are well formed
+        # Catches a skip with no reason, or a directive that is not immediately
+        # before a fence, neither of which needs a container to detect. A skip
+        # without a reason must never reach the status page.
+        run: |
+          fail=0
+          for f in content/crawl/*.md content/walk/*.md content/run/*.md; do
+            out=$(python3 verify/extract.py "$f" 2>&1 >/dev/null) || true
+            if [ -n "$out" ]; then echo "::error file=$f::$out"; fail=1; fi
+          done
+          exit $fail
+
+      - name: Samples match the lessons they are generated from
+        run: python3 site/sync_samples.py --check
+
+      - name: Build the site
+        # build.py also fails on an invalid manifest, a missing content file, a
+        # track-committed shared fragment, and any link that does not resolve
+        # from the page it appears on.
+        run: PANDOC=$(command -v pandoc) PYTHON=$(command -v python3) just build
+
+      - name: Committed docs/ is up to date
+        # docs/ is what Pages serves, so a content change without a rebuild
+        # would publish stale pages. The status page carries a build timestamp
+        # that changes every run, so ignore that one line.
+        run: |
+          if ! git diff --quiet -- docs/ ':!docs/status.html'; then
+            echo "::error::docs/ is stale. Run 'just build' and commit the result."
+            git diff --stat -- docs/ ':!docs/status.html'
+            exit 1
+          fi
+          if git diff --numstat -- docs/status.html | awk '{ if ($1 > 1 || $2 > 1) exit 1 }'; then
+            echo "docs/ is current (status.html timestamp only)"
+          else
+            echo "::error::docs/status.html changed by more than its timestamp."
+            git diff -- docs/status.html
+            exit 1
+          fi
