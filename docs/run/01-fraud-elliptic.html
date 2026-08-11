@@ -152,8 +152,8 @@
     graph is built in process and the model trains against it in memory.
     The first build compiles AstraeaDB and takes a few minutes; after
     that the whole thing runs in about two seconds. Use
-    <code>--release</code> — a debug build trains roughly twenty times
-    slower.</p>
+    <code>--release</code>, because a debug build trains roughly twenty
+    times slower.</p>
     <p>That project is <em>generated from this page</em> by
     <code>site/sync_samples.py</code>, and the site build fails if the
     two fall out of step. The code you download cannot quietly differ
@@ -335,7 +335,7 @@ illicit class: precision 1.000  recall 0.737  (tp=14 fp=0 fn=5)</code></pre>
     false positive is an angry customer. An investigator generating
     leads cares about recall, because a missed case is invisible. This
     model sits at the exchange's end of that trade, and nothing about
-    the code says so — you only find out by computing both.</p>
+    the code says so; you only find out by computing both.</p>
     <p>One caution on the reported <code>accuracy</code> field: it is
     measured over the labelled set, so it tells you how well the model
     fits data it has seen. <code>validation_split</code> holds part of

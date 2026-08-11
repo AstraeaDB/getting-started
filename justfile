@@ -5,7 +5,10 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 # tool fails with a clear message instead of a confusing one (DESIGN.md 8).
 pandoc := env_var_or_default("PANDOC", "/opt/homebrew/bin/pandoc")
 python := env_var_or_default("PYTHON", "/opt/homebrew/bin/python3")
-astraeadb := env_var_or_default("ASTRAEADB", "/Users/jimharris/Documents/astraeadb/target/release/astraeadb")
+# The astraeadb binary for `just up`. Empty means "go and look": this project
+# is developed inside a monorepo and published as a standalone repo, so the
+# checkout sits at a different depth in each. Set ASTRAEADB to skip the search.
+astraeadb := env_var_or_default("ASTRAEADB", "")
 
 default:
     @just --list
@@ -52,11 +55,26 @@ up:
     # launcher-managed instance cannot serve the 768 dimensions the site
     # teaches. 7687 is the port the lessons print. See astraea-config/.
     set -euo pipefail
+    BIN="{{astraeadb}}"
+    if [[ -z "$BIN" ]]; then
+        for c in ../astraeadb ../../../astraeadb; do
+            if [[ -x "$c/target/release/astraeadb" ]]; then
+                BIN="$c/target/release/astraeadb"; break
+            fi
+        done
+    fi
+    if [[ -z "$BIN" || ! -x "$BIN" ]]; then
+        echo "cannot find the astraeadb binary." >&2
+        echo "Build it with 'cargo build --release' in your astraeadb checkout," >&2
+        echo "then either place that checkout beside this repository or set" >&2
+        echo "ASTRAEADB=/path/to/astraeadb/target/release/astraeadb." >&2
+        exit 1
+    fi
     mkdir -p .astraea/data .astraea/wal
     if [[ -f .astraea/pid ]] && kill -0 "$(cat .astraea/pid)" 2>/dev/null; then
         echo "authoring server already running (pid $(cat .astraea/pid))"; exit 0
     fi
-    nohup {{astraeadb}} serve --config astraea-config/default.toml \
+    nohup "$BIN" serve --config astraea-config/default.toml \
         >>.astraea/server.log 2>&1 &
     echo $! > .astraea/pid
     sleep 2

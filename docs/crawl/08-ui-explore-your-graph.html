@@ -144,20 +144,21 @@
     After that it serves the dashboard at
     <code>http://localhost:3100</code> and rebuilds automatically
     whenever you change a file.</p>
-    <p>If you ever rebuild the dashboard and then get an error like
-    <em>"Could not deserialize error: Request did not meet this
-    resource's requirements"</em> when you log in or run a query,
-    <strong>hard reload the page</strong> (Cmd-Shift-R, or
-    Ctrl-Shift-R). The browser is holding a cached copy of the old
-    WebAssembly bundle, and it is calling server addresses the freshly
-    built server no longer answers on. A hard reload fetches the new
-    bundle and the error goes away. Make sure your AstraeaDB server is
-    already running, using the <code>astraeadb serve</code> step from
-    the getting-started posts. The dashboard connects to
-    <code>127.0.0.1:7687</code> by default. If your server runs
-    somewhere else, set the <code>ASTRAEA_HOST</code> and
-    <code>ASTRAEA_PORT</code> environment variables before you start
+    <p>Make sure your AstraeaDB server is already running, using the
+    <code>astraeadb serve</code> step from the getting-started posts.
+    The dashboard connects to <code>127.0.0.1:7687</code> by default. If
+    your server runs somewhere else, set the <code>ASTRAEA_HOST</code>
+    and <code>ASTRAEA_PORT</code> environment variables before you start
     it.</p>
+    <p>One error is worth recognising, because it names the wrong
+    culprit. If you rebuild the dashboard and then see <em>"Could not
+    deserialize error: Request did not meet this resource's
+    requirements"</em> when you log in or run a query, <strong>hard
+    reload the page</strong> (Cmd-Shift-R, or Ctrl-Shift-R). Your
+    browser is holding a cached copy of the old WebAssembly bundle,
+    which calls server addresses the freshly built server no longer
+    answers on. A hard reload fetches the new bundle and the error goes
+    away.</p>
     <h2 id="log-in">Log in</h2>
     <p>Open <code>http://localhost:3100</code> and you will see a login
     screen. If your server has authentication turned off, which is the
@@ -234,10 +235,11 @@ RETURN keanu, r1, m, r2, costar</code></pre>
     and it is the difference between two genuinely different questions:
     "what does this thing point at" and "what is this thing connected
     to". Most exploration wants the second, which is why the control
-    defaults to either way. But when you are tracing influence, or
-    provenance, or the flow of money — anywhere the arrow carries
-    meaning — the first is the only honest question, and following edges
-    backwards would invent connections that do not exist.</p>
+    defaults to either way. But the first is the only honest question
+    anywhere the arrow carries meaning, whether you are tracing
+    influence, provenance, or the movement of money. Following edges
+    backwards in those cases would invent connections that do not
+    exist.</p>
     <p>This is the same distinction you will meet again in the
     algorithms below, where connected components will report that all
     twelve nodes are one piece while shortest path insists there is no
@@ -294,8 +296,8 @@ RETURN keanu, r1, m, r2, costar</code></pre>
     in the Graph Explorer only, because it needs two specific node IDs
     rather than a set. <strong>Follow the arrows when you pick the two
     ends.</strong> Your edges run one way, from a person to a film and
-    from a film to a genre, so an actor can reach a genre — Keanu Reeves
-    to Action lights up Keanu Reeves → The Matrix → Action — but one
+    from a film to a genre, so an actor can reach a genre (Keanu Reeves
+    to Action lights up Keanu Reeves → The Matrix → Action), but one
     actor cannot reach another, and asking for that reports no
     path.</li>
     </ul>

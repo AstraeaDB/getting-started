@@ -42,7 +42,7 @@ cargo run --release
 
 If you would rather not clone anything, the two files are served straight from this site: [`src/main.rs`](../samples/run-01-fraud-elliptic/src/main.rs) and [`Cargo.toml`](../samples/run-01-fraud-elliptic/Cargo.toml).
 
-Nothing else is needed. No server, no dataset, no API key: the graph is built in process and the model trains against it in memory. The first build compiles AstraeaDB and takes a few minutes; after that the whole thing runs in about two seconds. Use `--release` — a debug build trains roughly twenty times slower.
+Nothing else is needed. No server, no dataset, no API key: the graph is built in process and the model trains against it in memory. The first build compiles AstraeaDB and takes a few minutes; after that the whole thing runs in about two seconds. Use `--release`, because a debug build trains roughly twenty times slower.
 
 That project is *generated from this page* by `site/sync_samples.py`, and the site build fails if the two fall out of step. The code you download cannot quietly differ from the code you are about to read, and both are what the verification harness compiles and runs.
 
@@ -201,7 +201,7 @@ Now the result is readable. The model did learn something, but the gap is seven 
 
 The last line is the honest description. Of the nineteen illicit transactions in the labelled set the model caught fourteen, and every transaction it flagged really was illicit: no false alarms, five missed. Precision of 1.000 with recall of 0.737 describes a cautious model, one that speaks only when certain.
 
-Those two numbers trade against each other, and which way you want to lean is a business decision rather than a modelling one. An exchange freezing accounts cares about precision, because every false positive is an angry customer. An investigator generating leads cares about recall, because a missed case is invisible. This model sits at the exchange's end of that trade, and nothing about the code says so — you only find out by computing both.
+Those two numbers trade against each other, and which way you want to lean is a business decision rather than a modelling one. An exchange freezing accounts cares about precision, because every false positive is an angry customer. An investigator generating leads cares about recall, because a missed case is invisible. This model sits at the exchange's end of that trade, and nothing about the code says so; you only find out by computing both.
 
 One caution on the reported `accuracy` field: it is measured over the labelled set, so it tells you how well the model fits data it has seen. `validation_split` holds part of that back during training, but if you want a number you can defend, keep your own test set aside and never train on it. The final training loss printing as `0.0000` is the same warning wearing a different hat: the model has fitted its training portion exactly, which is easy on 400 synthetic nodes and would be cause for suspicion on anything real.
 

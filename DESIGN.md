@@ -973,7 +973,7 @@ LANL may be redistributed. If the answer is no for either, that lesson becomes
 "here is how to get the data yourself" and its code is verified against a
 synthetic graph of the same shape instead.
 
-*ANSWER* Explain how to get the data for the user. You may verify the code works on the data already existing locally today (the gnn-elliptinc data should be here: /Users/jimharris/Documents/gnn-elliptic-demo)
+*ANSWER* Explain how to get the data for the user. You may verify the code works against a copy of the Elliptic data held locally (path redacted for publication; it is a private checkout, and the dataset's licence forbids redistributing it).
 
 **Q5 RESOLVED 2026-08-09: Python-primary, with short "in R" sidebars.**
 

@@ -170,8 +170,9 @@ Surrounding the server is a growing collection of client libraries, small
 packages that let you use AstraeaDB from a language you already know:
 
 - For **R**, there is the
-  [`AstraeaDB`](https://CRAN.R-project.org/package=AstraeaDB) package on CRAN,
-  R's standard package repository.
+  [`AstraeaDB`](https://github.com/AstraeaDB/R-AstraeaDB) package. It is
+  awaiting publication on CRAN, R's standard package repository, so for now you
+  install it from GitHub. The R lessons show you how.
 - For **Python**, there is the
   [`astraeadb`](https://pypi.org/project/astraeadb/) package on PyPI, Python's
   standard package repository.

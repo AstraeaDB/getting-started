@@ -502,10 +502,32 @@ def run_lesson(lesson, manifest, keep_going=False, timeout=900):
     return rec
 
 
+def astraeadb_src():
+    """Where the AstraeaDB source checkout lives, if it is nearby.
+
+    Used only to stamp reports with the revision a run was verified against.
+    ASTRAEADB_SRC wins; otherwise look beside this repository, then beside the
+    dev environment that contains it, because this project is developed inside
+    a monorepo and published as a standalone repo, and the checkout sits at a
+    different depth in each. Finding nothing is fine: the revision is
+    provenance, not something a verification run depends on.
+    """
+    env = os.environ.get("ASTRAEADB_SRC")
+    if env:
+        return env
+    for cand in (ROOT.parent / "astraeadb", ROOT.parent.parent.parent / "astraeadb"):
+        if (cand / ".git").exists():
+            return str(cand)
+    return ""
+
+
 def astraeadb_rev():
+    src = astraeadb_src()
+    if not src:
+        return "unknown"
     try:
         out = subprocess.run(
-            ["git", "-C", "/Users/jimharris/Documents/astraeadb", "rev-parse", "--short", "HEAD"],
+            ["git", "-C", src, "rev-parse", "--short", "HEAD"],
             capture_output=True, text=True, timeout=10,
         )
         return out.stdout.strip() or "unknown"

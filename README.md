@@ -92,12 +92,27 @@ something a person has to remember.
 
 ## Contributing
 
-Prose follows [`blogs/STYLE.md`](../../blogs/STYLE.md) in the parent dev
-environment: no em-dashes, no sentence fragments, warm but not familiar, no
-unexplained jargon, and concepts explained before code appears. Those are
-acceptance criteria on every content change, not suggestions.
+Read [`CONTRIBUTING.md`](CONTRIBUTING.md) first. Prose follows five rules: no
+em-dashes, no sentence fragments, warm but not familiar, no unexplained jargon,
+and concepts explained before code appears. Those are acceptance criteria on
+every content change, not suggestions. The accuracy rules matter more: use only
+APIs that exist, verify every claimed number against a running server, and
+never trust a check you have not watched fail.
 
 Planning artifacts live alongside the source and are not published:
 [`PROJECT.md`](PROJECT.md), [`CONCEPT.md`](CONCEPT.md) (the original brief), and
 [`DESIGN.md`](DESIGN.md) (architecture, content inventory, task list, and the
 open questions).
+
+## Licence
+
+The site, its code, and the harness are MIT licensed; see [`LICENSE`](LICENSE).
+
+The sampled data under `data/` is not ours and carries its own terms. The LANL
+slice is CC0, a public domain dedication, which is why it can ship here at all.
+The Elliptic Bitcoin dataset is CC BY-NC-ND 4.0 and therefore is **not**
+included: `run-01` generates a graph with the same shape instead, and
+[`data/elliptic/README.md`](data/elliptic/README.md) explains how to fetch the
+real thing under its own licence. Two public research datasets, opposite
+answers about what you may pass on, which is worth checking every time rather
+than assuming "public" means "yours to redistribute".
