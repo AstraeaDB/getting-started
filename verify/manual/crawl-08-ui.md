@@ -17,7 +17,7 @@ than as green.
 | --- | --- | --- |
 | 1 | `https://github.com/AstraeaDB/astraea-ui` is public and clonable | **PASS**, HTTP 200, cloned at `30df7a6` |
 | 2 | `rustup target add wasm32-unknown-unknown` | **PASS**, already installed |
-| 3 | `cargo install cargo-leptos --version 0.3.5` | **PASS**, 0.3.5 installed and on crates.io |
+| 3 | `cargo install cargo-leptos --locked` | **PASS**, 0.3.7 installs and builds the dashboard; see finding 2 |
 | 4 | `npm install` | **NOT NEEDED**, see finding 1 |
 | 5 | `npm install -g @tailwindcss/cli` | **NOT NEEDED**, see finding 1 |
 | 6 | `cargo leptos build --release` completes | **PASS**, exit 0 in about 80 seconds total |
@@ -93,7 +93,7 @@ time; a silent overlay is the failure this section exists to catch.
 
 ## Findings
 
-### 1. The lesson's Node.js prerequisite is unnecessary
+### 1. The lesson's Node.js prerequisite is unnecessary  *(fixed in `f579fb4`)*
 
 The lesson asks the reader to install Node.js 18 or newer, run `npm install`,
 and run `npm install -g @tailwindcss/cli`. **None of that is needed.** This
@@ -109,23 +109,51 @@ and then downloads a standalone Tailwind binary to
 `~/Library/Caches/cargo-leptos/tailwindcss-v4.1.10` and runs it directly. The
 `tailwindcss` entry in the repository's `package.json` is therefore optional.
 
-This is worth fixing in the lesson, because it removes an entire toolchain from
-the prerequisites for a reader who only wants to look at their graph. Suggested
-change: drop the Node.js bullet and the `npm install` line, and note that
-cargo-leptos fetches Tailwind on first build.
+This removed an entire toolchain from the prerequisites for a reader who only
+wants to look at their graph. Applied in `f579fb4`: the Node.js bullet and both
+`npm install` lines are gone, and the "What you need" list now ends with
+"Nothing else … so you do not need Node.js or npm".
 
-### 2. Two pinned versions are behind, though both still work
+### 2. The `cargo-leptos` pin was hiding a broken install line  *(fixed 2026-08-11)*
 
-- `cargo-leptos`: the lesson pins **0.3.5**; the current release is **0.3.7**.
-  0.3.5 is still on crates.io and installs cleanly, so the instruction works as
-  written. Either bump the pin or drop the `--version` flag.
-- Tailwind: cargo-leptos 0.3.5 requests **v4.1.10** and reports that **v4.3.3**
-  is available, overridable with `LEPTOS_TAILWIND_VERSION`. Cosmetic, since the
-  lesson does not name a Tailwind version.
+Recorded originally as cosmetic: the lesson pinned **0.3.5** while **0.3.7** was
+current, and 0.3.5 still installs cleanly. The suggested fix was to bump the pin
+or drop `--version`.
 
-A third version notice appears during the build: wasm-opt `version_123` is
-requested while `version_131` exists, overridable with
-`LEPTOS_WASM_OPT_VERSION`. Also cosmetic.
+**Dropping `--version` would have shipped an instruction that fails.** Tested on
+this machine (rustc 1.95.0), `cargo install cargo-leptos --version 0.3.7` errors:
+
+    rustc 1.95.0 is not supported by the following package:
+      kstring@2.0.4 requires rustc 1.96.0
+    Try re-running `cargo install` with `--locked`
+
+Without `--locked`, cargo re-resolves the whole dependency tree to newest, and a
+transitive dependency has raised its minimum Rust past what the reader has. A
+pinned cargo-leptos version does not protect against this, because the pin
+constrains cargo-leptos and not its dependencies — 0.3.5 will hit the same wall
+as its own dependencies move.
+
+The lesson now says `cargo install cargo-leptos --locked` with no version pin,
+and explains why, quoting the error. `--locked` uses the lockfile the
+maintainers published, so the reader gets the dependency versions cargo-leptos
+was actually built against. No pin means the line does not go stale.
+
+Verified end to end, without disturbing the installed 0.3.5:
+
+    cargo install cargo-leptos --version 0.3.7 --locked --root <scratch>
+    <scratch>/bin/cargo-leptos build --release      # Finished in 1m 04s
+    # binary serves 200 on /, /query and /graph
+
+**Watch out when repeating this.** `site-root = "target/site"` in `Cargo.toml`
+is project-relative, so `CARGO_TARGET_DIR` moves the compiled binary but *not*
+the generated WASM and CSS. A scratch build still overwrites `target/site/pkg/`
+and therefore what a already-running dashboard serves. Rebuild with the normal
+toolchain and restart the dashboard afterwards.
+
+Two remaining version notices are genuinely cosmetic: cargo-leptos 0.3.5
+requests Tailwind v4.1.10 while v4.3.3 exists (`LEPTOS_TAILWIND_VERSION`), and
+wasm-opt `version_123` is requested while `version_131` exists
+(`LEPTOS_WASM_OPT_VERSION`). The lesson names neither version.
 
 ### 3. Build time is understated but not wrongly
 
@@ -188,6 +216,7 @@ than three areas and says which scope each one uses.
 ```bash
 git clone https://github.com/AstraeaDB/astraea-ui.git
 cd astraea-ui
+cargo install cargo-leptos --locked   # --locked is load-bearing; see finding 2
 cargo leptos build --release
 LEPTOS_SITE_ROOT=target/site LEPTOS_SITE_ADDR=127.0.0.1:3100 ./target/release/astraea-ui
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3100/

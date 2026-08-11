@@ -107,15 +107,26 @@
     <p>Because the dashboard is a Rust program, you need Rust's tools
     plus a couple of extras. Install the following:</p>
     <ul>
-    <li>Rust itself, from <a href="https://rustup.rs">rustup.rs</a>,
+    <li><p>Rust itself, from <a href="https://rustup.rs">rustup.rs</a>,
     together with the WebAssembly build target, which you add with
-    <code>rustup target add wasm32-unknown-unknown</code>.</li>
-    <li><code>cargo-leptos</code>, the build tool for Leptos (the Rust
-    web framework the dashboard is built on). Install it with
-    <code>cargo install cargo-leptos --version 0.3.5</code>.</li>
-    <li>Nothing else. The pages are styled with Tailwind CSS, and
+    <code>rustup target add wasm32-unknown-unknown</code>.</p></li>
+    <li><p><code>cargo-leptos</code>, the build tool for Leptos (the
+    Rust web framework the dashboard is built on). Install it with
+    <code>cargo install cargo-leptos --locked</code>.</p>
+    <p>The <code>--locked</code> matters. Without it, cargo re-resolves
+    cargo-leptos's dependencies to their newest versions, and one of
+    those may demand a newer Rust than you have. That is not
+    hypothetical: on Rust 1.95, installing the current cargo-leptos
+    without <code>--locked</code> fails with <em>"rustc 1.95.0 is not
+    supported by the following package: <a
+    href="mailto:kstring@2.0.4">kstring@2.0.4</a> requires rustc
+    1.96.0"</em>. With <code>--locked</code> you get the dependency
+    versions the maintainers actually built and tested against, which is
+    what you want for a tool you are only using to compile something
+    else.</p></li>
+    <li><p>Nothing else. The pages are styled with Tailwind CSS, and
     <code>cargo-leptos</code> downloads the Tailwind tool for you the
-    first time you build, so you do not need Node.js or npm.</li>
+    first time you build, so you do not need Node.js or npm.</p></li>
     </ul>
     <h2 id="install-and-run-it">Install and run it</h2>
     <p>Clone the repository, install its local dependencies, and start

@@ -15,7 +15,9 @@ The Astraea UI is a small web application that runs in your browser and talks to
 Because the dashboard is a Rust program, you need Rust's tools plus a couple of extras. Install the following:
 
 - Rust itself, from [rustup.rs](https://rustup.rs), together with the WebAssembly build target, which you add with `rustup target add wasm32-unknown-unknown`.
-- `cargo-leptos`, the build tool for Leptos (the Rust web framework the dashboard is built on). Install it with `cargo install cargo-leptos --version 0.3.5`.
+- `cargo-leptos`, the build tool for Leptos (the Rust web framework the dashboard is built on). Install it with `cargo install cargo-leptos --locked`.
+
+  The `--locked` matters. Without it, cargo re-resolves cargo-leptos's dependencies to their newest versions, and one of those may demand a newer Rust than you have. That is not hypothetical: on Rust 1.95, installing the current cargo-leptos without `--locked` fails with *"rustc 1.95.0 is not supported by the following package: kstring@2.0.4 requires rustc 1.96.0"*. With `--locked` you get the dependency versions the maintainers actually built and tested against, which is what you want for a tool you are only using to compile something else.
 - Nothing else. The pages are styled with Tailwind CSS, and `cargo-leptos` downloads the Tailwind tool for you the first time you build, so you do not need Node.js or npm.
 
 ## Install and run it
