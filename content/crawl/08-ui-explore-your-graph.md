@@ -8,7 +8,7 @@ In the earlier posts you built a movie knowledge graph and explored it with code
 
 ## What the dashboard is
 
-The Astraea UI is a small web application that runs in your browser and talks to your AstraeaDB server. It has three main areas: a Query Console for running queries, a Graph Explorer for seeing the graph as a picture, and a panel of graph algorithms. The application is written in Rust and compiled to WebAssembly, usually shortened to WASM, which is a format that lets compiled code run inside a web page. You do not need to know Rust to use the dashboard. You only need Rust's tools to build it once.
+The Astraea UI is a small web application that runs in your browser and talks to your AstraeaDB server. It has two main pages: a **Query Console** for running queries and drawing their results, and a **Graph Explorer** for walking outward from a node you choose. Both can run graph algorithms over what they are showing. The application is written in Rust and compiled to WebAssembly, usually shortened to WASM, which is a format that lets compiled code run inside a web page. You do not need to know Rust to use the dashboard. You only need Rust's tools to build it once.
 
 ## What you need
 
@@ -53,11 +53,20 @@ Once the graph is on screen, try the layout options. A Force layout lets connect
 
 ## Run graph algorithms
 
-The Graph Algorithms panel runs a calculation on the server and shows the result on top of the picture.
+Algorithms run on the server and paint their result on top of the picture. They appear in two places, and the difference between them is not cosmetic:
+
+- **In the Graph Explorer**, the Algorithms panel sits in the left sidebar and runs over **the whole database**.
+- **In the Query Console**, an Algorithms row appears above the graph once a result is drawn, and runs over **only the nodes that query returned**.
+
+Prefer the Query Console version when you have a question about a particular slice of the graph. Ranking Keanu's co-stars among themselves is a different question from ranking them against every node in the database, and on a large graph the second answer will tell you almost nothing about the first.
+
+Whichever you use, a status line reports what happened: how many nodes were styled, how many groups were found, or that the algorithm returned nothing it could draw. Read it. A graph that looks unchanged after running an algorithm usually has a reason, and the status line is where the reason is.
 
 - PageRank scores each node by how much it is pointed to by other important nodes, and how important those nodes are in turn. It is the idea that once ranked web pages. In a movie graph, prolific actors and widely shared genres score high, and the dashboard draws those nodes larger.
+- Degree centrality is the blunter cousin: it counts connections without caring how important they are. Comparing the two is instructive, because a node can have many unimportant neighbours or few important ones.
 - Louvain community detection groups nodes that connect to each other far more than they connect to the rest of the graph. On a movie graph those groups tend to line up with franchises and genres, and the dashboard gives each group its own color.
-- [Shortest path](../glossary.html#shortest-path) highlights the fewest steps between two nodes you choose. Picking two actors from different franchises makes a good test, because the highlighted route shows how the whole graph is connected through the films they share.
+- Connected components asks a simpler question: which nodes can reach each other at all? On the movie graph the honest answer is "all of them", and the status line says so rather than leaving you staring at a single colour wondering whether the button worked. Components earn their keep on data that arrives in disconnected islands.
+- [Shortest path](../glossary.html#shortest-path) highlights the fewest steps between two nodes you choose, and lives in the Graph Explorer only, because it needs two specific node IDs rather than a set. Picking two actors from different franchises makes a good test, because the highlighted route shows how the whole graph is connected through the films they share.
 
 ## Save a picture
 
@@ -65,4 +74,4 @@ When a view looks the way you want, the Export button saves the current graph as
 
 ## Where this fits
 
-You now have a visual way to explore the same graph you built with code. The Query Console answers precise questions, the Graph Explorer reveals structure at a glance, and the algorithm overlays surface the influence and the communities that you would otherwise have to compute by hand. If you have not built the movie graph yet, start with [Getting Started with AstraeaDB in R](./r-01-getting-started.md) or [Getting Started with AstraeaDB in Python](./py-01-getting-started.md), then come back here to see what you made.
+You now have a visual way to explore the same graph you built with code. The Query Console answers precise questions and can run algorithms over the answer; the Graph Explorer reveals structure at a glance and runs them over everything. Between them the overlays surface the influence and the communities that you would otherwise have to compute by hand. If you have not built the movie graph yet, start with [Getting Started with AstraeaDB in R](./r-01-getting-started.md) or [Getting Started with AstraeaDB in Python](./py-01-getting-started.md), then come back here to see what you made.

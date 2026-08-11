@@ -5,9 +5,9 @@
 `/status.html` shows the lesson as manually checked with the date below rather
 than as green.
 
-**Last run: 2026-08-08**
-**Result: toolchain and claims verified; browser interaction steps not yet driven**
-**Against: astraea-ui `30df7a6`, AstraeaDB 0.3.1, cargo-leptos 0.3.5, rustc 1.95.0**
+**Last run: 2026-08-11**
+**Result: browser run found four broken algorithm overlays; fixed in astraea-ui `da2409a`; re-run of the browser steps still owed**
+**Against: astraea-ui `da2409a`, AstraeaDB `61eef42` (0.3.1), cargo-leptos 0.3.5, rustc 1.95.0**
 
 ---
 
@@ -27,28 +27,34 @@ than as green.
 | 10 | Port matches the lesson | **PASS**, `Cargo.toml` sets `site-addr = "127.0.0.1:3100"` |
 | 11 | `ASTRAEA_HOST` / `ASTRAEA_PORT` honoured, defaulting to 127.0.0.1:7687 | **PASS**, `src/server/config.rs:14` |
 
-## Part 2: features the lesson names (source-verified this run)
+## Part 2: features the lesson names
 
-Each was confirmed present in `astraea-ui/src`, but not yet exercised through a
-browser.
+> **This section used to list "present in `astraea-ui/src`" as evidence, and
+> that is how four broken features passed a review.** Presence in source says a
+> button exists, not that pressing it does anything. Every row below now names
+> the behaviour to observe, and a row is only ticked by someone who watched it
+> happen. See finding 4.
 
-| Claim | Evidence |
-| --- | --- |
-| Query Console | present, 4 files |
-| Graph Explorer | present, 4 files |
-| Graph Algorithms panel | present |
-| "Find by Label" quick action | present, 2 files |
-| PageRank overlay | present, 4 files |
-| Louvain community detection | present, 4 files |
-| Force layout | present, 3 files |
-| Shortest path highlight | present in `app.rs`, `pages/graph.rs`, `shared/protocol.rs` |
-| Export as PNG and JSON | `export_png` and `export_json` in `src/graph/bridge.rs`, with an "Export PNG" button at `pages/graph.rs:396` |
-| Roles Reader, Writer, Admin | all three present in source |
+| Claim | How to check it | Last observed |
+| --- | --- | --- |
+| Query Console runs GQL | a query returns rows or a drawing | 2026-08-11, works |
+| Graph Explorer walks outward | centre + depth 2 draws a second ring | not re-run |
+| "Find by Label" quick action | returns node ids for `Person` | not re-run |
+| Algorithms on Graph Explorer | status line names a node count | fixed, not re-run |
+| Algorithms on Query Console | row appears above the result graph | new, not re-run |
+| PageRank overlay | high scorers are visibly larger | **was broken**, fixed |
+| Degree centrality overlay | node sizes change | **was broken**, fixed |
+| Louvain overlay | groups take distinct colours | **was broken**, fixed |
+| Connected components overlay | status says "one connected component" | **was broken**, fixed |
+| Shortest path highlight | route between two ids lights up | 2026-08-11, works |
+| Force layout | clusters separate | not re-run |
+| Export as PNG and JSON | files download and the JSON reloads | not re-run |
+| Roles Reader, Writer, Admin | log in and observe available actions | not re-run |
 
 ## Part 3: browser steps still to be driven by a human
 
-These need a person at a keyboard and are **not** done. Run them against a
-server holding the movie graph from `crawl-py-01` or `crawl-r-01`.
+These need a person at a keyboard. Run them against a server holding the movie
+graph from `crawl-py-01` or `crawl-r-01`.
 
 - [ ] Log in with any key while authentication is off, and confirm Admin access.
 - [ ] Run the co-star GQL query from the lesson and confirm a drawing appears
@@ -57,10 +63,31 @@ server holding the movie graph from `crawl-py-01` or `crawl-r-01`.
       centre with depth 2, and confirm the second ring appears.
 - [ ] Switch to the Force layout and confirm clusters separate.
 - [ ] Filter by label and by edge type.
-- [ ] Run PageRank and confirm high-scoring nodes are drawn larger.
-- [ ] Run Louvain and confirm each community gets its own colour.
-- [ ] Run shortest path between two actors from different franchises.
 - [ ] Export a PNG and a JSON file, and reload the JSON.
+
+### Algorithms — the part that was broken
+
+Run each of these **twice**: once in the Graph Explorer sidebar, once in the
+Algorithms row above the Query Console's graph tab. Check the status line every
+time; a silent overlay is the failure this section exists to catch.
+
+- [ ] **PageRank.** Node sizes visibly differ afterwards. Status names a node
+      count, e.g. "PageRank applied to 12 nodes". On the movie graph the
+      Wachowski-heavy nodes should be among the larger ones.
+- [ ] **Degree centrality.** Sizes change, and differently from PageRank.
+- [ ] **Louvain.** Nodes take at least two distinct colours on the full movie
+      graph; the server finds four communities there.
+- [ ] **Connected components.** The movie graph is fully connected, so the
+      expected result is one colour **and** a status line reading "All 12 nodes
+      are in one connected component". One colour with no such message means
+      the overlay silently failed again.
+- [ ] **Scoping.** Run PageRank in the Query Console on the co-star query, then
+      in the Graph Explorer over the whole database, and confirm the two give
+      different sizes. If they match, the Query Console is not scoping to its
+      result and the `nodes` field is being dropped.
+- [ ] **Shortest path** (Graph Explorer only). A route between two actor ids
+      lights up and the status reports the hop count.
+- [ ] **Reset.** Clears sizes and colours and empties the status line.
 
 ---
 
@@ -105,6 +132,56 @@ requested while `version_131` exists, overridable with
 The lesson says the first `cargo leptos watch` "takes a few minutes". A release
 build here took about 80 seconds of compilation on an already-warm cargo
 registry. A reader starting cold will be slower, so the claim is safe.
+
+### 4. Four of the five algorithms did nothing, and said they had  *(fixed)*
+
+Found by clicking the buttons, which no previous run had done. Pressing
+"Connected Components" showed the banner *"Components applied (node color =
+component)"* above a graph where every node kept its original colour.
+
+The page parsed every algorithm response as a bare `{nodeId: value}` map. The
+server does not send that. It wraps each result in a named field, and the field
+differs per algorithm — captured live from AstraeaDB `61eef42`:
+
+```text
+RunPageRank            {"scores": {"575": 0.04, ...}}
+RunDegreeCentrality    {"scores": {"575": 0.36, ...}}
+RunLouvain             {"communities": {...}, "num_communities": 4}
+RunConnectedComponents {"components": [[575, 581, ...]], "count": 1}
+ShortestPath           {"path": [575, 581, 586], "length": 2}
+```
+
+PageRank and degree centrality matched nothing and returned early. Louvain and
+components matched only the sibling scalar, so the page styled nodes literally
+named `num_communities` and `count`, which do not exist. Only shortest path
+worked, because its response happens to have the `path` key the code expected.
+
+The status bar reported success either way, which is what kept this invisible.
+
+Fixed in astraea-ui `da2409a`: parsing moved to `graph::overlays` with tests
+pinned to the captured JSON above, and every handler now reports the node count
+it actually styled. Connected components on a fully connected graph now says
+"All 12 nodes are in one connected component" instead of leaving one colour to
+speak for itself.
+
+**Why the earlier review missed it.** Part 2 of this checklist accepted
+"present in `astraea-ui/src`, 4 files" as evidence for "PageRank overlay". Every
+one of those files was real. `grep` cannot tell a wired-up feature from a
+disconnected one, and a check that cannot fail is not a check. Part 2 now names
+an observable behaviour per row.
+
+### 5. The lesson implied algorithms were on the Query Console  *(fixed both sides)*
+
+The lesson described "three main areas: a Query Console, a Graph Explorer, and a
+panel of graph algorithms", which reads as though the panel is available
+wherever you are. It was in the Graph Explorer sidebar only, and a reader who
+ran a query and got a picture had no way to analyse it.
+
+Both halves changed. astraea-ui `da2409a` adds the four algorithms to the Query
+Console, scoped via the protocol's `nodes` field to the ids the query returned —
+the right question for that page, since ranking a result's nodes against the
+whole database answers something else. The lesson now names two pages rather
+than three areas and says which scope each one uses.
 
 ## How to re-run part 1
 
