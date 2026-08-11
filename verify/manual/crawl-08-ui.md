@@ -7,7 +7,7 @@ than as green.
 
 **Last run: 2026-08-11**
 **Result: browser run found four broken algorithm overlays; fixed in astraea-ui `da2409a`; re-run of the browser steps still owed**
-**Against: astraea-ui `da2409a`, AstraeaDB `61eef42` (0.3.1), cargo-leptos 0.3.5, rustc 1.95.0**
+**Against: astraea-ui `72a93b9`, AstraeaDB `61eef42` (0.3.1), cargo-leptos 0.3.5 and 0.3.7, rustc 1.95.0**
 
 ---
 
@@ -56,14 +56,14 @@ than as green.
 These need a person at a keyboard. Run them against a server holding the movie
 graph from `crawl-py-01` or `crawl-r-01`.
 
-- [ ] Log in with any key while authentication is off, and confirm Admin access.
-- [ ] Run the co-star GQL query from the lesson and confirm a drawing appears
+- [X] Log in with any key while authentication is off, and confirm Admin access.
+- [X] Run the co-star GQL query from the lesson and confirm a drawing appears
       rather than a table, given that it returns whole nodes and relationships.
-- [ ] Use "Find by Label" to get a `Person` id, enter it as the Graph Explorer
+- [X] Use "Find by Label" to get a `Person` id, enter it as the Graph Explorer
       centre with depth 2, and confirm the second ring appears.
-- [ ] Switch to the Force layout and confirm clusters separate.
-- [ ] Filter by label and by edge type.
-- [ ] Export a PNG and a JSON file, and reload the JSON.
+- [X] Switch to the Force layout and confirm clusters separate.
+- [X] Filter by label and by edge type.
+- [X] Export a PNG and a JSON file, and reload the JSON.
 
 ### Algorithms — the part that was broken
 
@@ -211,7 +211,7 @@ the right question for that page, since ranking a result's nodes against the
 whole database answers something else. The lesson now names two pages rather
 than three areas and says which scope each one uses.
 
-### 6. A stale browser cache breaks every server call after a rebuild
+### 6. A stale browser cache breaks every server call after a rebuild  *(fixed in astraea-ui `72a93b9`)*
 
 Symptom, seen on the login page right after the dashboard was rebuilt:
 
@@ -219,10 +219,12 @@ Symptom, seen on the login page right after the dashboard was rebuilt:
     "Request did not meet this resource's requirements."
 
 Nothing was wrong with the server. Leptos routes each server function at a path
-made of its snake-case name **plus a hash**, and that hash covers more than the
-one function — changing any server function in `src/app.rs` re-hashes **all** of
-them. Measured across the two commits either side of the overlay fix, every one
-of the fourteen paths changed, including functions that were not touched:
+made of its snake-case name **plus a hash**, and that hash is not per-function.
+Measured across the two commits either side of the overlay fix, altering four
+signatures moved **all fourteen** paths, including the ten that were not
+touched. A comment-only change, tested separately, moves none — so it is a
+signature change anywhere in the crate that invalidates every path, not merely
+editing the file:
 
     30df7a6  /api/login17300062197879492894
     da2409a  /api/login11596859232311602335
@@ -248,9 +250,18 @@ watch` rebuilds on every file change. Its live-reload usually refreshes the page
 for you; when the dashboard is restarted by hand instead, nothing tells the
 browser its bundle is stale.
 
-Worth fixing upstream in astraea-ui, not just documenting: serve `pkg/` with a
-content hash in the filename, or send `Cache-Control: no-cache` for it so the
-browser always revalidates.
+**Fixed upstream** in astraea-ui `72a93b9`: `/pkg` is now served with
+`Cache-Control: no-cache`, so the browser revalidates before reuse. Unchanged
+bundles still answer 304 from their ETag, so the cost is one conditional
+request per load. Verified by caching a bundle's ETag, rebuilding, and
+confirming the conditional request now returns 200 with fresh bytes.
+
+Content-hashed filenames were considered and rejected. `hash-files` is read at
+runtime from `LEPTOS_HASH_FILES`, but `main.rs` calls `get_configuration(None)`,
+which is env-driven; a build with hashing enabled that is then run as a bare
+`./astraea-ui` would serve HTML pointing at filenames that do not exist. That
+is a worse failure than the one being fixed, and it is exactly the standalone
+invocation this checklist uses.
 
 **Check before blaming the browser:** compare what the two halves expect.
 
