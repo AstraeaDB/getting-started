@@ -211,6 +211,56 @@ the right question for that page, since ranking a result's nodes against the
 whole database answers something else. The lesson now names two pages rather
 than three areas and says which scope each one uses.
 
+### 6. A stale browser cache breaks every server call after a rebuild
+
+Symptom, seen on the login page right after the dashboard was rebuilt:
+
+    error deserializing server function results: Could not deserialize error
+    "Request did not meet this resource's requirements."
+
+Nothing was wrong with the server. Leptos routes each server function at a path
+made of its snake-case name **plus a hash**, and that hash covers more than the
+one function — changing any server function in `src/app.rs` re-hashes **all** of
+them. Measured across the two commits either side of the overlay fix, every one
+of the fourteen paths changed, including functions that were not touched:
+
+    30df7a6  /api/login17300062197879492894
+    da2409a  /api/login11596859232311602335
+
+The browser had cached `pkg/astraea-ui.wasm` from before the rebuild, so it kept
+POSTing to the old path. Nothing serves that path any more, so the request falls
+through to the `Files` service, which allows only GET and answers `405 Method
+Not Allowed` with the plain-text body above. The client then fails to parse that
+plain text as a serialized `ServerFnError`, which produces the doubly-confusing
+"could not deserialize the error" wording.
+
+Reproduced exactly against the running server:
+
+    POST /api/login17300062197879492894  ->  405, "Request did not meet ..."
+    POST /api/login11596859232311602335  ->  200, {"authenticated":true,...}
+
+**Fix for a reader: hard reload** (Cmd-Shift-R). The bundle is served from
+`target/site/pkg` under fixed filenames with no `Cache-Control` and no content
+hash in the name, so an ordinary reload can reuse the stale WASM.
+
+This is a real trap for anyone following the lesson, because `cargo leptos
+watch` rebuilds on every file change. Its live-reload usually refreshes the page
+for you; when the dashboard is restarted by hand instead, nothing tells the
+browser its bundle is stale.
+
+Worth fixing upstream in astraea-ui, not just documenting: serve `pkg/` with a
+content hash in the filename, or send `Cache-Control: no-cache` for it so the
+browser always revalidates.
+
+**Check before blaming the browser:** compare what the two halves expect.
+
+    strings target/release/astraea-ui | grep -oE '/api/[a-z_]+[0-9]{8,}' | sort -u
+    curl -s localhost:3100/pkg/astraea-ui.wasm | strings \
+      | grep -oE '/api/[a-z_]+[0-9]{8,}' | sort -u
+
+Those two lists must be identical. If they are, the server is fine and the
+browser is stale.
+
 ## How to re-run part 1
 
 ```bash

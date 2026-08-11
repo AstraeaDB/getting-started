@@ -30,7 +30,9 @@ cd astraea-ui
 cargo leptos watch
 ```
 
-The first `cargo leptos watch` compiles the dashboard, which takes a few minutes. It also downloads the Tailwind tool on that first run, so expect a short pause before compilation starts. After that it serves the dashboard at `http://localhost:3100` and rebuilds automatically whenever you change a file. Make sure your AstraeaDB server is already running, using the `astraeadb serve` step from the getting-started posts. The dashboard connects to `127.0.0.1:7687` by default. If your server runs somewhere else, set the `ASTRAEA_HOST` and `ASTRAEA_PORT` environment variables before you start it.
+The first `cargo leptos watch` compiles the dashboard, which takes a few minutes. It also downloads the Tailwind tool on that first run, so expect a short pause before compilation starts. After that it serves the dashboard at `http://localhost:3100` and rebuilds automatically whenever you change a file.
+
+If you ever rebuild the dashboard and then get an error like *"Could not deserialize error: Request did not meet this resource's requirements"* when you log in or run a query, **hard reload the page** (Cmd-Shift-R, or Ctrl-Shift-R). The browser is holding a cached copy of the old WebAssembly bundle, and it is calling server addresses the freshly built server no longer answers on. A hard reload fetches the new bundle and the error goes away. Make sure your AstraeaDB server is already running, using the `astraeadb serve` step from the getting-started posts. The dashboard connects to `127.0.0.1:7687` by default. If your server runs somewhere else, set the `ASTRAEA_HOST` and `ASTRAEA_PORT` environment variables before you start it.
 
 ## Log in
 
