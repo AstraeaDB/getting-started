@@ -54,7 +54,10 @@ than as green.
 ## Part 3: browser steps still to be driven by a human
 
 These need a person at a keyboard. Run them against a server holding the movie
-graph from `crawl-py-01` or `crawl-r-01`.
+graph from `crawl-py-01` or `crawl-r-01`. Node ids on that graph: 575 Keanu
+Reeves, 576 Carrie-Anne Moss, 577 Laurence Fishburne, 578 Sandra Bullock,
+579 Lana Wachowski, 580 Chad Stahelski, 581 The Matrix, 582 The Matrix
+Reloaded, 583 John Wick, 584 Speed, 585 Science Fiction, 586 Action.
 
 - [X] Log in with any key while authentication is off, and confirm Admin access.
 - [X] Run the co-star GQL query from the lesson and confirm a drawing appears
@@ -71,22 +74,36 @@ Run each of these **twice**: once in the Graph Explorer sidebar, once in the
 Algorithms row above the Query Console's graph tab. Check the status line every
 time; a silent overlay is the failure this section exists to catch.
 
-- [ ] **PageRank.** Node sizes visibly differ afterwards. Status names a node
-      count, e.g. "PageRank applied to 12 nodes". On the movie graph the
-      Wachowski-heavy nodes should be among the larger ones.
-- [ ] **Degree centrality.** Sizes change, and differently from PageRank.
-- [ ] **Louvain.** Nodes take at least two distinct colours on the full movie
-      graph; the server finds four communities there.
-- [ ] **Connected components.** The movie graph is fully connected, so the
-      expected result is one colour **and** a status line reading "All 12 nodes
-      are in one connected component". One colour with no such message means
-      the overlay silently failed again.
+Expected results on the twelve-node movie graph, taken from the server on
+2026-08-11 so a plausible-looking overlay can be told from a correct one.
+
+- [ ] **PageRank.** Sizes visibly differ; status names a node count. Largest
+      first: Action (0.267), Science Fiction (0.125), then The Matrix and
+      The Matrix Reloaded (0.100 each). The genres win because every film
+      points at them.
+- [ ] **Degree centrality.** Sizes change, and the order is *different* from
+      PageRank: Keanu Reeves (0.364) is the largest, then a four-way tie at
+      0.182. If this looks identical to PageRank, one of the two is not being
+      applied.
+- [ ] **Louvain.** Four colours: {Keanu Reeves, Sandra Bullock, Speed},
+      {Carrie-Anne Moss, Science Fiction, The Matrix Reloaded},
+      {Lana Wachowski, Laurence Fishburne, The Matrix},
+      {Action, Chad Stahelski, John Wick}.
+- [ ] **Connected components.** One colour **and** a status line reading
+      "All 12 nodes are in one connected component". One colour with no such
+      message means the overlay silently failed again. Note this ignores edge
+      direction, which is why it can report one component while shortest path
+      below finds no route between two of its members.
 - [ ] **Scoping.** Run PageRank in the Query Console on the co-star query, then
       in the Graph Explorer over the whole database, and confirm the two give
       different sizes. If they match, the Query Console is not scoping to its
       result and the `nodes` field is being dropped.
-- [ ] **Shortest path** (Graph Explorer only). A route between two actor ids
-      lights up and the status reports the hop count.
+- [ ] **Shortest path** (Graph Explorer only). Edges are directed, so pick
+      ends the arrows can actually connect: **575 -> 586** (Keanu Reeves to
+      Action) lights up Keanu Reeves → The Matrix → Action, 2 hops. Two actors
+      never work — 577 -> 578 correctly reports no path, because nothing leads
+      back down from a genre to a person. An earlier version of this checklist
+      asked for exactly that and would have read as a bug.
 - [ ] **Reset.** Clears sizes and colours and empties the status line.
 
 ---

@@ -245,10 +245,21 @@ RETURN keanu, r1, m, r2, costar</code></pre>
     <li><a href="../glossary.html#shortest-path">Shortest path</a>
     highlights the fewest steps between two nodes you choose, and lives
     in the Graph Explorer only, because it needs two specific node IDs
-    rather than a set. Picking two actors from different franchises
-    makes a good test, because the highlighted route shows how the whole
-    graph is connected through the films they share.</li>
+    rather than a set. <strong>Follow the arrows when you pick the two
+    ends.</strong> Your edges run one way, from a person to a film and
+    from a film to a genre, so an actor can reach a genre — Keanu Reeves
+    to Action lights up Keanu Reeves → The Matrix → Action — but one
+    actor cannot reach another, and asking for that reports no
+    path.</li>
     </ul>
+    <p>That last point is worth sitting with, because it looks like a
+    contradiction. Connected components just told you all twelve nodes
+    are in one piece, and yet there is no route from Laurence Fishburne
+    to Sandra Bullock. Both answers are right: components ignores
+    direction and asks "is this all one lump of graph", while shortest
+    path obeys it and asks "can I walk from here to there". A graph can
+    be a single connected lump that you still cannot traverse, and which
+    question you are asking decides which answer you get.</p>
     <h2 id="save-a-picture">Save a picture</h2>
     <p>When a view looks the way you want, the Export button saves the
     current graph as a PNG image or as a JSON file. The image is handy
