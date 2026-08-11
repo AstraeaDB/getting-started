@@ -28,9 +28,19 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install pandoc and just
+        # Pandoc is pinned, and to the version the committed docs/ was rendered
+        # with. Ubuntu's apt pandoc is older and does not accept
+        # --syntax-highlighting, but the deeper reason for pinning is the
+        # "docs/ is up to date" step below: it compares rendered output byte
+        # for byte, so any pandoc whose HTML differs even cosmetically would
+        # fail the build for no real reason. Bump this together with a local
+        # rebuild, never on its own.
+        env:
+          PANDOC_VERSION: '3.9'
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq pandoc
+          curl -fsSL -o /tmp/pandoc.deb \
+            "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-1-amd64.deb"
+          sudo dpkg -i /tmp/pandoc.deb
           curl -fsSL https://just.systems/install.sh | sudo bash -s -- --to /usr/local/bin
 
       # 3.11 is the floor: site/build.py reads lessons.toml with tomllib.
