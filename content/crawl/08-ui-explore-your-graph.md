@@ -51,7 +51,17 @@ This reads as a sentence: find Keanu, follow his `ACTED_IN` links to the movies 
 
 ## Explore the graph by hand
 
-The Graph Explorer draws a neighborhood of the graph starting from one node. It asks for a center node's ID and a depth, where depth is how many steps outward to follow. To find an ID, use the "Find by Label" quick action and choose `Person` or `Movie`, or read one from a query result, since every node the console returns includes its `id`. Enter that ID as the center and set the depth to 2. A depth of 1 shows only the immediate neighbors, while a depth of 2 brings in the next ring, so an actor expands into their films and then into those films' genres and co-stars.
+The Graph Explorer draws a neighborhood of the graph starting from one node. It asks for a center node's ID and a depth, where depth is how many steps outward to follow. To find an ID, use the "Find by Label" quick action and choose `Person` or `Movie`, or read one from a query result, since every node the console returns includes its `id`. Enter that ID as the center and set the depth to 2. A depth of 1 shows only the immediate neighbors, while a depth of 2 brings in the next ring, so an actor expands into their films and then into those films' genres.
+
+**The Explorer follows your arrows, and only forwards.** That has a consequence worth knowing before you go hunting for a view that does not exist: because people point at films and films point at genres, and nothing points back, you can never reach an actor's co-stars from the actor. Starting at Keanu Reeves with depth 2 draws seven of this graph's twelve nodes — him, his four films, and their two genres — and raising the depth adds nothing, because there is nowhere further to go. Start at a genre and you get one lonely node, since a genre is where every path ends.
+
+To see the whole graph at once, use the Query Console instead, which does not traverse at all:
+
+```
+MATCH (n)-[r]->(m) RETURN n, r, m
+```
+
+That returns every relationship in the database, and the Graph tab draws all twelve nodes together.
 
 Once the graph is on screen, try the layout options. A Force layout lets connected nodes pull together while unrelated ones drift apart, which makes clusters easy to see. You can also filter by label or by edge type to hide everything except, for example, movies and the genres they belong to.
 

@@ -94,10 +94,16 @@ Expected results on the twelve-node movie graph, taken from the server on
       message means the overlay silently failed again. Note this ignores edge
       direction, which is why it can report one component while shortest path
       below finds no route between two of its members.
-- [ ] **Scoping.** Run PageRank in the Query Console on the co-star query, then
-      in the Graph Explorer over the whole database, and confirm the two give
-      different sizes. If they match, the Query Console is not scoping to its
-      result and the `nodes` field is being dropped.
+- [ ] **Scoping.** The sharpest check available, because two nodes swap
+      relationship between the two views.
+      - Graph Explorer, centre **575**, depth 2 (see finding 7 — this is the
+        most of the graph the Explorer can show, 7 of 12 nodes). Run PageRank.
+        **Speed and John Wick come out the same size**, both 0.0830 globally.
+      - Query Console, run the lesson's co-star query, then PageRank on the
+        Algorithms row. Scoped to those 8 nodes, **Speed (0.0387) is visibly
+        bigger than John Wick (0.0227)**, and the genres are gone entirely.
+      If Speed and John Wick stay equal in the Query Console, the `nodes` field
+      is being dropped and the scoping is not happening.
 - [ ] **Shortest path** (Graph Explorer only). Edges are directed, so pick
       ends the arrows can actually connect: **575 -> 586** (Keanu Reeves to
       Action) lights up Keanu Reeves → The Matrix → Action, 2 hops. Two actors
@@ -288,6 +294,34 @@ invocation this checklist uses.
 
 Those two lists must be identical. If they are, the server is fine and the
 browser is stale.
+
+### 7. The Graph Explorer cannot show the whole graph
+
+Raised while working out where to start for the PageRank check. `GetSubgraph`
+follows **outgoing edges only**, and this graph is a two-level funnel: people
+point at films, films point at genres, nothing points back. So the reachable
+set depends entirely on where you start, and depth past 2 adds nothing at all:
+
+    centre 575 Keanu Reeves        depth 2 or 3 ->  7 of 12 nodes
+    centre 577 Laurence Fishburne  depth 2 or 3 ->  5
+    centre 578 Sandra Bullock      depth 2 or 3 ->  3
+    centre 581 The Matrix          depth 2 or 3 ->  3
+    centre 586 Action              depth 2 or 3 ->  1  (a genre is a sink)
+
+**Centre 575 at depth 2 is the best the Explorer can do: 7 of 12.** The five
+missing nodes are the other people, who are unreachable from anywhere because
+no edge leads back down from a film to a person.
+
+The whole graph is visible in the **Query Console**, which does not traverse:
+
+    MATCH (n)-[r]->(m) RETURN n, r, m
+
+returns 18 rows covering all 12 nodes, and the Graph tab draws them.
+
+Worth considering upstream: a direction control on the Explorer (outgoing,
+incoming, either) would make it possible to explore backwards from a film to
+its cast, which is the obvious thing to want on a graph shaped like this. Until
+then the lesson should not imply the Explorer shows everything.
 
 ## How to re-run part 1
 

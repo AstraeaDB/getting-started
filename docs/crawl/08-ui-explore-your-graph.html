@@ -193,8 +193,23 @@ RETURN keanu, r1, m, r2, costar</code></pre>
     node the console returns includes its <code>id</code>. Enter that ID
     as the center and set the depth to 2. A depth of 1 shows only the
     immediate neighbors, while a depth of 2 brings in the next ring, so
-    an actor expands into their films and then into those films' genres
-    and co-stars.</p>
+    an actor expands into their films and then into those films'
+    genres.</p>
+    <p><strong>The Explorer follows your arrows, and only
+    forwards.</strong> That has a consequence worth knowing before you
+    go hunting for a view that does not exist: because people point at
+    films and films point at genres, and nothing points back, you can
+    never reach an actor's co-stars from the actor. Starting at Keanu
+    Reeves with depth 2 draws seven of this graph's twelve nodes — him,
+    his four films, and their two genres — and raising the depth adds
+    nothing, because there is nowhere further to go. Start at a genre
+    and you get one lonely node, since a genre is where every path
+    ends.</p>
+    <p>To see the whole graph at once, use the Query Console instead,
+    which does not traverse at all:</p>
+    <pre><code>MATCH (n)-[r]-&gt;(m) RETURN n, r, m</code></pre>
+    <p>That returns every relationship in the database, and the Graph
+    tab draws all twelve nodes together.</p>
     <p>Once the graph is on screen, try the layout options. A Force
     layout lets connected nodes pull together while unrelated ones drift
     apart, which makes clusters easy to see. You can also filter by
