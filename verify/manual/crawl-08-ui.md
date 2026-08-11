@@ -6,9 +6,10 @@
 than as green.
 
 **Last run: 2026-08-11**
-**Result: PASS. All 13 browser steps driven by a human. The run found four
-broken algorithm overlays and a stale-bundle failure; both fixed, and every
-step re-checked against expected values afterwards.**
+**Result: PASS on all 13 original browser steps, driven by a human. The run
+found four broken algorithm overlays and a stale-bundle failure; both fixed and
+re-checked. Five new direction-control steps added afterwards (finding 7 fix)
+and are not yet driven.**
 **Against: astraea-ui `72a93b9`, AstraeaDB `61eef42` (0.3.1), cargo-leptos 0.3.5 and 0.3.7, rustc 1.95.0**
 
 ---
@@ -40,7 +41,8 @@ step re-checked against expected values afterwards.**
 | Claim | How to check it | Last observed |
 | --- | --- | --- |
 | Query Console runs GQL | a query returns rows or a drawing | 2026-08-11, works |
-| Graph Explorer walks outward | centre + depth 2 draws a second ring | 2026-08-11, works (7 of 12 nodes; finding 7) |
+| Graph Explorer walks outward | centre + depth 2 draws a second ring | 2026-08-11, works |
+| Explorer "Follow edges" control | outgoing/incoming/either change what is reachable | new in `304e92b`, not browser-checked |
 | "Find by Label" quick action | returns node ids for `Person` | 2026-08-11, works |
 | Algorithms on Graph Explorer | status line names a node count | 2026-08-11, works |
 | Algorithms on Query Console | row appears above the result graph | 2026-08-11, works, and scopes |
@@ -69,6 +71,20 @@ Reloaded, 583 John Wick, 584 Speed, 585 Science Fiction, 586 Action.
 - [X] Switch to the Force layout and confirm clusters separate.
 - [X] Filter by label and by edge type.
 - [X] Export a PNG and a JSON file, and reload the JSON.
+
+### Direction control (new in astraea-ui `304e92b`)
+
+- [ ] **Outgoing, centre 575, depth 2** draws 7 nodes: Keanu, his four films,
+      the two genres. No co-stars appear, and raising the depth to 3 or 10
+      changes nothing.
+- [ ] **Incoming, centre 575** draws exactly 1 node, Keanu alone.
+- [ ] **Either way, centre 575, depth 2** draws all 12 nodes and 18 edges.
+- [ ] **Either way from a sink.** Centre 586 (Action) with Outgoing gives 1
+      node; switching to Either way gives all 12. This is the check most likely
+      to catch the direction being ignored, because the two answers could
+      hardly differ more.
+- [ ] **Truncation.** Set Max Nodes to 5 with Either way: 5 nodes appear and no
+      edge dangles into a node that is not drawn.
 
 ### Algorithms — the part that was broken
 
@@ -297,7 +313,7 @@ invocation this checklist uses.
 Those two lists must be identical. If they are, the server is fine and the
 browser is stale.
 
-### 7. The Graph Explorer cannot show the whole graph
+### 7. The Graph Explorer cannot show the whole graph  *(fixed in astraea-ui `304e92b`)*
 
 Raised while working out where to start for the PageRank check. `GetSubgraph`
 follows **outgoing edges only**, and this graph is a two-level funnel: people
@@ -320,10 +336,22 @@ The whole graph is visible in the **Query Console**, which does not traverse:
 
 returns 18 rows covering all 12 nodes, and the Graph tab draws them.
 
-Worth considering upstream: a direction control on the Explorer (outgoing,
-incoming, either) would make it possible to explore backwards from a film to
-its cast, which is the obvious thing to want on a graph shaped like this. Until
-then the lesson should not imply the Explorer shows everything.
+**Fixed** in astraea-ui `304e92b`, which adds a "Follow edges" selector —
+either way, outgoing, incoming — defaulting to either way. No server change was
+needed: `Neighbors` has taken a direction since 0.3.1, so the walk happens in
+the dashboard backend and works against a stock released server. Measured after
+the change, centre 575 depth 2:
+
+    outgoing   7 nodes, 10 edges   (unchanged from before)
+    incoming   1 node,   0 edges   (nothing points at a person)
+    both      12 nodes, 18 edges   (the entire graph)
+
+and centre 586, the Action genre, goes from 1 node to all 12.
+
+The lesson now teaches this rather than working around it: direction is the
+difference between "what does this point at" and "what is this connected to",
+and the Explorer is where a reader can feel that difference by flipping one
+control.
 
 ## How to re-run part 1
 

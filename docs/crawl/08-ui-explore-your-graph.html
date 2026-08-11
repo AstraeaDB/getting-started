@@ -75,6 +75,9 @@
       <li><a href="#explore-the-graph-by-hand"
       id="toc-explore-the-graph-by-hand">Explore the graph by
       hand</a></li>
+      <li><a href="#which-way-do-the-arrows-point"
+      id="toc-which-way-do-the-arrows-point">Which way do the arrows
+      point?</a></li>
       <li><a href="#run-graph-algorithms"
       id="toc-run-graph-algorithms">Run graph algorithms</a></li>
       <li><a href="#save-a-picture" id="toc-save-a-picture">Save a
@@ -192,24 +195,53 @@ RETURN keanu, r1, m, r2, costar</code></pre>
     <code>Movie</code>, or read one from a query result, since every
     node the console returns includes its <code>id</code>. Enter that ID
     as the center and set the depth to 2. A depth of 1 shows only the
-    immediate neighbors, while a depth of 2 brings in the next ring, so
-    an actor expands into their films and then into those films'
-    genres.</p>
-    <p><strong>The Explorer follows your arrows, and only
-    forwards.</strong> That has a consequence worth knowing before you
-    go hunting for a view that does not exist: because people point at
-    films and films point at genres, and nothing points back, you can
-    never reach an actor's co-stars from the actor. Starting at Keanu
-    Reeves with depth 2 draws seven of this graph's twelve nodes — him,
-    his four films, and their two genres — and raising the depth adds
-    nothing, because there is nowhere further to go. Start at a genre
-    and you get one lonely node, since a genre is where every path
-    ends.</p>
-    <p>To see the whole graph at once, use the Query Console instead,
-    which does not traverse at all:</p>
-    <pre><code>MATCH (n)-[r]-&gt;(m) RETURN n, r, m</code></pre>
-    <p>That returns every relationship in the database, and the Graph
-    tab draws all twelve nodes together.</p>
+    immediate neighbors, while a depth of 2 brings in the next ring.</p>
+    <h2 id="which-way-do-the-arrows-point">Which way do the arrows
+    point?</h2>
+    <p>Next to the depth is a control labelled <strong>Follow
+    edges</strong>, offering <em>either way</em>, <em>outgoing</em> and
+    <em>incoming</em>. It looks like a minor setting and it is the most
+    important control on the page, because on a directed graph it
+    decides what you are even able to see.</p>
+    <p>Your movie graph runs one way. A person points at a film they
+    acted in; a film points at its genres; nothing points back. So set
+    <strong>Outgoing</strong>, start at Keanu Reeves, and ask for depth
+    2:</p>
+    <ul>
+    <li>You get seven of the twelve nodes: Keanu, his four films, and
+    their two genres.</li>
+    <li>You never see a co-star, no matter how large you make the depth.
+    There is no arrow from a film back to a person, so there is no
+    route.</li>
+    <li>Raising the depth to 3, or 10, changes nothing at all. Two hops
+    is as deep as this graph goes in that direction.</li>
+    </ul>
+    <p>Now switch to <strong>Incoming</strong> and explore the same
+    node. You get exactly one node: Keanu himself. Nothing in the
+    database points at a person, so walking backwards from one is a dead
+    end.</p>
+    <p>Switch to <strong>Either way</strong> and the picture opens up:
+    all twelve nodes and all eighteen relationships. Ignoring direction,
+    you can get from any node to any other, so a single starting point
+    reaches everything.</p>
+    <p>The most telling test is to start somewhere that looks useless.
+    Enter the ID of the <code>Action</code> genre and explore
+    <strong>Outgoing</strong>: you get one node, because a genre is
+    where every path ends. Nothing flows out of it. Switch that same
+    node to <strong>Either way</strong> and the entire graph appears
+    around it.</p>
+    <p>None of that is a defect. It is what direction <em>means</em>,
+    and it is the difference between two genuinely different questions:
+    "what does this thing point at" and "what is this thing connected
+    to". Most exploration wants the second, which is why the control
+    defaults to either way. But when you are tracing influence, or
+    provenance, or the flow of money — anywhere the arrow carries
+    meaning — the first is the only honest question, and following edges
+    backwards would invent connections that do not exist.</p>
+    <p>This is the same distinction you will meet again in the
+    algorithms below, where connected components will report that all
+    twelve nodes are one piece while shortest path insists there is no
+    route between two of them.</p>
     <p>Once the graph is on screen, try the layout options. A Force
     layout lets connected nodes pull together while unrelated ones drift
     apart, which makes clusters easy to see. You can also filter by

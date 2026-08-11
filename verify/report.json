@@ -5,7 +5,7 @@
       "lesson": "crawl-08-ui",
       "green": false,
       "checked_on": "2026-08-11",
-      "note": "All 13 browser steps driven by a human and passing, including the seven algorithm checks against expected values read off the server. Found and fixed four broken overlays (astraea-ui da2409a) and a stale-bundle failure (72a93b9). See verify/manual/crawl-08-ui.md.",
+      "note": "All 13 original browser steps driven by a human and passing. The run found four broken algorithm overlays and a stale-bundle failure, both fixed in astraea-ui and re-checked. A direction control was then added (astraea-ui 304e92b); its five checks are not yet driven. See verify/manual/crawl-08-ui.md.",
       "skipped": []
     },
     {

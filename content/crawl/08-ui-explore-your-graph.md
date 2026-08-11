@@ -51,17 +51,27 @@ This reads as a sentence: find Keanu, follow his `ACTED_IN` links to the movies 
 
 ## Explore the graph by hand
 
-The Graph Explorer draws a neighborhood of the graph starting from one node. It asks for a center node's ID and a depth, where depth is how many steps outward to follow. To find an ID, use the "Find by Label" quick action and choose `Person` or `Movie`, or read one from a query result, since every node the console returns includes its `id`. Enter that ID as the center and set the depth to 2. A depth of 1 shows only the immediate neighbors, while a depth of 2 brings in the next ring, so an actor expands into their films and then into those films' genres.
+The Graph Explorer draws a neighborhood of the graph starting from one node. It asks for a center node's ID and a depth, where depth is how many steps outward to follow. To find an ID, use the "Find by Label" quick action and choose `Person` or `Movie`, or read one from a query result, since every node the console returns includes its `id`. Enter that ID as the center and set the depth to 2. A depth of 1 shows only the immediate neighbors, while a depth of 2 brings in the next ring.
 
-**The Explorer follows your arrows, and only forwards.** That has a consequence worth knowing before you go hunting for a view that does not exist: because people point at films and films point at genres, and nothing points back, you can never reach an actor's co-stars from the actor. Starting at Keanu Reeves with depth 2 draws seven of this graph's twelve nodes — him, his four films, and their two genres — and raising the depth adds nothing, because there is nowhere further to go. Start at a genre and you get one lonely node, since a genre is where every path ends.
+## Which way do the arrows point?
 
-To see the whole graph at once, use the Query Console instead, which does not traverse at all:
+Next to the depth is a control labelled **Follow edges**, offering *either way*, *outgoing* and *incoming*. It looks like a minor setting and it is the most important control on the page, because on a directed graph it decides what you are even able to see.
 
-```
-MATCH (n)-[r]->(m) RETURN n, r, m
-```
+Your movie graph runs one way. A person points at a film they acted in; a film points at its genres; nothing points back. So set **Outgoing**, start at Keanu Reeves, and ask for depth 2:
 
-That returns every relationship in the database, and the Graph tab draws all twelve nodes together.
+- You get seven of the twelve nodes: Keanu, his four films, and their two genres.
+- You never see a co-star, no matter how large you make the depth. There is no arrow from a film back to a person, so there is no route.
+- Raising the depth to 3, or 10, changes nothing at all. Two hops is as deep as this graph goes in that direction.
+
+Now switch to **Incoming** and explore the same node. You get exactly one node: Keanu himself. Nothing in the database points at a person, so walking backwards from one is a dead end.
+
+Switch to **Either way** and the picture opens up: all twelve nodes and all eighteen relationships. Ignoring direction, you can get from any node to any other, so a single starting point reaches everything.
+
+The most telling test is to start somewhere that looks useless. Enter the ID of the `Action` genre and explore **Outgoing**: you get one node, because a genre is where every path ends. Nothing flows out of it. Switch that same node to **Either way** and the entire graph appears around it.
+
+None of that is a defect. It is what direction *means*, and it is the difference between two genuinely different questions: "what does this thing point at" and "what is this thing connected to". Most exploration wants the second, which is why the control defaults to either way. But when you are tracing influence, or provenance, or the flow of money — anywhere the arrow carries meaning — the first is the only honest question, and following edges backwards would invent connections that do not exist.
+
+This is the same distinction you will meet again in the algorithms below, where connected components will report that all twelve nodes are one piece while shortest path insists there is no route between two of them.
 
 Once the graph is on screen, try the layout options. A Force layout lets connected nodes pull together while unrelated ones drift apart, which makes clusters easy to see. You can also filter by label or by edge type to hide everything except, for example, movies and the genres they belong to.
 
