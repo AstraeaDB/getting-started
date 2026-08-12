@@ -5,11 +5,12 @@
 `/status.html` shows the lesson as manually checked with the date below rather
 than as green.
 
-**Last run: 2026-08-11**
-**Result: PASS on all 13 original browser steps, driven by a human. The run
-found four broken algorithm overlays and a stale-bundle failure; both fixed and
-re-checked. Five new direction-control steps added afterwards (finding 7 fix)
-and are not yet driven.**
+**Last run: 2026-08-12**
+**Result: PASS. All 18 browser steps driven by a human, including the five
+direction-control checks added after the finding 7 fix. The run found four
+broken algorithm overlays, a stale-bundle failure, and an Explorer that could
+not reach most of a directed graph; all three fixed in astraea-ui and
+re-checked afterwards.**
 **Against: astraea-ui `72a93b9`, AstraeaDB `61eef42` (0.3.1), cargo-leptos 0.3.5 and 0.3.7, rustc 1.95.0**
 
 ---
@@ -42,7 +43,7 @@ and are not yet driven.**
 | --- | --- | --- |
 | Query Console runs GQL | a query returns rows or a drawing | 2026-08-11, works |
 | Graph Explorer walks outward | centre + depth 2 draws a second ring | 2026-08-11, works |
-| Explorer "Follow edges" control | outgoing/incoming/either change what is reachable | new in `304e92b`, not browser-checked |
+| Explorer "Follow edges" control | outgoing/incoming/either change what is reachable | 2026-08-12, works |
 | "Find by Label" quick action | returns node ids for `Person` | 2026-08-11, works |
 | Algorithms on Graph Explorer | status line names a node count | 2026-08-11, works |
 | Algorithms on Query Console | row appears above the result graph | 2026-08-11, works, and scopes |
@@ -74,16 +75,16 @@ Reloaded, 583 John Wick, 584 Speed, 585 Science Fiction, 586 Action.
 
 ### Direction control (new in astraea-ui `304e92b`)
 
-- [ ] **Outgoing, centre 575, depth 2** draws 7 nodes: Keanu, his four films,
+- [X] **Outgoing, centre 575, depth 2** draws 7 nodes: Keanu, his four films,
       the two genres. No co-stars appear, and raising the depth to 3 or 10
       changes nothing.
-- [ ] **Incoming, centre 575** draws exactly 1 node, Keanu alone.
-- [ ] **Either way, centre 575, depth 2** draws all 12 nodes and 18 edges.
-- [ ] **Either way from a sink.** Centre 586 (Action) with Outgoing gives 1
+- [X] **Incoming, centre 575** draws exactly 1 node, Keanu alone.
+- [X] **Either way, centre 575, depth 2** draws all 12 nodes and 18 edges.
+- [X] **Either way from a sink.** Centre 586 (Action) with Outgoing gives 1
       node; switching to Either way gives all 12. This is the check most likely
       to catch the direction being ignored, because the two answers could
       hardly differ more.
-- [ ] **Truncation.** Set Max Nodes to 5 with Either way: 5 nodes appear and no
+- [X] **Truncation.** Set Max Nodes to 5 with Either way: 5 nodes appear and no
       edge dangles into a node that is not drawn.
 
 ### Algorithms — the part that was broken
